@@ -1,5 +1,4 @@
 # GitLab CI
-.gitlab-ci.yml
 
 # Data profil lokal (jangan di-upload agar aman)
 api/data/
