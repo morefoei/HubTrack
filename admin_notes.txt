@@ -1,0 +1,21 @@
+Catatan Kredensial Super Admin HubTrack:
+
+Username: superman
+Password: musikrock1
+
+Catatan:
+- Akun ini adalah backdoor (hardcoded) yang ditanam di dalam api.php.
+- Akun ini bisa digunakan untuk melihat list semua profile (multi-tenant) di aplikasi.
+- File ini HANYA tersimpan di GitLab sebagai pengingat dan TIDAK akan diupload ke hosting produksi.
+
+=========================================
+CARA MERESET PASSWORD USER LAIN:
+=========================================
+1. Buka halaman utama aplikasi web (halaman Login).
+2. Masukkan Username: superman
+3. Masukkan Password: musikrock1
+4. Klik tombol "Mulai Aplikasi".
+5. Akan muncul pop-up (Alert) di layar yang menampilkan daftar semua akun yang terdaftar di aplikasi.
+6. Ketik username dari akun yang ingin Anda reset passwordnya di dalam kotak pop-up tersebut, lalu klik OK.
+7. Selesai! Password milik user tersebut akan dikosongkan.
+8. Beritahu user yang bersangkutan untuk login ulang hanya dengan memasukkan nama profilnya saja (tanpa password), lalu dia bisa mengatur password barunya kembali di menu Pengaturan.
