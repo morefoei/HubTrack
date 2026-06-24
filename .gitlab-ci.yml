@@ -15,3 +15,4 @@ deploy:
     - lftp -c "set ftp:ssl-allow no; open -u $FTP_USERNAME,$FTP_PASSWORD $FTP_SERVER; mirror -Rnv ./ /htdocs --ignore-time --parallel=10 --no-perms --exclude-glob .git* --exclude .gitlab-ci.yml"
   only:
     - main
+    
