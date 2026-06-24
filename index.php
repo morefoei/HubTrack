@@ -8,7 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="assets/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+
     <!-- PWA / Android App Integration -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0f172a">
@@ -35,7 +35,7 @@
             <form id="loginForm">
                 <div class="form-group">
                     <label>Username / Profile Name</label>
-                    <input type="text" id="loginUsername" placeholder="e.g. fadly" required autocomplete="username">
+                    <input type="text" id="loginUsername" placeholder="e.g. udin" required autocomplete="username">
                 </div>
                 <div class="form-group">
                     <label>Password</label>
@@ -154,7 +154,13 @@
             <div class="card">
                 <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
                     <h2 class="card-title">Current Logs</h2>
-                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                        <select id="filterLogStatus" style="padding: 0.5rem; border-radius: 4px; border: 1px solid var(--panel-border); background: #1e293b; color: var(--text-main);">
+                            <option value="all">Semua Status</option>
+                            <option value="pending" style="color: #fcd34d;">Pending</option>
+                            <option value="final" style="color: #93c5fd;">Final</option>
+                            <option value="done" style="color: #10b981;">Done</option>
+                        </select>
                         <select id="bulkStatusSelect" style="padding: 0.5rem; border-radius: 4px; border: 1px solid var(--panel-border); background: #1e293b; color: var(--text-main);">
                             <option value="final" style="background: #1e293b; color: #93c5fd;">Final</option>
                             <option value="pending" style="background: #1e293b; color: #fcd34d;">Pending</option>
@@ -408,7 +414,7 @@
                         <p>Setelah pengaturan selesai, Anda bisa menginput data jam kerja Anda lewat menu utama:</p>
                         <ol style="margin-left: 1.5rem; margin-bottom: 1.5rem;">
                             <li><strong>Daily-Track:</strong> Gunakan menu ini untuk menginput 1 hari kerja. Klik tulisan <em><i class="fa-solid fa-rotate"></i> Load Projects</em> pada kolom Project Name untuk mengambil daftar nama project langsung dari Zoho.</li>
-                            <li><strong>Fast-Track & Exclude Weekends:</strong> Fitur ini digunakan jika Anda memiliki jadwal yang sama persis untuk beberapa hari berturut-turut (misal: masuk jam 09:00 - 18:00 selama 1 bulan penuh). 
+                            <li><strong>Fast-Track & Exclude Weekends:</strong> Fitur ini digunakan jika Anda memiliki jadwal yang sama persis untuk beberapa hari berturut-turut (misal: masuk jam 09:00 - 18:00 selama 1 bulan penuh).
                                 <ul style="margin-top: 0.5rem; margin-bottom: 0.5rem;">
                                     <li>Pilih rentang <strong>Start Date</strong> (Tanggal Mulai) dan <strong>End Date</strong> (Tanggal Selesai). <em>Contoh: Start Date "01-06-2024" dan End Date "30-06-2024".</em></li>
                                     <li>Isi data proyek, task, dan catatan seperti biasa.</li>
@@ -480,7 +486,7 @@
                         <p>After setup is complete, use the main menus to manage your work logs:</p>
                         <ol style="margin-left: 1.5rem; margin-bottom: 1.5rem;">
                             <li><strong>Daily-Track:</strong> Use this to input single day logs. Click <em><i class="fa-solid fa-rotate"></i> Load Projects</em> to fetch projects directly from Zoho.</li>
-                            <li><strong>Fast-Track & Exclude Weekends:</strong> This feature is used if you have the exact same schedule for consecutive days (e.g., working 09:00 - 18:00 for a full month). 
+                            <li><strong>Fast-Track & Exclude Weekends:</strong> This feature is used if you have the exact same schedule for consecutive days (e.g., working 09:00 - 18:00 for a full month).
                                 <ul style="margin-top: 0.5rem; margin-bottom: 0.5rem;">
                                     <li>Select your <strong>Start Date</strong> and <strong>End Date</strong>. <em>Example: Start Date "01-06-2024" and End Date "30-06-2024".</em></li>
                                     <li>Fill in the project, task, and notes data as usual.</li>

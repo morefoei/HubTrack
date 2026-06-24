@@ -204,6 +204,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         logs.forEach(log => {
             const tr = document.createElement('tr');
+            tr.setAttribute('data-status', log.status);
             
             let statusClass = 'status-pending';
             if (log.status === 'final') statusClass = 'status-final';
@@ -693,9 +694,33 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('selectAllLogs').addEventListener('change', (e) => {
         const checked = e.target.checked;
         document.querySelectorAll('.log-checkbox').forEach(cb => {
-            cb.checked = checked;
+            if (cb.closest('tr').style.display !== 'none') {
+                cb.checked = checked;
+            }
         });
     });
+
+    // Filter Logic
+    const filterLogStatus = document.getElementById('filterLogStatus');
+    if (filterLogStatus) {
+        filterLogStatus.addEventListener('change', (e) => {
+            const status = e.target.value;
+            const rows = document.querySelectorAll('#logsTableBody tr');
+            rows.forEach(row => {
+                // skip empty row message if any
+                if (!row.hasAttribute('data-status')) return;
+                
+                if (status === 'all' || row.getAttribute('data-status') === status) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                    const cb = row.querySelector('.log-checkbox');
+                    if (cb) cb.checked = false;
+                }
+            });
+            document.getElementById('selectAllLogs').checked = false;
+        });
+    }
 
     document.getElementById('btnExportCSV').addEventListener('click', () => {
         if (!currentLogs || currentLogs.length === 0) {
