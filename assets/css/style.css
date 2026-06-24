@@ -229,20 +229,28 @@ label {
 
 input, select, textarea {
     width: 100%;
-    background: rgba(15, 23, 42, 0.5);
-    border: 1px solid var(--panel-border);
+    background: rgba(30, 41, 59, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     color: var(--text-main);
-    padding: 0.75rem 1rem;
-    border-radius: 0.5rem;
+    padding: 0.85rem 1.2rem;
+    border-radius: 0.75rem;
     font-family: inherit;
     font-size: 0.95rem;
-    transition: all 0.2s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    backdrop-filter: blur(8px);
+}
+
+input:hover, select:hover, textarea:hover {
+    background: rgba(30, 41, 59, 0.6);
+    border-color: rgba(255, 255, 255, 0.15);
 }
 
 input:focus, select:focus, textarea:focus {
     outline: none;
-    border-color: var(--primary);
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+    border-color: #a855f7;
+    background: rgba(30, 41, 59, 0.8);
+    box-shadow: 0 0 0 4px rgba(168, 85, 247, 0.15), 0 0 12px rgba(168, 85, 247, 0.2);
+    transform: translateY(-2px);
 }
 
 button {

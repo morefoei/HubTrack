@@ -79,12 +79,15 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentLogs = [];
 
     // Profile Management
-    let userProfile = localStorage.getItem('zohoProfile') || '';
-    let userPassword = localStorage.getItem('zohoPassword') || '';
+    let userProfile = sessionStorage.getItem('zohoProfile') || '';
+    let userPassword = sessionStorage.getItem('zohoPassword') || '';
 
     const checkAuth = async () => {
         if (!userProfile || !userPassword) {
-            document.getElementById('loginOverlay').style.display = 'flex';
+            document.querySelector('header').style.display = 'none';
+            document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
+            document.getElementById('guide-view').classList.add('active');
+            document.getElementById('guideLoginBanner').style.display = 'block';
             return false;
         }
         
@@ -99,12 +102,25 @@ document.addEventListener('DOMContentLoaded', () => {
             if (data.success === false && data.message && data.message.includes('Password Salah')) {
                 showToast(data.message, 'error');
                 userPassword = '';
-                localStorage.removeItem('zohoPassword');
-                document.getElementById('loginOverlay').style.display = 'flex';
+                sessionStorage.removeItem('zohoPassword');
+                document.querySelector('header').style.display = 'none';
+                document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
+                document.getElementById('guide-view').classList.add('active');
+                document.getElementById('guideLoginBanner').style.display = 'block';
                 return false;
             }
             // Auth OK
             document.getElementById('loginOverlay').style.display = 'none';
+            document.querySelector('header').style.display = '';
+            const banner = document.getElementById('guideLoginBanner');
+            if (banner) banner.style.display = 'none';
+            
+            // If guide view was forced due to no login, reset back to logs view
+            if(document.getElementById('guide-view').classList.contains('active') && !document.querySelector('.nav-btn[data-target="guide-view"]')?.classList.contains('active')) {
+                document.getElementById('guide-view').classList.remove('active');
+                document.getElementById('logs-view').classList.add('active');
+            }
+
             document.getElementById('profileNameDisplay').innerText = userProfile;
             return true;
         } catch (err) {
@@ -147,8 +163,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         userProfile = u;
         userPassword = p;
-        localStorage.setItem('zohoProfile', userProfile);
-        localStorage.setItem('zohoPassword', userPassword);
+        sessionStorage.setItem('zohoProfile', userProfile);
+        sessionStorage.setItem('zohoPassword', userPassword);
         
         const valid = await checkAuth();
         if (valid) {
@@ -159,14 +175,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('profileDisplay').addEventListener('click', () => {
+        if (!confirm('Apakah Anda yakin ingin Logout?')) return;
         userProfile = '';
         userPassword = '';
-        localStorage.removeItem('zohoProfile');
-        localStorage.removeItem('zohoPassword');
-        document.getElementById('loginOverlay').style.display = 'flex';
-        document.getElementById('loginUsername').value = '';
-        document.getElementById('loginPassword').value = '';
-        showToast('Logged out', 'info');
+        sessionStorage.removeItem('zohoProfile');
+        sessionStorage.removeItem('zohoPassword');
+        window.location.reload();
     });
 
     const attachSettings = (payload = {}) => {
@@ -188,7 +202,154 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    let monthlyChartInstance = null;
+
+    document.getElementById('analyticsMonth')?.addEventListener('change', () => {
+        if (typeof currentLogs !== 'undefined' && currentLogs) updateAnalytics(currentLogs);
+    });
+    document.getElementById('analyticsYear')?.addEventListener('change', () => {
+        if (typeof currentLogs !== 'undefined' && currentLogs) updateAnalytics(currentLogs);
+    });
+
+    const initAnalyticsFilters = () => {
+        const today = new Date();
+        const m = document.getElementById('analyticsMonth');
+        const y = document.getElementById('analyticsYear');
+        if (m && m.value === 'all') m.value = String(today.getMonth() + 1).padStart(2, '0');
+        if (y && y.value === 'all') y.value = String(today.getFullYear());
+    };
+    initAnalyticsFilters();
+
+    const updateAnalytics = (logs) => {
+        const selMonth = document.getElementById('analyticsMonth')?.value || 'all';
+        const selYear = document.getElementById('analyticsYear')?.value || 'all';
+
+        const dailyCounts = {};
+        const projectCounts = {};
+        const projectTaskCounts = {};
+
+        logs.forEach(log => {
+            const dateStr = log.startDate; 
+            if (!dateStr) return;
+            
+            let logM = '', logY = '';
+            if (dateStr.includes('-')) {
+                const parts = dateStr.split('-');
+                if (parts[0].length === 4) { 
+                    logY = parts[0];
+                    logM = parts[1];
+                } else { 
+                    logY = parts[2];
+                    logM = parts[1];
+                }
+            }
+
+            if (selMonth !== 'all' && logM !== selMonth) return;
+            if (selYear !== 'all' && logY !== selYear) return;
+
+            dailyCounts[dateStr] = (dailyCounts[dateStr] || 0) + 1;
+            const proj = log.project || 'Unknown';
+            const task = log.task || 'Unknown';
+            
+            projectCounts[proj] = (projectCounts[proj] || 0) + 1;
+            
+            if (!projectTaskCounts[proj]) projectTaskCounts[proj] = {};
+            projectTaskCounts[proj][task] = (projectTaskCounts[proj][task] || 0) + 1;
+        });
+
+        const sortedDates = Object.keys(dailyCounts).sort((a, b) => {
+            const da = new Date(a.split(/[-/]/).reverse().join('-'));
+            const db = new Date(b.split(/[-/]/).reverse().join('-'));
+            return da - db;
+        });
+
+        const chartLabels = sortedDates;
+        const chartData = sortedDates.map(d => dailyCounts[d]);
+
+        const ctx = document.getElementById('monthlyChart');
+        if (ctx) {
+            if (monthlyChartInstance) {
+                monthlyChartInstance.destroy();
+            }
+            if (window.Chart) {
+                monthlyChartInstance = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: chartLabels,
+                        datasets: [{
+                            label: 'Jumlah Input Harian',
+                            data: chartData,
+                            borderColor: '#a855f7',
+                            backgroundColor: 'rgba(168, 85, 247, 0.2)',
+                            borderWidth: 2,
+                            tension: 0.3,
+                            fill: true,
+                            pointBackgroundColor: '#f43f5e',
+                            pointBorderColor: '#fff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: { beginAtZero: true, ticks: { stepSize: 1, color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                            x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+                        },
+                        plugins: {
+                            legend: { labels: { color: '#f8fafc', font: { family: 'Inter' } } }
+                        }
+                    }
+                });
+            }
+        }
+
+        const sortedProjects = Object.keys(projectCounts).sort((a, b) => projectCounts[b] - projectCounts[a]).slice(0, 10);
+        const topProjectsContainer = document.getElementById('topProjectsList');
+        if (topProjectsContainer) {
+            topProjectsContainer.innerHTML = '';
+            if (sortedProjects.length === 0) {
+                topProjectsContainer.innerHTML = '<div style="color: var(--text-muted); text-align: center; padding: 1rem;">Belum ada project yang diinput.</div>';
+            } else {
+                sortedProjects.forEach((proj, index) => {
+                    const count = projectCounts[proj];
+                    const tasks = projectTaskCounts[proj];
+                    
+                    let taskListHTML = '<ul style="margin: 0.5rem 0 0 2rem; padding: 0; color: var(--text-muted); font-size: 0.85rem; list-style-type: disc;">';
+                    const sortedTasks = Object.keys(tasks).sort((a, b) => tasks[b] - tasks[a]);
+                    sortedTasks.forEach(t => {
+                        taskListHTML += `<li style="margin-bottom: 0.2rem;">${t} <span style="color: #94a3b8; font-size: 0.75rem;">(${tasks[t]}x)</span></li>`;
+                    });
+                    taskListHTML += '</ul>';
+
+                    const item = document.createElement('details');
+                    item.style.cssText = 'background: rgba(255,255,255,0.03); border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 0.5rem; cursor: pointer;';
+                    
+                    let rankColor = 'var(--text-muted)';
+                    if (index === 0) rankColor = '#fcd34d'; // Gold
+                    else if (index === 1) rankColor = '#94a3b8'; // Silver
+                    else if (index === 2) rankColor = '#b45309'; // Bronze
+                    
+                    item.innerHTML = `
+                        <summary style="display: flex; justify-content: space-between; padding: 0.75rem 1rem; align-items: center; list-style: none;">
+                            <div style="display: flex; align-items: center; gap: 1rem;">
+                                <span style="font-weight: bold; color: ${rankColor}; font-size: 1.2rem; min-width: 25px;">#${index + 1}</span>
+                                <span style="color: var(--text-main); font-weight: 500;">${proj}</span>
+                            </div>
+                            <span style="background: linear-gradient(135deg, #f43f5e, #a855f7); color: white; padding: 0.2rem 0.8rem; border-radius: 12px; font-size: 0.85rem; font-weight: bold;">${count} <i class="fa-solid fa-chevron-down" style="font-size: 0.7rem; margin-left: 0.3rem;"></i></span>
+                        </summary>
+                        <div style="padding: 0 1rem 1rem 1rem; border-top: 1px solid rgba(255,255,255,0.05);">
+                            <div style="font-size: 0.8rem; font-weight: bold; color: var(--text-main); margin-top: 0.5rem;">Task yang paling sering diinput:</div>
+                            ${taskListHTML}
+                        </div>
+                    `;
+                    topProjectsContainer.appendChild(item);
+                });
+            }
+        }
+    };
+
     const renderLogs = (logs) => {
+        updateAnalytics(logs);
         const tbody = document.getElementById('logsTableBody');
         tbody.innerHTML = '';
         
@@ -598,6 +759,53 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    const btnGenerateToken = document.getElementById('btnGenerateToken');
+    if (btnGenerateToken) {
+        btnGenerateToken.addEventListener('click', async () => {
+            const cid = document.getElementById('clientId').value.trim();
+            const sec = document.getElementById('clientSecret').value.trim();
+            const code = document.getElementById('tempAuthCode').value.trim();
+            const accUrl = document.getElementById('accountsUrl').value;
+
+            if (!cid || !sec || !code) {
+                showToast('Client ID, Client Secret, dan Auth Code harus diisi!', 'warning');
+                return;
+            }
+
+            const originalText = btnGenerateToken.innerHTML;
+            btnGenerateToken.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generating...';
+            btnGenerateToken.disabled = true;
+
+            try {
+                const res = await fetch(`${API_URL}?action=generate_zoho_token`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        profile: userProfile,
+                        password: userPassword,
+                        client_id: cid,
+                        client_secret: sec,
+                        code: code,
+                        accountsUrl: accUrl
+                    })
+                });
+                const data = await res.json();
+                if (data.success && data.refresh_token) {
+                    document.getElementById('refreshToken').value = data.refresh_token;
+                    document.getElementById('tempAuthCode').value = '';
+                    showToast('Refresh Token berhasil digenerate!', 'success');
+                } else {
+                    showToast('Gagal: ' + (data.message || 'Kode salah/kadaluarsa'), 'error');
+                }
+            } catch (err) {
+                showToast('Error generating token', 'error');
+            }
+            
+            btnGenerateToken.innerHTML = originalText;
+            btnGenerateToken.disabled = false;
+        });
+    }
+
     document.getElementById('saveSettingsBtn').addEventListener('click', async (e) => {
         e.preventDefault();
         const payload = {
@@ -675,6 +883,12 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             if (data.success) {
+                const newPass = data.new_password;
+                if (newPass) {
+                    userPassword = newPass;
+                    sessionStorage.setItem('zohoPassword', userPassword);
+                    showToast('Password updated successfully!', 'success');
+                }
                 showToast('Sync completed successfully', 'success');
             } else {
                 showToast('Sync completed with errors', 'warning');

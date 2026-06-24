@@ -20,12 +20,13 @@
             });
         }
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body>
 
     <!-- Login Overlay -->
-    <div id="loginOverlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.95); display: flex; justify-content: center; align-items: center; z-index: 9999; backdrop-filter: blur(5px);">
+    <div id="loginOverlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.95); display: none; justify-content: center; align-items: center; z-index: 9999; backdrop-filter: blur(5px);">
         <div class="card" style="width: 100%; max-width: 400px; padding: 2rem;">
             <div style="text-align: center; margin-bottom: 2rem;">
                 <i class="fa-solid fa-cloud-arrow-up" style="font-size: 3rem; color: var(--primary); margin-bottom: 1rem;"></i>
@@ -55,7 +56,7 @@
                 <span class="logo"><i class="fa-solid fa-rocket" style="-webkit-text-fill-color: initial; color: #f43f5e;"></i> HubTrack</span>
                 <div style="display: flex; gap: 0.5rem; align-items: center;">
                     <button id="langToggleBtn" style="font-size: 0.75rem; padding: 0.3rem 0.6rem; background: rgba(255,255,255,0.1); border: none; color: white; border-radius: 4px; cursor: pointer;" title="Ubah Bahasa / Change Language">ID</button>
-                    <button id="profileDisplay" style="font-size: 0.8rem; margin: 0; padding: 0.3rem 0.8rem; background: transparent; border: 1px solid var(--primary); color: var(--primary); border-radius: 20px; cursor: pointer;" title="Ganti Profile"><i class="fa-solid fa-user"></i> <span id="profileNameDisplay">Profile</span></button>
+                    <button id="profileDisplay" style="font-size: 0.8rem; margin: 0; padding: 0.3rem 0.8rem; background: transparent; border: 1px solid var(--primary); color: var(--primary); border-radius: 20px; cursor: pointer; display: flex; align-items: center; gap: 0.4rem;" title="Logout Aplikasi"><i class="fa-solid fa-user"></i> <span id="profileNameDisplay">Profile</span> <i class="fa-solid fa-sign-out-alt"></i></button>
                 </div>
             </div>
             <button id="mobileMenuBtn" style="display: none; background: transparent; border: none; color: var(--text-main); font-size: 1.5rem; cursor: pointer; padding: 0.5rem;"><i class="fa-solid fa-bars"></i></button>
@@ -69,6 +70,7 @@
             <details class="nav-dropdown">
                 <summary class="nav-dropdown-summary"><i class="fa-solid fa-server"></i> <span class="lang-en">System</span><span class="lang-id">Sistem</span> <i class="fa-solid fa-chevron-down dropdown-icon"></i></summary>
                 <div class="dropdown-content">
+                    <button class="nav-btn" data-target="analytics-view"><i class="fa-solid fa-chart-pie"></i> Analytics</button>
                     <button class="nav-btn" data-target="settings-view"><i class="fa-solid fa-gear"></i> Settings</button>
                     <button class="nav-btn" data-target="guide-view"><i class="fa-solid fa-book"></i> Dokumentasi</button>
                 </div>
@@ -187,6 +189,49 @@
                             <!-- Populated by JS -->
                         </tbody>
                     </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Analytics View -->
+        <section id="analytics-view" class="view-section">
+            <div class="card" style="margin-bottom: 2rem;">
+                <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; border-bottom: none; padding-bottom: 0;">
+                    <h2 class="card-title" style="margin: 0;"><i class="fa-solid fa-chart-line" style="color: var(--primary);"></i> Statistik Input</h2>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <select id="analyticsMonth" style="padding: 0.5rem; border-radius: 4px; border: 1px solid var(--panel-border); background: #1e293b; color: var(--text-main); width: auto;">
+                            <option value="all">Semua Bulan</option>
+                            <option value="01">Januari</option>
+                            <option value="02">Februari</option>
+                            <option value="03">Maret</option>
+                            <option value="04">April</option>
+                            <option value="05">Mei</option>
+                            <option value="06">Juni</option>
+                            <option value="07">Juli</option>
+                            <option value="08">Agustus</option>
+                            <option value="09">September</option>
+                            <option value="10">Oktober</option>
+                            <option value="11">November</option>
+                            <option value="12">Desember</option>
+                        </select>
+                        <select id="analyticsYear" style="padding: 0.5rem; border-radius: 4px; border: 1px solid var(--panel-border); background: #1e293b; color: var(--text-main); width: auto;">
+                            <option value="all">Semua Tahun</option>
+                            <option value="2023">2023</option>
+                            <option value="2024">2024</option>
+                            <option value="2025">2025</option>
+                            <option value="2026">2026</option>
+                            <option value="2027">2027</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="height: 300px; width: 100%;">
+                    <canvas id="monthlyChart"></canvas>
+                </div>
+            </div>
+            <div class="card">
+                <h2 class="card-title"><i class="fa-solid fa-trophy" style="color: #fcd34d;"></i> Top Projects Terbanyak</h2>
+                <div id="topProjectsList" style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 1rem;">
+                    <!-- List will be populated by JS -->
                 </div>
             </div>
         </section>
@@ -320,6 +365,14 @@
                         <label>Zoho Refresh Token</label>
                         <input type="password" id="refreshToken" placeholder="Generated from self client">
                     </div>
+                    <div class="form-group" style="background: rgba(168, 85, 247, 0.05); padding: 1rem; border: 1px dashed var(--primary); border-radius: 8px; margin-top: 0.5rem; margin-bottom: 1.5rem;">
+                        <label style="color: var(--primary);"><i class="fa-solid fa-wand-magic-sparkles"></i> Auto-Generate Refresh Token</label>
+                        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.8rem;">Jika Anda belum memiliki Refresh Token, isi lengkap Client ID & Secret di atas. Lalu *paste* <strong>Authorization Code</strong> Anda dari Zoho ke bawah ini, dan klik Generate.</p>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <input type="text" id="tempAuthCode" placeholder="Paste kode Authorization Code (misal: 1000.xxxx...)" style="flex: 1; padding: 0.5rem; background: rgba(0,0,0,0.2); border: 1px solid var(--panel-border); color: white; border-radius: 4px;">
+                            <button type="button" id="btnGenerateToken" style="background: var(--primary-color); border: none; padding: 0.5rem 1rem; color: white; border-radius: 4px; cursor: pointer; white-space: nowrap;"><i class="fa-solid fa-bolt"></i> Generate</button>
+                        </div>
+                    </div>
                     <div class="form-group">
                         <label>Zoho Portal Name</label>
                         <input type="text" id="portalName" placeholder="e.g. mycompanyportal">
@@ -365,6 +418,11 @@
 
         <!-- Guide View -->
         <section id="guide-view" class="view-section">
+            <div id="guideLoginBanner" style="display: none; background: rgba(168, 85, 247, 0.1); border: 1px solid #a855f7; padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem; text-align: center;">
+                <h3 style="margin-top: 0; color: #a855f7; font-size: 1.3rem;">Siap Menggunakan HubTrack?</h3>
+                <p style="color: var(--text-muted); margin-bottom: 1.2rem;">Masuk atau buat profil baru Anda untuk membuka semua fitur pencatatan dan sinkronisasi.</p>
+                <button onclick="document.getElementById('loginOverlay').style.display = 'flex';" style="padding: 0.75rem 2.5rem; font-size: 1rem; border-radius: 25px;"><i class="fa-solid fa-right-to-bracket"></i> Login Sekarang</button>
+            </div>
             <div class="card" style="max-width: 900px; margin: 0 auto; line-height: 1.6;">
                 <div class="card-header">
                     <h2 class="card-title"><i class="fa-solid fa-book-open" style="color: var(--primary-color);"></i> Dokumentasi Instalasi & Penggunaan HubTrack</h2>
@@ -390,14 +448,12 @@
                             <li>Klik <strong>Add Client</strong>, lalu pilih <strong>Self Client</strong>.</li>
                             <li>Klik <strong>Create</strong>. Zoho akan memberikan Anda <strong>Client ID</strong> dan <strong>Client Secret</strong>. <em>Copy</em> keduanya ke tab Settings aplikasi kita.</li>
                             <li>Di Zoho API Console, buka tab <strong>Generate Code</strong>. Masukkan scope berikut secara persis:<br>
-                                <code>ZohoProjects.tasks.ALL,ZohoProjects.projects.ALL,ZohoProjects.portals.ALL,ZohoProjects.timelogs.ALL</code>
+<pre style="background: rgba(0,0,0,0.3); padding: 1rem; border-radius: 8px; overflow-x: auto; margin-top: 0.5rem; border: 1px solid rgba(255,255,255,0.05);"><code style="color: #fcd34d;">ZohoProjects.tasks.ALL,ZohoProjects.projects.ALL,ZohoProjects.portals.ALL,ZohoProjects.timelogs.ALL</code></pre>
                             </li>
                             <li>Pilih durasi <strong>10 Minutes</strong> atau lebih, lalu tuliskan deskripsi bebas, dan klik <strong>Create</strong>. Pilih portal organisasi Anda dan tekan <strong>Accept/Terima</strong>.</li>
                             <li>Zoho akan menampilkan kode Authorization sementara (Authorization Code). Segera <em>copy</em> kode tersebut.</li>
-                            <li>Buka aplikasi Postman atau alat API, buat <code>POST</code> request ke URL: <br>
-                                <code>https://accounts.zoho.com/oauth/v2/token?client_id=CLIENT_ID&client_secret=CLIENT_SECRET&code=AUTHORIZATION_CODE&grant_type=authorization_code</code>
-                            </li>
-                            <li>Di respons JSON-nya, Anda akan mendapatkan <strong>refresh_token</strong> permanen. <em>Copy</em> token tersebut ke kolom <strong>Zoho Refresh Token</strong> di aplikasi kita.</li>
+                            <li>Buka menu <strong>Settings</strong> di aplikasi HubTrack ini. Pastikan Anda sudah menyalin <strong>Zoho Client ID</strong> dan <strong>Zoho Client Secret</strong>.</li>
+                            <li>Pada kotak <strong>Auto-Generate Refresh Token</strong> di menu Settings, <em>Paste</em> kode Authorization sementara tersebut <em>(contoh: <code>1000.e574a13a804f9...</code>)</em>, lalu klik <strong>⚡ Generate</strong>. Token akan otomatis dibuat dan tersimpan!</li>
                         </ol>
 
                         <h3 style="color: var(--primary); border-bottom: 1px solid var(--panel-border); padding-bottom: 0.5rem;">Bagian 3: Melengkapi Tab Settings di Aplikasi</h3>
@@ -439,7 +495,8 @@
                         <ul style="margin-left: 1.5rem; margin-bottom: 1.5rem;">
                             <li><strong>Error: <code>REMAINING_LOG_HOURS_DAYS</code>:</strong> Anda sudah melampaui batas input maksimal (24 jam) di satu tanggal.</li>
                             <li><strong>Error: <code>Project tidak ditemukan</code>:</strong> Nama project salah ketik. Gunakan fitur <em>Load Projects</em> untuk memastikannya sama persis.</li>
-                            <li><strong>Task salah masuk:</strong> Bot memprioritaskan task yang berstatus <strong>Open</strong> atau <strong>Active</strong>.</li>
+                            <li><strong>Task tidak ditemukan (Otomatis Dibuat):</strong> Jika nama task yang Anda ketik belum ada di project Zoho tersebut, bot akan <strong>otomatis membuatkan (create) task baru</strong>. Task baru ini akan secara default memiliki status <strong>Open/Active</strong>.</li>
+                            <li><strong>Log nyasar ke task yang salah:</strong> Jika Anda memiliki beberapa task dengan nama kembar (misal satu berstatus <em>Closed</em> dan lainnya <em>Open</em>), bot akan selalu memprioritaskan untuk mengisi log ke task yang masih <strong>Open / Active</strong> agar tidak salah masuk ke task yang sudah lama/ditutup.</li>
                         </ul>
                     </div>
 
@@ -462,14 +519,12 @@
                             <li>Click <strong>Add Client</strong>, then select <strong>Self Client</strong>.</li>
                             <li>Click <strong>Create</strong>. Zoho will provide a <strong>Client ID</strong> and <strong>Client Secret</strong>. <em>Copy</em> both into the Settings tab.</li>
                             <li>In the Zoho API Console, go to the <strong>Generate Code</strong> tab. Enter the following exact scope:<br>
-                                <code>ZohoProjects.tasks.ALL,ZohoProjects.projects.ALL,ZohoProjects.portals.ALL,ZohoProjects.timelogs.ALL</code>
+<pre style="background: rgba(0,0,0,0.3); padding: 1rem; border-radius: 8px; overflow-x: auto; margin-top: 0.5rem; border: 1px solid rgba(255,255,255,0.05);"><code style="color: #fcd34d;">ZohoProjects.tasks.ALL,ZohoProjects.projects.ALL,ZohoProjects.portals.ALL,ZohoProjects.timelogs.ALL</code></pre>
                             </li>
                             <li>Select a duration of <strong>10 Minutes</strong> or more, enter any description, and click <strong>Create</strong>. Select your portal and click <strong>Accept</strong>.</li>
                             <li>Zoho will display a temporary Authorization Code. Copy it immediately.</li>
-                            <li>Open Postman or any API tool, make a <code>POST</code> request to: <br>
-                                <code>https://accounts.zoho.com/oauth/v2/token?client_id=CLIENT_ID&client_secret=CLIENT_SECRET&code=AUTHORIZATION_CODE&grant_type=authorization_code</code>
-                            </li>
-                            <li>In the JSON response, you will get a permanent <strong>refresh_token</strong>. <em>Copy</em> this token into the <strong>Zoho Refresh Token</strong> field in Settings.</li>
+                            <li>Go to the <strong>Settings</strong> menu in this HubTrack app. Make sure you have entered your <strong>Zoho Client ID</strong> and <strong>Zoho Client Secret</strong>.</li>
+                            <li>In the <strong>Auto-Generate Refresh Token</strong> box, <em>Paste</em> the temporary Authorization Code <em>(example: <code>1000.e574a13a804f9...</code>)</em> and click <strong>⚡ Generate</strong>. The token will be automatically created and filled!</li>
                         </ol>
 
                         <h3 style="color: var(--primary); border-bottom: 1px solid var(--panel-border); padding-bottom: 0.5rem;">Part 3: Completing App Settings</h3>
@@ -511,7 +566,8 @@
                         <ul style="margin-left: 1.5rem; margin-bottom: 1.5rem;">
                             <li><strong>Error: <code>REMAINING_LOG_HOURS_DAYS</code>:</strong> You exceeded the maximum 24-hour log limit for a single day.</li>
                             <li><strong>Error: <code>Project not found</code>:</strong> Project name is typed incorrectly. Use <em>Load Projects</em> to ensure an exact match.</li>
-                            <li><strong>Task logged incorrectly:</strong> The bot prioritizes tasks with <strong>Open</strong> or <strong>Active</strong> status.</li>
+                            <li><strong>Task not found (Auto-Created):</strong> If the task name you entered doesn't exist in the Zoho project, the bot will <strong>automatically create a new task</strong>. This newly created task will default to an <strong>Open/Active</strong> status.</li>
+                            <li><strong>Log went to an old task:</strong> If you have multiple tasks with the exact same name (e.g., one is <em>Closed</em> and another is <em>Open</em>), the bot smartly prioritizes logging time to the one that is still <strong>Open / Active</strong> to prevent logging into a closed task.</li>
                         </ul>
                     </div>
                 </div>

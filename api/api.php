@@ -547,6 +547,41 @@ if ($action === 'edit_log' && $method === 'POST') {
     exit;
 }
 
+if ($action === 'generate_zoho_token' && $method === 'POST') {
+    $client_id = $input['client_id'] ?? '';
+    $client_secret = $input['client_secret'] ?? '';
+    $code = $input['code'] ?? '';
+    $accountsUrl = $input['accountsUrl'] ?? 'https://accounts.zoho.com';
+
+    if (!$client_id || !$client_secret || !$code) {
+        echo json_encode(['success' => false, 'message' => 'Missing fields']);
+        exit;
+    }
+
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, rtrim($accountsUrl, '/') . '/oauth/v2/token');
+    curl_setopt($ch, CURLOPT_POST, 1);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query([
+        'grant_type' => 'authorization_code',
+        'client_id' => $client_id,
+        'client_secret' => $client_secret,
+        'code' => $code
+    ]));
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    $resData = json_decode($response, true);
+    if ($httpCode >= 200 && $httpCode < 300 && isset($resData['refresh_token'])) {
+        echo json_encode(['success' => true, 'refresh_token' => $resData['refresh_token']]);
+    } else {
+        $errMsg = $resData['error'] ?? 'Failed to generate token';
+        echo json_encode(['success' => false, 'message' => $errMsg, 'zoho_response' => $resData]);
+    }
+    exit;
+}
+
 if ($action === 'get_zoho_projects' && $method === 'POST') {
     $settings = getSettings();
     if (empty($settings['clientId']) || empty($settings['refreshToken'])) {
