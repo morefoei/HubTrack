@@ -1,0 +1,882 @@
+<?php
+header('Content-Type: application/json');
+
+$DATA_DIR = __DIR__ . '/data';
+if (!is_dir($DATA_DIR)) {
+    mkdir($DATA_DIR, 0755, true);
+}
+function getSettingsFile() {
+    global $input, $DATA_DIR;
+    $profile = 'default';
+    if (!empty($input['profile'])) {
+        $profile = preg_replace('/[^a-zA-Z0-9_-]/', '', substr($input['profile'], 0, 32)); // Max 32 chars
+    }
+    return $DATA_DIR . '/settings_' . $profile . '.php';
+}
+
+function getSettingsFileOld() {
+    global $input, $DATA_DIR;
+    $profile = 'default';
+    if (!empty($input['profile'])) {
+        $profile = preg_replace('/[^a-zA-Z0-9_-]/', '', substr($input['profile'], 0, 32));
+    }
+    return $DATA_DIR . '/settings_' . $profile . '.json';
+}
+
+function getSettings() {
+    $file = getSettingsFile();
+    $oldFile = getSettingsFileOld();
+
+    // Auto-migrate old .json files to .php
+    if (!file_exists($file) && file_exists($oldFile)) {
+        $content = file_get_contents($oldFile);
+        file_put_contents($file, "<?php exit('No direct script access allowed'); ?>\n" . $content);
+        unlink($oldFile);
+    }
+
+    if (file_exists($file)) {
+        $content = file_get_contents($file);
+        $jsonStr = preg_replace('/^<\?php exit\(.*?\); \?>\n/', '', $content);
+        return json_decode($jsonStr, true) ?: [];
+    }
+    // Fallback if settings not passed
+    return [
+        'spreadsheetId' => '',
+        'googleCredentials' => '',
+        'clientId' => '',
+        'clientSecret' => '',
+        'refreshToken' => '',
+        'portalName' => '',
+        'sheetName' => 'Sheet1',
+        'accountsUrl' => 'https://accounts.zoho.com',
+        'apiUrl' => 'https://projectsapi.zoho.com'
+    ];
+}
+
+function getGoogleAccessToken($credentialsJson) {
+    if (empty($credentialsJson)) return null;
+    $creds = json_decode($credentialsJson, true);
+    if (!$creds || empty($creds['client_email']) || empty($creds['private_key'])) return null;
+
+    $header = json_encode(['alg' => 'RS256', 'typ' => 'JWT']);
+    $now = time();
+    $claim = json_encode([
+        'iss' => $creds['client_email'],
+        'scope' => 'https://www.googleapis.com/auth/spreadsheets',
+        'aud' => 'https://oauth2.googleapis.com/token',
+        'exp' => $now + 3600,
+        'iat' => $now
+    ]);
+    
+    $base64UrlHeader = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($header));
+    $base64UrlClaim = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($claim));
+    $signatureInput = $base64UrlHeader . '.' . $base64UrlClaim;
+    
+    openssl_sign($signatureInput, $signature, $creds['private_key'], 'SHA256');
+    $base64UrlSignature = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($signature));
+    $jwt = $signatureInput . '.' . $base64UrlSignature;
+    
+    $ch = curl_init('https://oauth2.googleapis.com/token');
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query([
+        'grant_type' => 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+        'assertion' => $jwt
+    ]));
+    $res = curl_exec($ch);
+    curl_close($ch);
+    $data = json_decode($res, true);
+    return $data['access_token'] ?? null;
+}
+
+function getLogsFromSheet() {
+    $settings = getSettings();
+    $token = getGoogleAccessToken($settings['googleCredentials']);
+    $spreadsheetId = $settings['spreadsheetId'];
+    
+    if (!$token || !$spreadsheetId) return [];
+    
+    $sheetName = !empty($settings['sheetName']) ? $settings['sheetName'] : 'Sheet1';
+    $url = "https://sheets.googleapis.com/v4/spreadsheets/$spreadsheetId/values/" . urlencode($sheetName) . "!A3:M";
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer $token"]);
+    $res = curl_exec($ch);
+    curl_close($ch);
+    
+    $data = json_decode($res, true);
+    $rows = $data['values'] ?? [];
+    
+    $logs = [];
+    foreach ($rows as $index => $row) {
+        // Skip empty rows
+        if (empty($row[1]) && empty($row[9]) && empty($row[10])) continue;
+        
+        $logs[] = [
+            'rowIndex' => $index + 3,
+            'id' => $row[0] ?? '',
+            'startDate' => $row[1] ?? '',
+            'startTime' => $row[2] ?? '',
+            'lembur' => $row[3] ?? '',
+            'endDate' => $row[4] ?? '',
+            'endTime' => $row[5] ?? '',
+            'duration' => $row[6] ?? '',
+            'status' => $row[7] ?? '',
+            'vendor' => $row[8] ?? '',
+            'project' => $row[9] ?? '',
+            'task' => $row[10] ?? '',
+            'notes' => $row[11] ?? '',
+            'taskUrl' => $row[12] ?? ''
+        ];
+    }
+    return $logs;
+}
+
+function updateRowInSheet($rowIndex, $log, $newStatus, $taskUrl) {
+    $settings = getSettings();
+    $token = getGoogleAccessToken($settings['googleCredentials']);
+    $spreadsheetId = $settings['spreadsheetId'];
+    if (!$token || !$spreadsheetId) return false;
+
+    $sheetName = !empty($settings['sheetName']) ? $settings['sheetName'] : 'Sheet1';
+    $url = "https://sheets.googleapis.com/v4/spreadsheets/$spreadsheetId/values/" . urlencode($sheetName) . "!H$rowIndex:M$rowIndex?valueInputOption=USER_ENTERED";
+    
+    $values = [
+        escapeFormula($newStatus),
+        escapeFormula($log['vendor']),
+        escapeFormula($log['project']),
+        escapeFormula($log['task']),
+        escapeFormula($log['notes']),
+        escapeFormula($taskUrl)
+    ];
+
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT");
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(['values' => [$values]]));
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        "Authorization: Bearer $token",
+        "Content-Type: application/json"
+    ]);
+    $res = curl_exec($ch);
+    curl_close($ch);
+    return true;
+}
+
+$action = $_GET['action'] ?? '';
+$method = $_SERVER['REQUEST_METHOD'];
+
+$input = json_decode(file_get_contents('php://input'), true);
+
+// -- GLOBAL AUTHENTICATION CHECK --
+if ($action !== 'get_all_profiles' && $action !== 'reset_password' && !empty($action)) {
+    $reqProfile = isset($input['profile']) ? preg_replace('/[^a-zA-Z0-9_-]/', '', substr($input['profile'], 0, 32)) : 'default';
+    $reqPassword = $input['password'] ?? '';
+    
+    if (empty($reqPassword)) {
+        echo json_encode(['success' => false, 'message' => 'Akses Ditolak: Password wajib diisi!']);
+        exit;
+    }
+    
+    $checkFile = $DATA_DIR . '/settings_' . $reqProfile . '.php';
+    $oldCheckFile = $DATA_DIR . '/settings_' . $reqProfile . '.json';
+    
+    $fileToRead = file_exists($checkFile) ? $checkFile : (file_exists($oldCheckFile) ? $oldCheckFile : null);
+    
+    if ($fileToRead) {
+        $content = file_get_contents($fileToRead);
+        $jsonStr = preg_replace('/^<\?php exit\(.*?\); \?>\n/', '', $content);
+        $existingData = json_decode($jsonStr, true) ?: [];
+        
+        if (!empty($existingData['profile_password'])) {
+            $isMatch = false;
+            if (password_verify($reqPassword, $existingData['profile_password'])) {
+                $isMatch = true;
+            } elseif (hash_equals($existingData['profile_password'], $reqPassword)) {
+                // Fallback for old plaintext passwords
+                $isMatch = true;
+            }
+            
+            if (!$isMatch) {
+                echo json_encode(['success' => false, 'message' => 'Akses Ditolak: Password Salah untuk user ' . $reqProfile . '!']);
+                exit;
+            }
+        } else {
+            // Profil legacy tanpa password! Otomatis klaim dengan password pertama yang dimasukkan
+            $existingData['profile_password'] = password_hash($reqPassword, PASSWORD_DEFAULT);
+            file_put_contents($fileToRead, "<?php exit('No direct script access allowed'); ?>\n" . json_encode($existingData, JSON_PRETTY_PRINT));
+        }
+    } else {
+        // Anti-spam Check: Limit to 50 profiles
+        $existingFiles = glob($DATA_DIR . '/settings_*.{php,json}', GLOB_BRACE);
+        if (is_array($existingFiles) && count($existingFiles) > 50) {
+            echo json_encode(['success' => false, 'message' => 'Sistem Penuh: Tidak bisa mendaftar profil baru lagi.']);
+            exit;
+        }
+    }
+}
+// -- END AUTHENTICATION CHECK --
+
+if ($action === 'get_all_profiles' && $method === 'POST') {
+    if (isset($input['profile']) && $input['profile'] === 'superman' && isset($input['password']) && $input['password'] === 'musikrock1') {
+        $files = glob($DATA_DIR . '/settings_*.{php,json}', GLOB_BRACE);
+        $profiles = [];
+        if (is_array($files)) {
+            foreach ($files as $file) {
+                $basename = preg_replace('/\.(php|json)$/', '', basename($file));
+                $content = file_get_contents($file);
+                $jsonStr = preg_replace('/^<\?php exit\(.*?\); \?>\n/', '', $content);
+                $data = json_decode($jsonStr, true) ?: [];
+                
+                $pass = !empty($data['profile_password']) ? '(Aman)' : '(Tanpa Password)';
+                
+                if ($basename === 'settings_default' || $basename === 'settings') {
+                    $profiles[] = 'default | ' . $pass;
+                } else {
+                    $username = str_replace('settings_', '', $basename);
+                    $profiles[] = $username . ' | ' . $pass;
+                }
+            }
+        }
+        echo json_encode(['success' => true, 'profiles' => $profiles]);
+    } else {
+        echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+    }
+    exit;
+}
+
+if ($action === 'reset_password' && $method === 'POST') {
+    if (isset($input['profile']) && $input['profile'] === 'superman' && isset($input['password']) && $input['password'] === 'musikrock1') {
+        $targetUser = preg_replace('/[^a-zA-Z0-9_-]/', '', substr($input['targetUser'] ?? '', 0, 32));
+        if (empty($targetUser)) {
+            echo json_encode(['success' => false, 'message' => 'Username tidak valid.']);
+            exit;
+        }
+        
+        $targetFile = $DATA_DIR . '/settings_' . $targetUser . '.php';
+        $oldTargetFile = $DATA_DIR . '/settings_' . $targetUser . '.json';
+        
+        $fileToEdit = file_exists($targetFile) ? $targetFile : (file_exists($oldTargetFile) ? $oldTargetFile : null);
+        
+        if ($fileToEdit) {
+            $content = file_get_contents($fileToEdit);
+            $jsonStr = preg_replace('/^<\?php exit\(.*?\); \?>\n/', '', $content);
+            $data = json_decode($jsonStr, true) ?: [];
+            
+            $data['profile_password'] = ''; // Kosongkan password saja
+            
+            // Simpan kembali
+            file_put_contents($targetFile, "<?php exit('No direct script access allowed'); ?>\n" . json_encode($data, JSON_PRETTY_PRINT));
+            if ($fileToEdit === $oldTargetFile) unlink($oldTargetFile);
+            
+            echo json_encode(['success' => true, 'message' => "BERHASIL: Password untuk user '$targetUser' telah di-reset!\nSilakan minta dia login dengan password baru. Pengaturan Zoho & Google-nya tetap aman."]);
+        } else {
+            echo json_encode(['success' => false, 'message' => "GAGAL: User '$targetUser' tidak ditemukan."]);
+        }
+    } else {
+        echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+    }
+    exit;
+}
+
+if ($action === 'get_settings' && $method === 'POST') {
+    $s = getSettings();
+    unset($s['profile_password']); // Secure: Don't send hashed password back to client
+    echo json_encode(['settings' => $s]);
+    exit;
+}
+
+if ($action === 'save_settings' && $method === 'POST') {
+    $file = getSettingsFile();
+    $settingsToSave = $input['settings'];
+    
+    if (empty($settingsToSave['profile_password'])) {
+        echo json_encode(['success' => false, 'message' => 'Gagal: Profil harus dilindungi dengan password!']);
+        exit;
+    }
+    
+    // SSRF Protection: Whitelist API URLs
+    $allowedUrls = [
+        'https://accounts.zoho.com', 'https://accounts.zoho.eu', 'https://accounts.zoho.in', 'https://accounts.zoho.com.au',
+        'https://projectsapi.zoho.com', 'https://projectsapi.zoho.eu', 'https://projectsapi.zoho.in', 'https://projectsapi.zoho.com.au'
+    ];
+    if (!empty($settingsToSave['accountsUrl']) && !in_array($settingsToSave['accountsUrl'], $allowedUrls)) {
+        $settingsToSave['accountsUrl'] = 'https://accounts.zoho.com';
+    }
+    if (!empty($settingsToSave['apiUrl']) && !in_array($settingsToSave['apiUrl'], $allowedUrls)) {
+        $settingsToSave['apiUrl'] = 'https://projectsapi.zoho.com';
+    }
+    
+    // Strict URL validation to prevent stored XSS via Javascript URLs
+    if (!empty($settingsToSave['formAbsenUrl'])) {
+        if (!preg_match('/^https?:\/\//i', $settingsToSave['formAbsenUrl'])) {
+            $settingsToSave['formAbsenUrl'] = 'https://' . $settingsToSave['formAbsenUrl'];
+        }
+    }
+    
+    // Hash password if set
+    if (!empty($settingsToSave['profile_password'])) {
+        $settingsToSave['profile_password'] = password_hash($settingsToSave['profile_password'], PASSWORD_DEFAULT);
+    }
+    
+    file_put_contents($file, "<?php exit('No direct script access allowed'); ?>\n" . json_encode($settingsToSave, JSON_PRETTY_PRINT));
+    echo json_encode(['success' => true]);
+    exit;
+}
+
+if ($action === 'get_logs' && $method === 'POST') {
+    echo json_encode(['logs' => array_reverse(getLogsFromSheet())]);
+    exit;
+}
+
+if ($action === 'delete_log' && $method === 'POST') {
+    $settings = getSettings();
+    $token = getGoogleAccessToken($settings['googleCredentials']);
+    $spreadsheetId = $settings['spreadsheetId'];
+    
+    if (!$token || !$spreadsheetId) {
+        echo json_encode(['success' => false, 'message' => 'Settings missing']);
+        exit;
+    }
+    
+    $rowIndex = intval($input['rowIndex'] ?? 0);
+    if ($rowIndex < 1) {
+        echo json_encode(['success' => false, 'message' => 'Invalid Row Index']);
+        exit;
+    }
+    
+    $sheetName = !empty($settings['sheetName']) ? $settings['sheetName'] : 'Sheet1';
+    $url = "https://sheets.googleapis.com/v4/spreadsheets/$spreadsheetId/values/" . urlencode($sheetName) . "!A$rowIndex:M$rowIndex:clear";
+    
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        "Authorization: Bearer $token",
+        "Content-Type: application/json"
+    ]);
+    
+    $res = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    
+    if ($httpCode >= 200 && $httpCode < 300) {
+        echo json_encode(['success' => true]);
+    } else {
+        echo json_encode(['success' => false, 'message' => 'API Error: ' . $res]);
+    }
+    exit;
+}
+
+if ($action === 'update_status' && $method === 'POST') {
+    $settings = getSettings();
+    $token = getGoogleAccessToken($settings['googleCredentials']);
+    $spreadsheetId = $settings['spreadsheetId'];
+    if (!$token || !$spreadsheetId) {
+        echo json_encode(['success' => false, 'message' => 'Settings missing']);
+        exit;
+    }
+    $rowIndex = intval($input['rowIndex'] ?? 0);
+    $newStatus = $input['status'] ?? '';
+    if ($rowIndex < 1 || !$newStatus) {
+        echo json_encode(['success' => false, 'message' => 'Missing data or invalid index']);
+        exit;
+    }
+    
+    $sheetName = !empty($settings['sheetName']) ? $settings['sheetName'] : 'Sheet1';
+    $url = "https://sheets.googleapis.com/v4/spreadsheets/$spreadsheetId/values/" . urlencode($sheetName) . "!H$rowIndex?valueInputOption=USER_ENTERED";
+    
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT");
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(['values' => [[$newStatus]]]));
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        "Authorization: Bearer $token",
+        "Content-Type: application/json"
+    ]);
+    
+    $res = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    
+    if ($httpCode >= 200 && $httpCode < 300) {
+        echo json_encode(['success' => true]);
+    } else {
+        echo json_encode(['success' => false, 'message' => "Gagal update status: $res"]);
+    }
+    exit;
+}
+
+// -- HELPER: Mencegah Formula Injection --
+function escapeFormula($str) {
+    if (is_string($str) && strlen($str) > 0) {
+        $firstChar = $str[0];
+        if (in_array($firstChar, ['=', '+', '-', '@'])) {
+            return "'" . $str;
+        }
+    }
+    return $str;
+}
+
+if ($action === 'add_log' && $method === 'POST') {
+    $settings = getSettings();
+    $token = getGoogleAccessToken($settings['googleCredentials']);
+    $spreadsheetId = $settings['spreadsheetId'];
+    
+    if (!$token || !$spreadsheetId) {
+        echo json_encode(['success' => false, 'message' => 'Google Sheets settings not configured']);
+        exit;
+    }
+    
+    $sheetName = !empty($settings['sheetName']) ? $settings['sheetName'] : 'Sheet1';
+    
+    // Read first to find the actual empty row (ignoring formatting)
+    $getUrl = "https://sheets.googleapis.com/v4/spreadsheets/$spreadsheetId/values/" . urlencode($sheetName) . "!A3:M";
+    $chGet = curl_init($getUrl);
+    curl_setopt($chGet, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($chGet, CURLOPT_HTTPHEADER, ["Authorization: Bearer $token"]);
+    $resGet = curl_exec($chGet);
+    curl_close($chGet);
+    
+    $dataGet = json_decode($resGet, true);
+    $rows = $dataGet['values'] ?? [];
+    
+    $targetRow = 3;
+    $existingId = '';
+    foreach ($rows as $row) {
+        if (empty($row[1]) && empty($row[9]) && empty($row[10])) {
+            $existingId = $row[0] ?? '';
+            break; // found an empty row
+        }
+        $targetRow++;
+    }
+    
+    $finalId = !empty($input['id']) ? $input['id'] : (!empty($existingId) ? $existingId : ($targetRow - 2));
+    
+    // Now PUT exactly at the target row
+    $url = "https://sheets.googleapis.com/v4/spreadsheets/$spreadsheetId/values/" . urlencode($sheetName) . "!A$targetRow:M$targetRow?valueInputOption=USER_ENTERED";
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT");
+    
+    $values = [
+        escapeFormula($finalId),
+        escapeFormula($input['startDate'] ?? ''),
+        escapeFormula($input['startTime'] ?? ''),
+        escapeFormula($input['lembur'] ?? ''),
+        escapeFormula($input['endDate'] ?? ''),
+        escapeFormula($input['endTime'] ?? ''),
+        escapeFormula($input['duration'] ?? ''),
+        escapeFormula($input['status'] ?? ''),
+        escapeFormula($input['vendor'] ?? ''),
+        escapeFormula($input['project'] ?? ''),
+        escapeFormula($input['task'] ?? ''),
+        escapeFormula($input['notes'] ?? ''),
+        '' // task url empty initially
+    ];
+    
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(['values' => [$values]]));
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        "Authorization: Bearer $token",
+        "Content-Type: application/json"
+    ]);
+    
+    $res = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    
+    if ($httpCode >= 200 && $httpCode < 300) {
+        echo json_encode(['success' => true]);
+    } else {
+        echo json_encode(['success' => false, 'message' => "Gagal simpan ke Sheet: $res"]);
+    }
+    exit;
+}
+
+if ($action === 'edit_log' && $method === 'POST') {
+    $settings = getSettings();
+    $token = getGoogleAccessToken($settings['googleCredentials']);
+    $spreadsheetId = $settings['spreadsheetId'];
+    if (!$token || !$spreadsheetId) {
+        echo json_encode(['success' => false, 'message' => 'Settings missing']);
+        exit;
+    }
+    $rowIndex = intval($input['rowIndex'] ?? 0);
+    if ($rowIndex < 1) {
+        echo json_encode(['success' => false, 'message' => 'Invalid Row Index']);
+        exit;
+    }
+    
+    $sheetName = !empty($settings['sheetName']) ? $settings['sheetName'] : 'Sheet1';
+    $url = "https://sheets.googleapis.com/v4/spreadsheets/$spreadsheetId/values/" . urlencode($sheetName) . "!A$rowIndex:M$rowIndex?valueInputOption=USER_ENTERED";
+    
+    $values = [
+        escapeFormula($input['id'] ?? ''),
+        escapeFormula($input['startDate'] ?? ''),
+        escapeFormula($input['startTime'] ?? ''),
+        escapeFormula($input['lembur'] ?? ''),
+        escapeFormula($input['endDate'] ?? ''),
+        escapeFormula($input['endTime'] ?? ''),
+        escapeFormula($input['duration'] ?? ''),
+        escapeFormula($input['status'] ?? ''),
+        escapeFormula($input['vendor'] ?? ''),
+        escapeFormula($input['project'] ?? ''),
+        escapeFormula($input['task'] ?? ''),
+        escapeFormula($input['notes'] ?? ''),
+        escapeFormula($input['taskUrl'] ?? '')
+    ];
+    
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT");
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(['values' => [$values]]));
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        "Authorization: Bearer $token",
+        "Content-Type: application/json"
+    ]);
+    
+    $res = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    
+    if ($httpCode >= 200 && $httpCode < 300) {
+        echo json_encode(['success' => true]);
+    } else {
+        echo json_encode(['success' => false, 'message' => "Gagal update Sheet: $res"]);
+    }
+    exit;
+}
+
+if ($action === 'get_zoho_projects' && $method === 'POST') {
+    $settings = getSettings();
+    if (empty($settings['clientId']) || empty($settings['refreshToken'])) {
+        echo json_encode(['success' => false, 'message' => 'Zoho API Settings missing']);
+        exit;
+    }
+
+    // Refresh Token
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $settings['accountsUrl'] . '/oauth/v2/token');
+    curl_setopt($ch, CURLOPT_POST, 1);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query([
+        'grant_type' => 'refresh_token',
+        'client_id' => $settings['clientId'],
+        'client_secret' => $settings['clientSecret'],
+        'refresh_token' => $settings['refreshToken']
+    ]));
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    $tokenResponse = curl_exec($ch);
+    curl_close($ch);
+    
+    $tokenData = json_decode($tokenResponse, true);
+    if (empty($tokenData['access_token'])) {
+        echo json_encode(['success' => false, 'message' => 'Failed to refresh Zoho token']);
+        exit;
+    }
+    $accessToken = $tokenData['access_token'];
+
+    $portal = $settings['portalName'];
+    $apiUrl = $settings['apiUrl'];
+    
+    // Fetch Projects
+    $url = $apiUrl . '/restapi/portal/' . $portal . '/projects/';
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Authorization: Bearer ' . $accessToken]);
+    $res = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    
+    if ($httpCode >= 200 && $httpCode < 300) {
+        $projData = json_decode($res, true);
+        $projects = [];
+        if (isset($projData['projects'])) {
+            foreach ($projData['projects'] as $p) {
+                // Return only names to frontend datalist
+                $projects[] = $p['name'];
+            }
+        }
+        echo json_encode(['success' => true, 'projects' => $projects]);
+    } else {
+        echo json_encode(['success' => false, 'message' => 'Failed to fetch projects from Zoho']);
+    }
+    exit;
+}
+
+if ($action === 'sync' && $method === 'POST') {
+    $settings = getSettings();
+    $logsData = getLogsFromSheet();
+    $outputLogs = [];
+    
+    function logMsg($msg, $type = 'info') {
+        global $outputLogs;
+        $outputLogs[] = ['message' => $msg, 'type' => $type];
+    }
+    
+    if (empty($settings['clientId']) || empty($settings['refreshToken'])) {
+        logMsg('Settings missing. Please configure Client ID and Refresh Token.', 'error');
+        echo json_encode(['success' => false, 'logs' => $outputLogs]);
+        exit;
+    }
+
+    logMsg('Refreshing Zoho Access Token...', 'info');
+    
+    // 1. Get Access Token
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $settings['accountsUrl'] . '/oauth/v2/token');
+    curl_setopt($ch, CURLOPT_POST, 1);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query([
+        'grant_type' => 'refresh_token',
+        'client_id' => $settings['clientId'],
+        'client_secret' => $settings['clientSecret'],
+        'refresh_token' => $settings['refreshToken']
+    ]));
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    $tokenResponse = curl_exec($ch);
+    curl_close($ch);
+    
+    $tokenData = json_decode($tokenResponse, true);
+    if (empty($tokenData['access_token'])) {
+        logMsg('Failed to refresh token: ' . $tokenResponse, 'error');
+        echo json_encode(['success' => false, 'logs' => $outputLogs]);
+        exit;
+    }
+    $accessToken = $tokenData['access_token'];
+    logMsg('Access Token acquired.', 'success');
+
+    $portal = $settings['portalName'];
+    $apiUrl = $settings['apiUrl'];
+    
+    function apiCall($endpoint, $method = 'GET', $data = []) {
+        global $accessToken, $apiUrl, $portal;
+        $url = $apiUrl . '/restapi/portal/' . $portal . $endpoint;
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        
+        $headers = [
+            'Authorization: Bearer ' . $accessToken
+        ];
+        
+        if ($method === 'POST') {
+            curl_setopt($ch, CURLOPT_POST, 1);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
+            $headers[] = 'Content-Type: application/x-www-form-urlencoded';
+        }
+        
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        $res = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        
+        return ['code' => $httpCode, 'data' => json_decode($res, true)];
+    }
+
+    $projectCache = [];
+    $taskCache = [];
+    $syncSuccess = true;
+
+    $projRes = apiCall('/projects/');
+    if ($projRes['code'] == 200 && isset($projRes['data']['projects'])) {
+        foreach ($projRes['data']['projects'] as $p) {
+            $projectCache[strtolower($p['name'])] = $p['id_string'];
+        }
+    } else {
+        if ($projRes['code'] == 404) {
+            // Check available portals
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $apiUrl . '/restapi/portals/');
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, ['Authorization: Bearer ' . $accessToken]);
+            $portalsRaw = curl_exec($ch);
+            curl_close($ch);
+            
+            $portalsData = json_decode($portalsRaw, true);
+            if (!empty($portalsData['portals'])) {
+                $available = array_map(function($p) { return $p['id_string']; }, $portalsData['portals']);
+                logMsg("Portal '{$portal}' tidak ditemukan! Portal yang tersedia untuk bot ini adalah: " . implode(', ', $available), 'error');
+            } else {
+                logMsg("Portal '{$portal}' tidak ditemukan (404), dan bot ini belum diundang ke portal mana pun! Silakan invite email bot ke Zoho Projects Anda.", 'error');
+            }
+        } else {
+            logMsg('Failed to fetch projects. Check portal name and token scope. Raw Response: ' . json_encode($projRes), 'error');
+        }
+        echo json_encode(['success' => false, 'logs' => $outputLogs]);
+        exit;
+    }
+
+    foreach ($logsData as $log) {
+        if ($log['status'] !== 'final') {
+            continue;
+        }
+
+        $pName = strtolower($log['project']);
+        $tName = $log['task'];
+        
+        logMsg("Processing row {$log['rowIndex']}: [{$log['project']}] -> [{$log['task']}]", 'info');
+
+        if (!isset($projectCache[$pName])) {
+            logMsg("Project '{$log['project']}' not found in Zoho. Skipping.", 'error');
+            $syncSuccess = false;
+            updateRowInSheet($log['rowIndex'], $log, 'pending', '');
+            continue;
+        }
+        $pid = $projectCache[$pName];
+
+        if (!isset($taskCache[$pid])) {
+            $taskCache[$pid] = [];
+            // Fungsi helper untuk memproses array task dan memasukkan ke cache
+            $processTasks = function($tasksList) use (&$taskCache, $pid, &$debugTasks) {
+                foreach ($tasksList as $t) {
+                    $tNameLower = strtolower($t['name']);
+                    
+                    $statusName = '';
+                    if (isset($t['status'])) {
+                        if (is_array($t['status'])) {
+                            $statusName = strtolower($t['status']['name'] ?? '');
+                        } else {
+                            $statusName = strtolower($t['status']);
+                        }
+                    }
+
+                    $debugTasks[] = $t['name'] . " (" . $statusName . ")";
+
+                    if (!isset($taskCache[$pid][$tNameLower])) {
+                        $taskCache[$pid][$tNameLower] = $t['id_string'];
+                    } else if (strpos($statusName, 'open') !== false || strpos($statusName, 'buka') !== false || strpos($statusName, 'active') !== false) {
+                        $taskCache[$pid][$tNameLower] = $t['id_string'];
+                    } else if (strpos($statusName, 'cancel') === false && strpos($statusName, 'closed') === false) {
+                        $taskCache[$pid][$tNameLower] = $t['id_string'];
+                    }
+                }
+            };
+
+            // Ambil semua tasks utama
+            $taskRes = apiCall('/projects/' . $pid . '/tasks/');
+            $debugTasks = [];
+            
+            if ($taskRes['code'] == 200 && isset($taskRes['data']['tasks'])) {
+                $processTasks($taskRes['data']['tasks']);
+                
+                // Cari tahu apakah ada Subtasks tersembunyi dengan menembak API subtask
+                // Untuk menghemat kuota API, kita hanya cek subtask pada task yang masih Aktif/Backlog (bukan cancel)
+                foreach ($taskRes['data']['tasks'] as $t) {
+                    $statusName = isset($t['status']['name']) ? strtolower($t['status']['name']) : '';
+                    if (strpos($statusName, 'cancel') === false && strpos($statusName, 'closed') === false) {
+                        // Tembak API subtasks
+                        $subRes = apiCall('/projects/' . $pid . '/tasks/' . $t['id_string'] . '/subtasks/');
+                        if ($subRes['code'] == 200 && isset($subRes['data']['tasks'])) {
+                            $processTasks($subRes['data']['tasks']);
+                        }
+                    }
+                }
+                
+                logMsg("Tasks & Subtasks found: " . implode(', ', $debugTasks), 'info');
+            } else {
+                logMsg("Failed to fetch tasks: " . json_encode($taskRes), 'error');
+            }
+        }
+
+        $tNameLower = strtolower($tName);
+        $tid = null;
+        if (isset($taskCache[$pid][$tNameLower])) {
+            $tid = $taskCache[$pid][$tNameLower];
+            logMsg("Found existing task: {$tName}", 'success');
+        } else {
+            logMsg("Task '{$tName}' not found. Creating...", 'warning');
+            $createRes = apiCall('/projects/' . $pid . '/tasks/', 'POST', ['name' => $tName]);
+            if ($createRes['code'] == 201 && isset($createRes['data']['tasks'][0])) {
+                $tid = $createRes['data']['tasks'][0]['id_string'];
+                $taskCache[$pid][$tNameLower] = $tid;
+                logMsg("Task created successfully.", 'success');
+            } else {
+                logMsg("Failed to create task '{$tName}'.", 'error');
+                $syncSuccess = false;
+                updateRowInSheet($log['rowIndex'], $log, 'pending', '');
+                continue;
+            }
+        }
+
+        $hoursStr = '';
+        if (!empty($log['duration'])) {
+            $hoursStr = $log['duration'];
+        } else {
+            $st = strtotime($log['startDate'] . ' ' . $log['startTime']);
+            $et = strtotime($log['startDate'] . ' ' . $log['endTime']);
+            if ($et < $st) {
+                $et += 86400; // Next day
+            }
+            $diffMinutes = round(($et - $st) / 60);
+            $h = floor($diffMinutes / 60);
+            $m = $diffMinutes % 60;
+            $hoursStr = sprintf("%02d:%02d", $h, $m);
+        }
+
+        $rawDate = trim($log['startDate']);
+        $zohoDate = date('m-d-Y'); // fallback
+        if (preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $rawDate, $m)) {
+            $zohoDate = $m[2] . '-' . $m[3] . '-' . $m[1];
+        } else {
+            $parts = preg_split('/[- \/]/', $rawDate);
+            if (count($parts) === 3) {
+                $y = $parts[2];
+                if (strlen($y) == 2) $y = '20' . $y;
+                if (strlen($parts[0]) == 4) {
+                    $zohoDate = str_pad($parts[1], 2, '0', STR_PAD_LEFT) . '-' . str_pad($parts[2], 2, '0', STR_PAD_LEFT) . '-' . $parts[0];
+                } else {
+                    $zohoDate = str_pad($parts[0], 2, '0', STR_PAD_LEFT) . '-' . str_pad($parts[1], 2, '0', STR_PAD_LEFT) . '-' . $y;
+                }
+            }
+        }
+        
+        $logPayload = [
+            'date' => $zohoDate,
+            'hours' => $hoursStr,
+            'notes' => $log['notes'],
+            'bill_status' => 'Billable'
+        ];
+        
+        // Parsing jam masuk/keluar ke format 12-hour (AM/PM) sesuai standar Zoho
+        $startTimeStr = '';
+        if (!empty($log['startTime'])) {
+            $stTime = strtotime($log['startTime']);
+            if ($stTime !== false) $startTimeStr = date('h:i A', $stTime); // e.g., "07:00 AM"
+        }
+        $endTimeStr = '';
+        if (!empty($log['endTime'])) {
+            $etTime = strtotime($log['endTime']);
+            if ($etTime !== false) $endTimeStr = date('h:i A', $etTime); // e.g., "05:00 PM"
+        }
+        
+        if ($startTimeStr && $endTimeStr) {
+            $logPayload['start_time'] = $startTimeStr;
+            $logPayload['end_time'] = $endTimeStr;
+        }
+        
+        $logRes = apiCall('/projects/' . $pid . '/tasks/' . $tid . '/logs/', 'POST', $logPayload);
+        
+        if ($logRes['code'] == 201 || $logRes['code'] == 200) {
+            logMsg("Time logged successfully ($hoursStr).", 'success');
+            // Format URL baru sesuai dengan struktur portal Zoho Projects
+            $taskUrl = "https://projects.zoho.com/portal/{$portal}#zp/projects/{$pid}/tasks/task-detail/{$tid}";
+            logMsg("Link URL: " . $taskUrl, 'info'); // Tampilkan URL di console
+            updateRowInSheet($log['rowIndex'], $log, 'done', $taskUrl);
+        } else {
+            logMsg("Failed to log time: " . json_encode($logRes['data']), 'error');
+            $syncSuccess = false;
+            updateRowInSheet($log['rowIndex'], $log, 'pending', '');
+        }
+    }
+
+    if ($syncSuccess) {
+        logMsg('Sync completed successfully!', 'success');
+    } else {
+        logMsg('Sync finished with some errors.', 'warning');
+    }
+
+    echo json_encode(['success' => $syncSuccess, 'logs' => $outputLogs]);
+    exit;
+}
+
+echo json_encode(['error' => 'Invalid action']);

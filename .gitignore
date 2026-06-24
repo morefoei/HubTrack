@@ -1,0 +1,15 @@
+# GitLab CI
+.gitlab-ci.yml
+
+# Data profil lokal (jangan di-upload agar aman)
+api/data/
+
+# Log files
+*.log
+
+# Mac OS
+.DS_Store
+
+# Node modules / Vendor (jika ada di masa depan)
+node_modules/
+vendor/

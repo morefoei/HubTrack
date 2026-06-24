@@ -1,0 +1,17 @@
+{
+  "name": "HubTrack Dashboard",
+  "short_name": "HubTrack",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "description": "Enterprise Time Tracking & Zoho Sync",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/1356/1356479.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
