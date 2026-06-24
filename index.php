@@ -519,6 +519,12 @@
         </section>
     </main>
 
+    <footer style="text-align: center; padding: 2rem 1rem; margin-top: auto; border-top: 1px solid rgba(255,255,255,0.05); color: var(--text-muted); font-size: 0.85rem;">
+        <div style="font-family: 'Inter', sans-serif; opacity: 0.8;">
+            &copy; 2026 <span style="font-weight: 800; font-size: 1.1rem; background: linear-gradient(135deg, #f43f5e, #a855f7, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: 1px; margin: 0 0.2rem;">FAFA</span> HubTrack. All Rights Reserved.
+        </div>
+    </footer>
+
     <div id="toast-container"></div>
     <datalist id="zohoProjectsList"></datalist>
 
