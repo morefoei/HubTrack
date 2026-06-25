@@ -53,6 +53,20 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Exclusive dropdown accordion behavior
+    const navDropdowns = document.querySelectorAll('details.nav-dropdown');
+    navDropdowns.forEach(dropdown => {
+        dropdown.addEventListener('toggle', () => {
+            if (dropdown.open) {
+                navDropdowns.forEach(other => {
+                    if (other !== dropdown && other.open) {
+                        other.removeAttribute('open');
+                    }
+                });
+            }
+        });
+    });
+
     // Toast Notification System
     const showToast = (message, type = 'info') => {
         const container = document.getElementById('toast-container');
@@ -444,10 +458,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td><div style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${safeNotes}">${safeNotes}</div></td>
                 <td>
                     ${log.status === 'done' ? 
-                        `<span class="status-badge status-done">done</span>` :
-                        `<select class="status-dropdown status-badge ${statusClass}" data-rowindex="${log.rowIndex}" style="cursor: pointer; outline: none; appearance: none; -webkit-appearance: none; padding-right: 1.5rem; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23ffffff%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right .4rem top 50%; background-size: .5rem auto;">
+                        `<select class="status-dropdown status-badge status-done" data-rowindex="${log.rowIndex}" data-prev="done" style="cursor: pointer; outline: none; appearance: none; -webkit-appearance: none; padding-right: 1.5rem; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23ffffff%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right .4rem top 50%; background-size: .5rem auto;">
+                            <option value="done" selected style="background: #1e293b; color: #34d399;">done</option>
+                            <option value="pending" style="background: #1e293b; color: #fcd34d;">pending</option>
+                            <option value="final" style="background: #1e293b; color: #93c5fd;">final</option>
+                        </select>` :
+                        `<select class="status-dropdown status-badge ${statusClass}" data-prev="${log.status}" data-rowindex="${log.rowIndex}" style="cursor: pointer; outline: none; appearance: none; -webkit-appearance: none; padding-right: 1.5rem; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23ffffff%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right .4rem top 50%; background-size: .5rem auto;">
                             <option value="pending" ${log.status !== 'final' ? 'selected' : ''} style="background: #1e293b; color: #fcd34d;">pending</option>
                             <option value="final" ${log.status === 'final' ? 'selected' : ''} style="background: #1e293b; color: #93c5fd;">final</option>
+                            <option value="done" style="background: #1e293b; color: #34d399;">done</option>
                         </select>`
                     }
                 </td>
@@ -487,9 +506,10 @@ document.addEventListener('DOMContentLoaded', () => {
         // Attach edit listeners
         document.querySelectorAll('.edit-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                const rowIndex = e.currentTarget.getAttribute('data-rowindex');
-                const log = currentLogs.find(l => l.rowIndex == rowIndex);
-                if(log) {
+                try {
+                    const rowIndex = e.currentTarget.getAttribute('data-rowindex');
+                    const log = currentLogs.find(l => l.rowIndex == rowIndex);
+                    if(log) {
                     // Helper to format Date string to YYYY-MM-DD
                     const parseDate = (str) => {
                         if(!str) return '';
@@ -520,6 +540,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     document.getElementById('editRowIndex').value = rowIndex;
                     document.getElementById('logId').value = log.id;
+                    document.getElementById('taskUrl').value = log.taskUrl || '';
                     document.getElementById('startDate').value = parseDate(log.startDate);
                     document.getElementById('startTime').value = parseTime(log.startTime);
                     document.getElementById('lembur').value = log.lembur;
@@ -536,7 +557,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (firstRow) {
                         firstRow.querySelector('.singleVendor').value = log.vendor || '';
                         firstRow.querySelector('.singleProjectName').value = log.project || '';
-                        firstRow.querySelector('.singleTaskName').value = log.task || '';
+                        const parts = (log.task || '').split(' > ');
+                    firstRow.querySelector('.singleTaskName').value = parts[0]?.trim() || '';
+                    const singleSub = firstRow.querySelector('.singleSubTaskName');
+                    if (singleSub) {
+                        singleSub.value = parts.slice(1).join(' > ').trim();
+                    }
                     }
 
                     document.querySelectorAll('.add-btn-daily').forEach(btn => btn.style.display = 'none');
@@ -547,7 +573,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     document.querySelector('#submitLogBtn span').innerText = 'Save Changes';
                     document.querySelector('#submitLogBtn i').className = 'fa-solid fa-floppy-disk';
                     document.getElementById('cancelEditBtn').style.display = 'inline-flex';
-                    window.scrollTo(0, 0);
+                    
+                    // Switch to Daily-Track tab where the form is located
+                    const dailyTrackBtn = document.querySelector('button[data-target="logs-view"]');
+                    if (dailyTrackBtn) dailyTrackBtn.click();
+                    
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                } else {
+                    alert('Log tidak ditemukan di memory (currentLogs). RowIndex: ' + rowIndex);
+                }
+                } catch(err) {
+                    alert("Error saat klik edit: " + err.message + "\n\nStack: " + err.stack);
                 }
             });
         });
@@ -617,7 +653,11 @@ document.addEventListener('DOMContentLoaded', () => {
         rows.forEach(row => {
             const vendor = row.querySelector('.singleVendor').value;
             const project = row.querySelector('.singleProjectName').value;
-            const task = row.querySelector('.singleTaskName').value;
+            let task = row.querySelector('.singleTaskName').value;
+            const singleSub = row.querySelector('.singleSubTaskName');
+            if (singleSub && singleSub.value.trim()) {
+                task += ' > ' + singleSub.value.trim();
+            }
             if (project && task) {
                 taskCombinations.push({ vendor, project, task });
             }
@@ -637,7 +677,8 @@ document.addEventListener('DOMContentLoaded', () => {
             endTime: document.getElementById('endTime').value,
             duration: document.getElementById('duration').value,
             status: document.getElementById('zohoStatus').value,
-            notes: document.getElementById('notes').value
+            notes: document.getElementById('notes').value,
+            taskUrl: document.getElementById('taskUrl').value
         };
 
         const submitBtn = document.querySelector('#submitLogBtn');
@@ -734,6 +775,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const vendorInput = newRow.querySelector('.singleVendor');
         const projectInput = newRow.querySelector('.singleProjectName');
         const taskInput = newRow.querySelector('.singleTaskName');
+        taskInput.value = '';
+        const singleSub = newRow.querySelector('.singleSubTaskName');
+        if (singleSub) singleSub.value = '';
         if (!options.keepVendor) vendorInput.value = '';
         if (!options.keepProject) projectInput.value = '';
         if (!options.keepTask) taskInput.value = '';
@@ -797,7 +841,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const vendorInput = newRow.querySelector('.bulkVendor');
         const projectInput = newRow.querySelector('.bulkProjectName');
         const taskInput = newRow.querySelector('.bulkTaskName');
-        
+        taskInput.value = '';
+        const bulkSub = newRow.querySelector('.bulkSubTaskName');
+        if (bulkSub) bulkSub.value = '';
         if (!options.keepVendor) vendorInput.value = '';
         if (!options.keepProject) projectInput.value = '';
         if (!options.keepTask) taskInput.value = '';
@@ -845,7 +891,11 @@ document.addEventListener('DOMContentLoaded', () => {
         rows.forEach(row => {
             const vendor = row.querySelector('.bulkVendor').value;
             const project = row.querySelector('.bulkProjectName').value;
-            const task = row.querySelector('.bulkTaskName').value;
+            let task = row.querySelector('.bulkTaskName').value;
+            const bulkSub = row.querySelector('.bulkSubTaskName');
+            if (bulkSub && bulkSub.value.trim()) {
+                task += ' > ' + bulkSub.value.trim();
+            }
             if (project && task) {
                 taskCombinations.push({ vendor, project, task });
             }
@@ -958,6 +1008,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (firstRow) {
                     firstRow.querySelector('.bulkProjectName').value = '';
                     firstRow.querySelector('.bulkTaskName').value = '';
+                    const bulkSub = firstRow.querySelector('.bulkSubTaskName');
+                    if (bulkSub) bulkSub.value = '';
                     firstRow.querySelector('.bulkVendor').value = '';
                 }
                 document.getElementById('bulkNotes').value = '';
@@ -1020,6 +1072,16 @@ document.addEventListener('DOMContentLoaded', () => {
             if (data.settings) {
                 document.getElementById('spreadsheetId').value = data.settings.spreadsheetId || '';
                 document.getElementById('sheetName').value = data.settings.sheetName || 'Sheet1';
+                document.getElementById('shiftSpreadsheetId').value = data.settings.shiftSpreadsheetId || '';
+                const shiftSheetSelect = document.getElementById('shiftSheetName');
+                const loadedVal = data.settings.shiftSheetName || 'Sheet1';
+                if (!Array.from(shiftSheetSelect.options).some(opt => opt.value === loadedVal)) {
+                    const newOpt = document.createElement('option');
+                    newOpt.value = loadedVal;
+                    newOpt.innerText = loadedVal;
+                    shiftSheetSelect.appendChild(newOpt);
+                }
+                shiftSheetSelect.value = loadedVal;
                 document.getElementById('googleCredentials').value = data.settings.googleCredentials || '';
                 document.getElementById('formAbsenUrl').value = data.settings.formAbsenUrl || '';
                 document.getElementById('profilePassword').value = userPassword || ''; // backend no longer sends password
@@ -1082,12 +1144,75 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    const extractSpreadsheetId = (val) => {
+        if (!val) return val;
+        const match = val.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+        if (match && match[1]) return match[1];
+        return val;
+    };
+
+    const btnSyncSettingsShiftTabs = document.getElementById('btnSyncSettingsShiftTabs');
+    if (btnSyncSettingsShiftTabs) {
+        btnSyncSettingsShiftTabs.addEventListener('click', async (e) => {
+            e.preventDefault();
+            // Ensure ID is extracted first
+            const idInput = document.getElementById('shiftSpreadsheetId');
+            idInput.value = extractSpreadsheetId(idInput.value);
+
+            if (!idInput.value) {
+                showToast('Isi Spreadsheet ID terlebih dahulu', 'warning');
+                return;
+            }
+
+            const originalText = btnSyncSettingsShiftTabs.innerHTML;
+            btnSyncSettingsShiftTabs.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+            btnSyncSettingsShiftTabs.disabled = true;
+
+            try {
+                const res = await fetch(`${API_URL}?action=get_shift_tabs`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(attachSettings({
+                        settings: { shiftSpreadsheetId: idInput.value }
+                    }))
+                });
+                const data = await res.json();
+                if (data.success && data.tabs) {
+                    const shiftSheetName = document.getElementById('shiftSheetName');
+                    shiftSheetName.innerHTML = '';
+                    data.tabs.forEach((t) => {
+                        const opt = document.createElement('option');
+                        opt.value = t;
+                        opt.innerText = t;
+                        shiftSheetName.appendChild(opt);
+                    });
+                    showToast('Berhasil memuat daftar tab', 'success');
+                } else {
+                    let errMsg = data.message || 'Error';
+                    if (data.google_error) {
+                        console.error('Google Error (Settings):', data.google_error);
+                        if (data.google_error.error && data.google_error.error.message) {
+                            errMsg += ' | ' + data.google_error.error.message;
+                        }
+                    }
+                    showToast('Gagal memuat tabs: ' + errMsg, 'error');
+                }
+            } catch (err) {
+                showToast('Kesalahan jaringan saat memuat tabs', 'error');
+            }
+            btnSyncSettingsShiftTabs.innerHTML = originalText;
+            btnSyncSettingsShiftTabs.disabled = false;
+        });
+    }
+
     document.getElementById('saveSettingsBtn').addEventListener('click', async (e) => {
         e.preventDefault();
         const payload = {
             settings: {
-                spreadsheetId: document.getElementById('spreadsheetId').value,
+                spreadsheetId: extractSpreadsheetId(document.getElementById('spreadsheetId').value),
                 sheetName: document.getElementById('sheetName').value,
+                shiftSpreadsheetId: extractSpreadsheetId(document.getElementById('shiftSpreadsheetId').value),
+                shiftSheetName: document.getElementById('shiftSheetName').value,
                 googleCredentials: document.getElementById('googleCredentials').value,
                 formAbsenUrl: document.getElementById('formAbsenUrl').value,
                 profile_password: document.getElementById('profilePassword').value,
@@ -1391,6 +1516,565 @@ document.addEventListener('DOMContentLoaded', () => {
     // Set default date to today
     document.getElementById('startDate').valueAsDate = new Date();
     
+    // WA Approval Tab Switching
+    const waTabs = document.querySelectorAll('#wa-approval-view .tab-btn');
+    const waContents = document.querySelectorAll('#wa-approval-view .tab-content');
+    
+    waTabs.forEach(tab => {
+        tab.addEventListener('click', (e) => {
+            e.preventDefault();
+            waTabs.forEach(t => t.classList.remove('active'));
+            waTabs.forEach(t => {
+                t.style.fontWeight = '600';
+                t.style.borderBottomColor = 'transparent';
+                t.style.color = 'var(--text-muted)';
+            });
+            
+            tab.classList.add('active');
+            tab.style.borderBottomColor = 'var(--primary)';
+            tab.style.color = 'var(--text-main)';
+            
+            waContents.forEach(c => c.style.display = 'none');
+            document.getElementById(tab.getAttribute('data-tab')).style.display = 'block';
+            document.getElementById('waResultContainer').style.display = 'none';
+        });
+    });
+
+    let generatedWAMessage = "";
+    
+    function showWAPreview(message) {
+        generatedWAMessage = message;
+        document.getElementById('waPreviewText').innerText = message;
+        document.getElementById('waResultContainer').style.display = 'block';
+    }
+
+    // Reguler WA Form
+    const waRegForm = document.getElementById('waRegulerForm');
+    if (waRegForm) {
+        waRegForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const startDateStr = document.getElementById('waRegStartDate').value;
+            const endDateStr = document.getElementById('waRegEndDate').value;
+            const excludeWeekends = document.getElementById('waRegExcludeWeekends').checked;
+            const bossName = document.getElementById('waRegName').value;
+            const monthName = document.getElementById('waRegMonth').value;
+            
+            let start = new Date(startDateStr);
+            let end = new Date(endDateStr);
+            
+            if (start > end) {
+                showToast('Start Date harus lebih kecil dari End Date', 'error');
+                return;
+            }
+            
+            let activeDates = [];
+            let current = new Date(start);
+            while (current <= end) {
+                const dayOfWeek = current.getDay();
+                const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
+                if (!excludeWeekends || !isWeekend) {
+                    activeDates.push(new Date(current));
+                }
+                current.setDate(current.getDate() + 1);
+            }
+            
+            let finalLines = [];
+            if (activeDates.length > 0) {
+                let startNum = activeDates[0].getDate();
+                let endNum = activeDates[0].getDate();
+                let singles = [];
+                
+                const pushRange = (s, e) => {
+                    if (s === e) singles.push(s);
+                    else finalLines.push(`${s} ${monthName} - ${e} ${monthName}`);
+                };
+                
+                for (let i = 1; i < activeDates.length; i++) {
+                    const curr = activeDates[i].getDate();
+                    if (curr === endNum + 1) {
+                        endNum = curr;
+                    } else {
+                        pushRange(startNum, endNum);
+                        startNum = curr;
+                        endNum = curr;
+                    }
+                }
+                pushRange(startNum, endNum);
+                if (singles.length > 0) {
+                    finalLines.push(`${singles.join(', ')} ${monthName}`);
+                }
+            }
+            
+            const msg = `selamat Pagi ${bossName}, mohon izin untuk minta approval kehadiran di bulan ${monthName}, berikut jadwal saya masuk:\n\n${finalLines.join('\n')}\n\nTerima kasih 🙏`;
+            showWAPreview(msg);
+        });
+    }
+
+    // Shift WA Form (Sync Version)
+    const btnLoadShiftTabs = document.getElementById('btnLoadShiftTabs');
+    const waShiftTabSelect = document.getElementById('waShiftTabSelect');
+    const waShiftNameSelect = document.getElementById('waShiftNameSelect');
+    
+    if (btnLoadShiftTabs) {
+        btnLoadShiftTabs.addEventListener('click', async (e) => {
+            e.preventDefault();
+            const originalText = btnLoadShiftTabs.innerHTML;
+            btnLoadShiftTabs.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Loading Tabs...';
+            btnLoadShiftTabs.disabled = true;
+            
+            try {
+                const res = await fetch(`${API_URL}?action=get_shift_tabs`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(attachSettings())
+                });
+                const data = await res.json();
+                if (data.success && data.tabs) {
+                    waShiftTabSelect.innerHTML = '<option value="">-- Pilih Bulan (Sheet Tab) --</option>';
+                    data.tabs.forEach(n => {
+                        const opt = document.createElement('option');
+                        opt.value = n;
+                        opt.innerText = n;
+                        waShiftTabSelect.appendChild(opt);
+                    });
+                    showToast('Berhasil memuat daftar sheet tab', 'success');
+                } else {
+                    let errMsg = data.message || 'Error';
+                    if (data.google_error) {
+                        console.error('Google Error (WA Approval):', data.google_error);
+                        if (data.google_error.error && data.google_error.error.message) {
+                            errMsg += ' | ' + data.google_error.error.message;
+                        }
+                    }
+                    showToast('Gagal memuat tabs: ' + errMsg, 'error');
+                }
+            } catch (err) {
+                showToast('Kesalahan jaringan saat memuat tabs', 'error');
+            }
+            
+            btnLoadShiftTabs.innerHTML = originalText;
+            btnLoadShiftTabs.disabled = false;
+        });
+    }
+
+    if (waShiftTabSelect) {
+        waShiftTabSelect.addEventListener('change', async (e) => {
+            const sheetName = e.target.value;
+            waShiftNameSelect.innerHTML = '<option value="">-- Loading... --</option>';
+            if (!sheetName) {
+                waShiftNameSelect.innerHTML = '<option value="">-- Silakan pilih Sheet Tab di atas --</option>';
+                return;
+            }
+            try {
+                const res = await fetch(`${API_URL}?action=get_shift_names`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(attachSettings({ sheetName }))
+                });
+                const data = await res.json();
+                if (data.success && data.names) {
+                    if (data.names.length === 0) {
+                        console.error("RAW ROW:", data.raw_row);
+                        showToast("Tidak ada nama ditemukan pada baris pertama Google Sheet", "error");
+                    }
+                    waShiftNameSelect.innerHTML = '<option value="">-- Pilih Nama Karyawan --</option>';
+                    data.names.forEach(n => {
+                        const opt = document.createElement('option');
+                        opt.value = n;
+                        opt.innerText = n;
+                        waShiftNameSelect.appendChild(opt);
+                    });
+                } else {
+                    waShiftNameSelect.innerHTML = '<option value="">-- Gagal memuat nama --</option>';
+                    showToast('Gagal memuat nama: ' + (data.message || 'Error'), 'error');
+                }
+            } catch (err) {
+                waShiftNameSelect.innerHTML = '<option value="">-- Error jaringan --</option>';
+            }
+        });
+    }
+
+    if (waShiftNameSelect) {
+        waShiftNameSelect.addEventListener('change', async (e) => {
+            const name = e.target.value;
+            const sheetName = waShiftTabSelect.value;
+            const infoDiv = document.getElementById('waShiftScheduleInfo');
+            const infoText = document.getElementById('waShiftScheduleText');
+            if (!name) {
+                infoDiv.style.display = 'none';
+                return;
+            }
+            
+            infoDiv.style.display = 'block';
+            infoText.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Memuat jadwal absen...';
+            
+            try {
+                const res = await fetch(`${API_URL}?action=get_shift_schedule`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(attachSettings({ name, sheetName }))
+                });
+                const data = await res.json();
+                if (data.success && data.dates) {
+                    if (data.dates.length === 0) {
+                        infoText.innerHTML = 'Tidak ada jadwal shift (angka 1 atau 2) yang ditemukan untuk nama ini.';
+                    } else {
+                        // Parse dates
+                        const indonesianMonths = {
+                            'Jan': 0, 'Feb': 1, 'Mar': 2, 'Apr': 3, 'Mei': 4, 'Jun': 5,
+                            'Jul': 6, 'Ags': 7, 'Sep': 8, 'Okt': 9, 'Nov': 10, 'Des': 11
+                        };
+                        const parsedDates = [];
+                        data.dates.forEach(dStr => {
+                            const parts = dStr.split('-');
+                            if (parts.length === 3) {
+                                let day = parseInt(parts[0]);
+                                let monStr = parts[1];
+                                let year = parseInt(parts[2]);
+                                if (year < 100) year += 2000;
+                                let mon = indonesianMonths[monStr];
+                                if (mon === undefined) {
+                                    const mNames = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+                                    const enNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+                                    mon = mNames.findIndex(m => m.toLowerCase().startsWith(monStr.toLowerCase()));
+                                    if (mon === -1) {
+                                        mon = enNames.findIndex(m => m.toLowerCase().startsWith(monStr.toLowerCase()));
+                                    }
+                                }
+                                if (mon !== -1) {
+                                    parsedDates.push(new Date(year, mon, day));
+                                }
+                            }
+                        });
+                        
+                        // Group dates
+                        parsedDates.sort((a,b) => a - b);
+                        let ranges = [];
+                        if (parsedDates.length > 0) {
+                            let startDt = parsedDates[0];
+                            let endDt = parsedDates[0];
+                            for (let i = 1; i < parsedDates.length; i++) {
+                                const curr = parsedDates[i];
+                                const diffDays = Math.round((curr - endDt) / (1000 * 60 * 60 * 24));
+                                if (diffDays === 1) {
+                                    endDt = curr;
+                                } else {
+                                    ranges.push({start: startDt, end: endDt});
+                                    startDt = curr;
+                                    endDt = curr;
+                                }
+                            }
+                            ranges.push({start: startDt, end: endDt});
+                        }
+                        
+                        const shortMonthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
+                        const formatShort = (dt) => {
+                            return `${String(dt.getDate()).padStart(2, '0')} ${shortMonthNames[dt.getMonth()]} ${String(dt.getFullYear()).slice(-2)}`;
+                        };
+                        const formatDateInput = (dt) => {
+                            return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+                        };
+                        
+                        window.renderScheduleRanges = function() {
+                            const filterVal = document.getElementById('waShiftMonthFilter').value;
+                            let html = '<ul style="list-style:none; padding:0; margin:0.5rem 0 0 0;">';
+                            
+                            let visibleRanges = 0;
+                            ranges.forEach(rng => {
+                                // Filter logic: check if the range touches the selected month
+                                if (filterVal !== 'all') {
+                                    const m = parseInt(filterVal);
+                                    if (rng.start.getMonth() !== m && rng.end.getMonth() !== m) return;
+                                }
+                                
+                                visibleRanges++;
+                                let label = formatShort(rng.start);
+                                if (rng.start.getTime() !== rng.end.getTime()) {
+                                    label += ' - ' + formatShort(rng.end);
+                                }
+                                html += `<li style="margin-bottom: 0.5rem; display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.05); padding: 0.5rem; border-radius: 4px;">
+                                    <span>${label}</span>
+                                    <button type="button" class="btn-use-schedule-range" data-start="${formatDateInput(rng.start)}" data-end="${formatDateInput(rng.end)}" style="background: rgba(16,185,129,0.2); color: #10b981; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;"><i class="fa-solid fa-plus"></i> Gunakan</button>
+                                </li>`;
+                            });
+                            
+                            if (visibleRanges === 0) {
+                                html += '<li style="color: var(--text-muted); font-size: 0.9rem;">Tidak ada jadwal di bulan ini.</li>';
+                            }
+                            
+                            html += '</ul>';
+                            infoText.innerHTML = html;
+                            
+                            // Bind buttons
+                            infoText.querySelectorAll('.btn-use-schedule-range').forEach(btn => {
+                                btn.addEventListener('click', (ev) => {
+                                    const s = ev.currentTarget.getAttribute('data-start');
+                                    const e = ev.currentTarget.getAttribute('data-end');
+                                    
+                                    // Cek baris pertama, kalau kosong pakai baris pertama
+                                    const firstRow = waShiftDateRangesContainer.querySelector('.wa-shift-date-range');
+                                    const firstStart = firstRow.querySelector('.waShiftStartDate').value;
+                                    const firstEnd = firstRow.querySelector('.waShiftEndDate').value;
+                                    
+                                    if (!firstStart && !firstEnd && waShiftDateRangesContainer.children.length === 1) {
+                                        firstRow.querySelector('.waShiftStartDate').value = s;
+                                        firstRow.querySelector('.waShiftEndDate').value = e;
+                                    } else {
+                                        // Bikin baris baru
+                                        const rowToCopy = waShiftDateRangesContainer.querySelector('.wa-shift-date-range');
+                                        const newRow = rowToCopy.cloneNode(true);
+                                        newRow.querySelector('.waShiftStartDate').value = s;
+                                        newRow.querySelector('.waShiftEndDate').value = e;
+                                        newRow.querySelector('.btn-remove-wa-range').style.display = 'inline-block';
+                                        
+                                        newRow.querySelector('.btn-remove-wa-range').addEventListener('click', (event) => {
+                                            event.currentTarget.closest('.wa-shift-date-range').remove();
+                                            updateWaRangeRemoveButtons();
+                                        });
+                                        waShiftDateRangesContainer.appendChild(newRow);
+                                        updateWaRangeRemoveButtons();
+                                    }
+                                    showToast('Rentang tanggal ditambahkan ke form!', 'success');
+                                });
+                            });
+                        };
+                        
+                        const filterSelect = document.getElementById('waShiftMonthFilter');
+                        if (filterSelect) {
+                            filterSelect.style.display = 'inline-block';
+                            filterSelect.value = 'all'; // Reset default
+                            filterSelect.onchange = () => {
+                                window.renderScheduleRanges();
+                            };
+                        }
+                        
+                        window.renderScheduleRanges();
+                    }
+                } else {
+                    infoText.innerHTML = 'Gagal memuat jadwal: ' + (data.message || 'Error');
+                }
+            } catch (err) {
+                infoText.innerHTML = 'Error jaringan saat memuat jadwal.';
+            }
+        });
+    }
+
+    // Handle Add Range Button
+    const btnAddWaRange = document.getElementById('btnAddWaRange');
+    const waShiftDateRangesContainer = document.getElementById('waShiftDateRangesContainer');
+    
+    if (btnAddWaRange && waShiftDateRangesContainer) {
+        btnAddWaRange.addEventListener('click', () => {
+            const rowToCopy = waShiftDateRangesContainer.querySelector('.wa-shift-date-range');
+            const newRow = rowToCopy.cloneNode(true);
+            newRow.querySelector('.waShiftStartDate').value = '';
+            newRow.querySelector('.waShiftEndDate').value = '';
+            newRow.querySelector('.btn-remove-wa-range').style.display = 'inline-block';
+            
+            newRow.querySelector('.btn-remove-wa-range').addEventListener('click', (e) => {
+                e.currentTarget.closest('.wa-shift-date-range').remove();
+                updateWaRangeRemoveButtons();
+            });
+            
+            waShiftDateRangesContainer.appendChild(newRow);
+            updateWaRangeRemoveButtons();
+        });
+    }
+
+    function updateWaRangeRemoveButtons() {
+        if (!waShiftDateRangesContainer) return;
+        const rows = waShiftDateRangesContainer.querySelectorAll('.wa-shift-date-range');
+        rows.forEach((r, idx) => {
+            const btn = r.querySelector('.btn-remove-wa-range');
+            if (btn) {
+                btn.style.display = rows.length > 1 ? 'inline-block' : 'none';
+                if (!btn.hasAttribute('data-listener')) {
+                    btn.addEventListener('click', (e) => {
+                        e.currentTarget.closest('.wa-shift-date-range').remove();
+                        updateWaRangeRemoveButtons();
+                    });
+                    btn.setAttribute('data-listener', 'true');
+                }
+            }
+        });
+    }
+    updateWaRangeRemoveButtons();
+
+    const waShiftForm = document.getElementById('waShiftForm');
+    if (waShiftForm) {
+        waShiftForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = waShiftNameSelect.value;
+            const sheetName = waShiftTabSelect.value;
+            
+            const rangeRows = document.querySelectorAll('.wa-shift-date-range');
+            const dateRanges = [];
+            let valid = true;
+            
+            rangeRows.forEach(r => {
+                const s = r.querySelector('.waShiftStartDate').value;
+                const e = r.querySelector('.waShiftEndDate').value;
+                if (s && e) {
+                    const sParts = s.split('-');
+                    const eParts = e.split('-');
+                    const startDt = new Date(sParts[0], sParts[1] - 1, sParts[2]);
+                    const endDt = new Date(eParts[0], eParts[1] - 1, eParts[2]);
+                    if (startDt > endDt) {
+                        showToast('Start Date tidak boleh lebih besar dari End Date', 'error');
+                        valid = false;
+                    }
+                    dateRanges.push({ start: startDt, end: endDt });
+                }
+            });
+            
+            if (!valid || dateRanges.length === 0) return;
+            
+            const bossName = document.getElementById('waShiftBossName').value;
+            const monthName = document.getElementById('waShiftMonth').value;
+            
+            if (!sheetName || !name) {
+                showToast('Pilih Sheet Tab dan Nama karyawan terlebih dahulu', 'warning');
+                return;
+            }
+
+            const btnGenerate = document.getElementById('btnGenerateShift');
+            const originalText = btnGenerate.innerHTML;
+            btnGenerate.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Mengambil Jadwal...';
+            btnGenerate.disabled = true;
+
+            try {
+                const res = await fetch(`${API_URL}?action=get_shift_schedule`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(attachSettings({ name, sheetName }))
+                });
+                const data = await res.json();
+                if (data.success && data.dates) {
+                    // Filter dates between start and end
+                    const rawDates = data.dates;
+                    let activeDates = [];
+                    const indonesianMonths = {
+                        'Jan': 0, 'Feb': 1, 'Mar': 2, 'Apr': 3, 'Mei': 4, 'Jun': 5,
+                        'Jul': 6, 'Ags': 7, 'Sep': 8, 'Okt': 9, 'Nov': 10, 'Des': 11
+                    };
+                    
+                    rawDates.forEach(dStr => {
+                        // Format is typically 20-Mei-26 or similar
+                        // Let's parse it safely
+                        const parts = dStr.split('-');
+                        if (parts.length === 3) {
+                            let day = parseInt(parts[0]);
+                            let monStr = parts[1];
+                            let year = parseInt(parts[2]);
+                            if (year < 100) year += 2000;
+                            
+                            let mon = indonesianMonths[monStr];
+                            if (mon === undefined) {
+                                // fallback logic for full names
+                                const mNames = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+                                const enNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+                                mon = mNames.findIndex(m => m.toLowerCase().startsWith(monStr.toLowerCase()));
+                                if (mon === -1) {
+                                    mon = enNames.findIndex(m => m.toLowerCase().startsWith(monStr.toLowerCase()));
+                                }
+                            }
+                            if (mon !== -1) {
+                                const dt = new Date(year, mon, day);
+                                
+                                // Cek apakah tanggal masuk dalam salah satu rentang
+                                let inRange = false;
+                                for (const rng of dateRanges) {
+                                    if (dt >= rng.start && dt <= rng.end) {
+                                        inRange = true;
+                                        break;
+                                    }
+                                }
+                                
+                                if (inRange) {
+                                    activeDates.push(dt);
+                                }
+                            }
+                        }
+                    });
+
+                    if (activeDates.length === 0) {
+                        showToast(`Tidak ada shift untuk ${name} pada rentang tanggal tersebut.`, 'warning');
+                        btnGenerate.innerHTML = originalText;
+                        btnGenerate.disabled = false;
+                        return;
+                    }
+
+                    // Sort dates
+                    activeDates.sort((a,b) => a - b);
+                    
+                    // Format function to `20 Jan 26`
+                    const shortMonthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
+                    const formatShort = (dt) => {
+                        return `${String(dt.getDate()).padStart(2, '0')} ${shortMonthNames[dt.getMonth()]} ${String(dt.getFullYear()).slice(-2)}`;
+                    };
+
+                    let finalLines = [];
+                    let startDt = activeDates[0];
+                    let endDt = activeDates[0];
+                    
+                    for (let i = 1; i < activeDates.length; i++) {
+                        const curr = activeDates[i];
+                        // Check if consecutive
+                        const diffDays = Math.round((curr - endDt) / (1000 * 60 * 60 * 24));
+                        if (diffDays === 1) {
+                            endDt = curr;
+                        } else {
+                            if (startDt.getTime() === endDt.getTime()) {
+                                finalLines.push(`${formatShort(startDt)}`);
+                            } else {
+                                finalLines.push(`${formatShort(startDt)} - ${formatShort(endDt)}`);
+                            }
+                            startDt = curr;
+                            endDt = curr;
+                        }
+                    }
+                    if (startDt.getTime() === endDt.getTime()) {
+                        finalLines.push(`${formatShort(startDt)}`);
+                    } else {
+                        finalLines.push(`${formatShort(startDt)} - ${formatShort(endDt)}`);
+                    }
+                    
+                    const bossSalutation = (bossName.split(' ')[0] || '').toLowerCase();
+                    const msg = `selamat Pagi ${bossName}, mohon izin untuk minta approval kehadiran di bulan ${monthName}, berikut jadwal saya masuk:\n\n${finalLines.join('\n')}\n\nTerima kasih ${bossSalutation} 🙏`;
+                    showWAPreview(msg);
+                } else {
+                    showToast('Gagal memuat jadwal: ' + (data.message || 'Error'), 'error');
+                }
+            } catch (err) {
+                showToast('Kesalahan jaringan saat memuat jadwal', 'error');
+            }
+            
+            btnGenerate.innerHTML = originalText;
+            btnGenerate.disabled = false;
+        });
+    }
+
+    const waSendBtn = document.getElementById('waSendBtn');
+    if (waSendBtn) {
+        waSendBtn.addEventListener('click', () => {
+            if (!generatedWAMessage) return;
+            const encoded = encodeURIComponent(generatedWAMessage);
+            window.open(`https://wa.me/?text=${encoded}`, '_blank');
+        });
+    }
+
+    const waCopyBtn = document.getElementById('waCopyBtn');
+    if (waCopyBtn) {
+        waCopyBtn.addEventListener('click', () => {
+            if (!generatedWAMessage) return;
+            navigator.clipboard.writeText(generatedWAMessage).then(() => {
+                showToast('Teks berhasil disalin!', 'success');
+            }).catch(() => {
+                showToast('Gagal menyalin teks', 'error');
+            });
+        });
+    }
+    
     checkAuth().then(valid => {
         if (valid) {
             fetchLogs();
@@ -1398,4 +2082,191 @@ document.addEventListener('DOMContentLoaded', () => {
             loadZohoProjects();
         }
     });
+
+    // Task Manager Logic
+    const btnFetchTasks = document.getElementById('btnFetchTasks');
+    const taskManagerProject = document.getElementById('taskManagerProject');
+    const taskManagerContainer = document.getElementById('taskManagerContainer');
+    const btnCreateRootTask = document.getElementById('btnCreateRootTask');
+    let currentTasks = [];
+    let currentProjectId = null;
+
+    if (btnFetchTasks) {
+        btnFetchTasks.addEventListener('click', async () => {
+            const projectName = taskManagerProject.value;
+            if (!projectName) {
+                showToast('Pilih project terlebih dahulu', 'warning');
+                return;
+            }
+            
+            btnFetchTasks.disabled = true;
+            btnFetchTasks.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Loading...';
+            taskManagerContainer.innerHTML = '<div style="text-align: center; color: var(--primary); padding: 2rem;"><i class="fa-solid fa-circle-notch fa-spin fa-2x"></i><p style="margin-top: 1rem;">Mengambil hirarki task dari Zoho...</p></div>';
+            
+            try {
+                const res = await fetch(`${API_URL}?action=get_project_tasks`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(attachSettings({ projectName }))
+                });
+                const data = await res.json();
+                
+                if (data.success) {
+                    currentTasks = data.tasks;
+                    currentProjectId = data.projectId;
+                    renderTaskManager();
+                    showToast('Tasks berhasil dimuat', 'success');
+                } else {
+                    taskManagerContainer.innerHTML = `<p style="color: var(--danger); text-align: center;">Error: ${data.message}</p>`;
+                }
+            } catch (err) {
+                taskManagerContainer.innerHTML = '<p style="color: var(--danger); text-align: center;">Koneksi gagal</p>';
+            }
+            
+            btnFetchTasks.disabled = false;
+            btnFetchTasks.innerHTML = '<i class="fa-solid fa-cloud-arrow-down"></i> Load Tasks';
+        });
+    }
+
+    if (btnCreateRootTask) {
+        btnCreateRootTask.addEventListener('click', () => {
+            if (!currentProjectId) {
+                showToast('Load task project terlebih dahulu', 'warning');
+                return;
+            }
+            const taskName = prompt('Nama Main Task Baru:');
+            if (taskName) {
+                createZohoTask(taskName, null, '');
+            }
+        });
+    }
+
+    async function createZohoTask(taskName, parentId, parentPath) {
+        showToast('Sedang membuat task...', 'info');
+        try {
+            const res = await fetch(`${API_URL}?action=create_project_task`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(attachSettings({ projectId: currentProjectId, taskName, parentId }))
+            });
+            const data = await res.json();
+            if (data.success) {
+                showToast('Task berhasil dibuat!', 'success');
+                
+                // Auto Redirect ke Form Daily-Track!
+                const finalPath = parentPath ? `${parentPath} > ${taskName}` : taskName;
+                const parts = finalPath.split(' > ');
+                document.querySelector('.singleProjectName').value = taskManagerProject.value;
+                document.querySelector('.singleTaskName').value = parts[0]?.trim() || '';
+                
+                const singleSub = document.querySelector('.singleSubTaskName');
+                if (singleSub) {
+                    singleSub.value = parts.slice(1).join(' > ').trim();
+                }
+                
+                const dailyTrackBtn = document.querySelector('button[data-target="logs-view"]');
+                if (dailyTrackBtn) dailyTrackBtn.click();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                
+                // Refresh list di background
+                btnFetchTasks.click();
+            } else {
+                alert('Gagal membuat task. Pesan dari Zoho: ' + (data.res || data.message));
+                console.error("Zoho Error:", data.res);
+            }
+        } catch (err) {
+            showToast('Koneksi gagal saat membuat task', 'error');
+        }
+    }
+
+    function renderTaskManager() {
+        if (!currentTasks || currentTasks.length === 0) {
+            taskManagerContainer.innerHTML = '<p style="color: var(--text-muted); text-align: center;">Tidak ada task di project ini.</p>';
+            return;
+        }
+
+        const taskMap = {};
+        const roots = [];
+
+        currentTasks.forEach(t => {
+            taskMap[t.id] = { ...t, children: [] };
+        });
+
+        currentTasks.forEach(t => {
+            if (t.parent && taskMap[t.parent]) {
+                taskMap[t.parent].children.push(taskMap[t.id]);
+            } else {
+                roots.push(taskMap[t.id]);
+            }
+        });
+
+        function buildHtml(node, depth = 0, currentPath = '') {
+            const nodePath = currentPath ? `${currentPath} > ${node.name}` : node.name;
+            let html = `
+                <div style="margin-left: ${depth * 20}px; border-left: ${depth > 0 ? '1px dashed var(--panel-border)' : 'none'}; padding-left: ${depth > 0 ? '15px' : '0'}; margin-bottom: 0.5rem; position: relative;">
+                    ${depth > 0 ? '<div style="position: absolute; left: 0; top: 12px; width: 10px; border-top: 1px dashed var(--panel-border);"></div>' : ''}
+                    <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.3); padding: 0.6rem 1rem; border-radius: 6px; border: 1px solid var(--panel-border);">
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="fa-solid ${node.children.length > 0 ? 'fa-folder-open' : 'fa-list-check'}" style="color: ${depth === 0 ? 'var(--primary)' : 'var(--text-muted)'};"></i>
+                            <span style="font-weight: ${depth === 0 ? '600' : '400'};">${sanitizeHTML(node.name)}</span>
+                            <span style="font-size: 0.7rem; background: var(--panel-bg); padding: 0.1rem 0.4rem; border-radius: 4px; color: ${node.status.toLowerCase().includes('closed') ? 'var(--danger)' : 'var(--success)'};">${node.status}</span>
+                        </div>
+                        <div>
+                            <button class="use-task-btn" data-path="${sanitizeHTML(nodePath)}" style="background: var(--primary); color: white; border: none; padding: 0.2rem 0.6rem; font-size: 0.75rem; border-radius: 4px; cursor: pointer; margin-right: 0.5rem;"><i class="fa-solid fa-pen"></i> Log</button>
+                            <button class="add-subtask-btn" data-id="${node.id}" data-path="${sanitizeHTML(nodePath)}" style="background: transparent; border: 1px solid var(--primary); color: var(--primary); padding: 0.2rem 0.6rem; font-size: 0.75rem; border-radius: 4px; cursor: pointer;"><i class="fa-solid fa-plus"></i> Subtask</button>
+                        </div>
+                    </div>
+            `;
+            if (node.children.length > 0) {
+                html += '<div style="margin-top: 0.5rem;">';
+                node.children.forEach(child => {
+                    html += buildHtml(child, depth + 1, nodePath);
+                });
+                html += '</div>';
+            }
+            html += '</div>';
+            return html;
+        }
+
+        let finalHtml = '';
+        roots.forEach(root => {
+            finalHtml += buildHtml(root);
+        });
+
+        taskManagerContainer.innerHTML = finalHtml;
+
+        taskManagerContainer.querySelectorAll('.add-subtask-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const parentId = e.currentTarget.getAttribute('data-id');
+                const parentPath = e.currentTarget.getAttribute('data-path');
+                const taskName = prompt('Nama Subtask Baru:');
+                if (taskName) {
+                    createZohoTask(taskName, parentId, parentPath);
+                }
+            });
+        });
+        
+        taskManagerContainer.querySelectorAll('.use-task-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const path = e.currentTarget.getAttribute('data-path');
+                const parts = path.split(' > ');
+                document.querySelector('.singleProjectName').value = taskManagerProject.value;
+                document.querySelector('.singleTaskName').value = parts[0]?.trim() || '';
+                
+                const singleSub = document.querySelector('.singleSubTaskName');
+                if (singleSub) {
+                    singleSub.value = parts.slice(1).join(' > ').trim();
+                }
+                
+                const dailyTrackBtn = document.querySelector('button[data-target="logs-view"]');
+                if (dailyTrackBtn) dailyTrackBtn.click();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        });
+    }
+
+    const sanitizeHTML = (str) => {
+        if (!str) return '';
+        return str.toString().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    };
 });

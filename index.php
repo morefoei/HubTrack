@@ -28,10 +28,11 @@
     <!-- Login Overlay -->
     <div id="loginOverlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.95); display: none; justify-content: center; align-items: center; z-index: 9999; backdrop-filter: blur(5px);">
         <div class="card" style="width: 100%; max-width: 400px; padding: 2rem;">
-            <div style="text-align: center; margin-bottom: 2rem;">
-                <i class="fa-solid fa-cloud-arrow-up" style="font-size: 3rem; color: var(--primary); margin-bottom: 1rem;"></i>
-                <h2 style="margin: 0; color: white;">Welcome to HubTrack</h2>
-                <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.5rem;">Log in or create a new profile</p>
+            <div style="text-align: center; margin-bottom: 2rem; display: flex; flex-direction: column; align-items: center;">
+                <div class="logo" style="font-size: 2.5rem; justify-content: center; margin-bottom: 0.5rem;">
+                    <i class="fa-solid fa-rocket" style="-webkit-text-fill-color: initial; color: #f43f5e;"></i> HubTrack
+                </div>
+                <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0;">Log in or create a new profile</p>
             </div>
             <form id="loginForm">
                 <div class="form-group">
@@ -62,11 +63,25 @@
             <button id="mobileMenuBtn" style="display: none; background: transparent; border: none; color: var(--text-main); font-size: 1.5rem; cursor: pointer; padding: 0.5rem;"><i class="fa-solid fa-bars"></i></button>
         </div>
         <nav id="mainNav">
-            <button class="nav-btn active" data-target="logs-view"><i class="fa-solid fa-pen-to-square"></i> Daily-Track</button>
-            <button class="nav-btn" data-target="bulk-view"><i class="fa-solid fa-calendar-days"></i> Fast-Track</button>
-            <button class="nav-btn" data-target="data-view"><i class="fa-solid fa-table"></i> Data Logs</button>
-            <button class="nav-btn" data-target="sync-view"><i class="fa-solid fa-rotate"></i> Sync Manager</button>
-            <button class="nav-btn" data-target="absen-view"><i class="fa-solid fa-clipboard-user"></i> Presence-Track</button>
+            <details class="nav-dropdown" open>
+                <summary class="nav-dropdown-summary"><i class="fa-solid fa-cloud-arrow-up"></i> Zoho Sync <i class="fa-solid fa-chevron-down dropdown-icon"></i></summary>
+                <div class="dropdown-content">
+                    <button class="nav-btn active" data-target="logs-view"><i class="fa-solid fa-pen-to-square"></i> Daily-Track</button>
+                    <button class="nav-btn" data-target="bulk-view"><i class="fa-solid fa-calendar-days"></i> Fast-Track</button>
+                    <button class="nav-btn" data-target="data-view"><i class="fa-solid fa-table"></i> Data Logs</button>
+                    <button class="nav-btn" data-target="tasks-view"><i class="fa-solid fa-list-check"></i> Task Manager</button>
+                    <button class="nav-btn" data-target="sync-view"><i class="fa-solid fa-rotate"></i> Sync Manager</button>
+                </div>
+            </details>
+            
+            <details class="nav-dropdown">
+                <summary class="nav-dropdown-summary"><i class="fa-solid fa-clipboard-user"></i> Absensi <i class="fa-solid fa-chevron-down dropdown-icon"></i></summary>
+                <div class="dropdown-content">
+                    <button class="nav-btn" data-target="absen-view"><i class="fa-solid fa-user-check"></i> Presence-Track</button>
+                    <button class="nav-btn" data-target="wa-approval-view"><i class="fa-brands fa-whatsapp"></i> WA Approval</button>
+                </div>
+            </details>
+
             <details class="nav-dropdown">
                 <summary class="nav-dropdown-summary"><i class="fa-solid fa-server"></i> <span class="lang-en">System</span><span class="lang-id">Sistem</span> <i class="fa-solid fa-chevron-down dropdown-icon"></i></summary>
                 <div class="dropdown-content">
@@ -92,6 +107,7 @@
                         <div class="form-group" style="display: none;">
                             <label>ID</label>
                             <input type="text" id="logId" placeholder="Auto">
+                            <input type="hidden" id="taskUrl" value="">
                         </div>
                         <div class="form-group">
                             <label>Start Date</label>
@@ -138,8 +154,12 @@
                                 <label>Task Name
                                     <button type="button" class="btn-add-single-project add-btn-daily" style="padding: 2px 6px; font-size: 0.7rem; margin-left: 5px; background: rgba(245,158,11,0.2); color: #fcd34d; border: none; border-radius: 4px; cursor: pointer;" title="Tambah Proyek baru untuk Task ini">+ Proyek</button>
                                 </label>
+                                <input type="text" class="singleTaskName" placeholder="Main Task" required style="width: 100%;">
+                            </div>
+                            <div class="form-group" style="flex: 1; position: relative;">
+                                <label>Subtask <small style="color: var(--text-muted);">(Opsional)</small></label>
                                 <div style="display: flex; gap: 0.5rem;">
-                                    <input type="text" class="singleTaskName" placeholder="Zoho Task Name" required style="flex: 1;">
+                                    <input type="text" class="singleSubTaskName" placeholder="Subtask (jika ada)" style="flex: 1;">
                                     <button type="button" class="btn-remove-single-row" style="background: transparent; color: var(--danger); border: none; cursor: pointer; padding: 0 0.5rem; display: none;"><i class="fa-solid fa-trash"></i></button>
                                 </div>
                             </div>
@@ -215,6 +235,32 @@
                             <!-- Populated by JS -->
                         </tbody>
                     </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Task Manager View -->
+        <section id="tasks-view" class="view-section">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Zoho Task Manager</h2>
+                </div>
+                <div class="form-row">
+                    <div class="form-group" style="flex: 1;">
+                        <label>Select Project</label>
+                        <input type="text" id="taskManagerProject" list="zohoProjectsList" placeholder="Pilih Project..." autocomplete="off">
+                    </div>
+                    <div class="form-group" style="flex: 0 0 auto; display: flex; align-items: flex-end;">
+                        <button id="btnFetchTasks" class="secondary"><i class="fa-solid fa-cloud-arrow-down"></i> Load Tasks</button>
+                    </div>
+                </div>
+                <hr style="border-color: var(--panel-border); margin: 1.5rem 0;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <h3>Task Hierarchy</h3>
+                    <button id="btnCreateRootTask" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;"><i class="fa-solid fa-plus"></i> New Main Task</button>
+                </div>
+                <div id="taskManagerContainer" style="background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 8px; border: 1px solid var(--panel-border); min-height: 200px;">
+                    <p style="color: var(--text-muted); text-align: center; margin-top: 2rem;">Pilih Project dan klik Load Tasks untuk melihat daftar Task.</p>
                 </div>
             </div>
         </section>
@@ -320,8 +366,12 @@
                                 <label>Task Name 
                                     <button type="button" class="btn-add-project" style="padding: 2px 6px; font-size: 0.7rem; margin-left: 5px; background: rgba(245,158,11,0.2); color: #fcd34d; border: none; border-radius: 4px; cursor: pointer;" title="Tambah Proyek baru untuk Task ini">+ Proyek</button>
                                 </label>
+                                <input type="text" class="bulkTaskName" placeholder="Main Task" required style="width: 100%;">
+                            </div>
+                            <div class="form-group" style="flex: 1; position: relative;">
+                                <label>Subtask <small style="color: var(--text-muted);">(Opsional)</small></label>
                                 <div style="display: flex; gap: 0.5rem;">
-                                    <input type="text" class="bulkTaskName" required style="flex: 1;">
+                                    <input type="text" class="bulkSubTaskName" placeholder="Subtask" style="flex: 1;">
                                     <button type="button" class="btn-remove-row" style="background: transparent; color: var(--danger); border: none; cursor: pointer; padding: 0 0.5rem; display: none;"><i class="fa-solid fa-trash"></i></button>
                                 </div>
                             </div>
@@ -370,6 +420,20 @@
                     <div class="form-group">
                         <label>Google Sheet Tab Name</label>
                         <input type="text" id="sheetName" placeholder="e.g. Sheet1 or tasklist" value="Sheet1">
+                    </div>
+                    <div class="form-group">
+                        <label>Shift Schedule Spreadsheet ID (Optional)</label>
+                        <input type="text" id="shiftSpreadsheetId" placeholder="ID from your Shift Google Sheet URL (View-Only is fine)">
+                        <small style="color: var(--text-muted);">Hanya diisi jika Anda ingin melakukan *sync* jadwal shift. Pastikan link Google Sheet ini diset "Anyone with the link can view".</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Shift Google Sheet Tab Name (Optional)</label>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <select id="shiftSheetName" style="flex: 1; background: var(--input-bg); color: var(--text-main); border: 1px solid var(--border); padding: 0.8rem; border-radius: 6px;">
+                                <option value="Sheet1">Sheet1</option>
+                            </select>
+                            <button type="button" id="btnSyncSettingsShiftTabs" style="background: rgba(59,130,246,0.1); color: #60a5fa; border: 1px solid #3b82f6; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; white-space: nowrap;"><i class="fa-solid fa-cloud-arrow-down"></i> Lihat Tab</button>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label>Google Service Account JSON</label>
@@ -452,6 +516,129 @@
             </div>
         </section>
 
+        <!-- WA Approval View -->
+        <section id="wa-approval-view" class="view-section">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title"><i class="fa-brands fa-whatsapp" style="color: #25D366;"></i> WhatsApp Approval Generator</h2>
+                </div>
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">Buat pesan rekap jadwal kehadiran otomatis untuk meminta approval atasan.</p>
+                
+                <div class="tabs" style="display: flex; gap: 1rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border);">
+                    <button class="tab-btn active" data-tab="wa-reguler" style="background: none; border: none; color: var(--text-main); padding: 0.5rem 1rem; border-bottom: 2px solid var(--primary); cursor: pointer; font-weight: 600;">Reguler / Dedicated</button>
+                    <button class="tab-btn" data-tab="wa-shift" style="background: none; border: none; color: var(--text-muted); padding: 0.5rem 1rem; border-bottom: 2px solid transparent; cursor: pointer; font-weight: 600;">Shift / Manual</button>
+                </div>
+
+                <div id="wa-reguler" class="tab-content" style="display: block;">
+                    <form id="waRegulerForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Start Date</label>
+                                <input type="date" id="waRegStartDate" required>
+                            </div>
+                            <div class="form-group">
+                                <label>End Date</label>
+                                <input type="date" id="waRegEndDate" required>
+                            </div>
+                        </div>
+                        <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem;">
+                            <input type="checkbox" id="waRegExcludeWeekends" checked>
+                            <label for="waRegExcludeWeekends" style="margin: 0;">Exclude Weekends (Hanya Hari Kerja)</label>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Nama Atasan / Klien</label>
+                                <input type="text" id="waRegName" placeholder="Contoh: Mas Muchlis" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Bulan Kehadiran</label>
+                                <input type="text" id="waRegMonth" placeholder="Contoh: Juni 2026" required>
+                            </div>
+                        </div>
+                        <button type="submit" style="margin-top: 1rem;"><i class="fa-solid fa-wand-magic-sparkles"></i> Generate Pesan</button>
+                    </form>
+                </div>
+
+                <div id="wa-shift" class="tab-content" style="display: none;">
+                    <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+                        <button id="btnLoadShiftTabs" style="background: rgba(59,130,246,0.1); color: #60a5fa; border: 1px solid #3b82f6; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; font-weight: 600; width: 100%; text-align: center;"><i class="fa-solid fa-cloud-arrow-down"></i> Sync List Sheet/Tab dari Google Sheet</button>
+                    </div>
+                    <form id="waShiftForm">
+                        <div class="form-group">
+                            <label>Pilih Bulan (Sheet Tab)</label>
+                            <select id="waShiftTabSelect" required style="background: var(--input-bg); color: var(--text-main); border: 1px solid var(--border); padding: 0.8rem; border-radius: 6px; width: 100%;">
+                                <option value="">-- Silakan klik tombol Sync di atas --</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Nama Karyawan</label>
+                            <select id="waShiftNameSelect" required style="background: var(--input-bg); color: var(--text-main); border: 1px solid var(--border); padding: 0.8rem; border-radius: 6px; width: 100%;">
+                                <option value="">-- Silakan pilih Sheet Tab di atas --</option>
+                            </select>
+                        </div>
+                        <div id="waShiftScheduleInfo" style="margin-bottom: 1rem; padding: 1rem; background: rgba(59,130,246,0.1); border-left: 4px solid #3b82f6; border-radius: 4px; display: none;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                <strong style="color: #60a5fa;"><i class="fa-regular fa-calendar-check"></i> Jadwal Shift Ditemukan:</strong>
+                                <select id="waShiftMonthFilter" style="background: var(--input-bg); color: var(--text-main); border: 1px solid var(--border); padding: 0.3rem; border-radius: 4px; font-size: 0.8rem; display: none;">
+                                    <option value="all">Semua Bulan</option>
+                                    <option value="0">Januari</option>
+                                    <option value="1">Februari</option>
+                                    <option value="2">Maret</option>
+                                    <option value="3">April</option>
+                                    <option value="4">Mei</option>
+                                    <option value="5">Juni</option>
+                                    <option value="6">Juli</option>
+                                    <option value="7">Agustus</option>
+                                    <option value="8">September</option>
+                                    <option value="9">Oktober</option>
+                                    <option value="10">November</option>
+                                    <option value="11">Desember</option>
+                                </select>
+                            </div>
+                            <p id="waShiftScheduleText" style="margin: 0; font-size: 0.9rem; color: var(--text-main); white-space: pre-wrap; line-height: 1.5;"></p>
+                        </div>
+                        
+                        <div id="waShiftDateRangesContainer">
+                            <div class="form-row wa-shift-date-range">
+                                <div class="form-group">
+                                    <label>Ambil Absen Awal (Start Date)</label>
+                                    <input type="date" class="waShiftStartDate" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Ambil Absen Akhir (End Date)</label>
+                                    <input type="date" class="waShiftEndDate" required>
+                                </div>
+                                <button type="button" class="btn-remove-wa-range" style="background: transparent; color: var(--danger); border: none; cursor: pointer; padding: 0 0.5rem; margin-bottom: 0.8rem; display: none;"><i class="fa-solid fa-trash"></i></button>
+                            </div>
+                        </div>
+                        <button type="button" id="btnAddWaRange" style="background: rgba(16,185,129,0.1); color: #10b981; border: 1px dashed #10b981; padding: 0.5rem 1rem; border-radius: 4px; margin-bottom: 1.5rem; cursor: pointer; width: 100%;"><i class="fa-solid fa-plus"></i> Tambah Rentang Tanggal</button>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Nama Atasan / Klien</label>
+                                <input type="text" id="waShiftBossName" placeholder="Contoh: Mas Muchlis" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Nama Bulan di Chat</label>
+                                <input type="text" id="waShiftMonth" placeholder="Contoh: Januari 2026 - Febuari 2026" required>
+                            </div>
+                        </div>
+                        <button type="submit" id="btnGenerateShift" style="margin-top: 1rem;"><i class="fa-solid fa-wand-magic-sparkles"></i> Generate Pesan Shift</button>
+                    </form>
+                </div>
+
+                <div id="waResultContainer" style="margin-top: 2rem; display: none; padding-top: 1.5rem; border-top: 1px solid var(--border);">
+                    <h3 style="margin-bottom: 1rem; color: var(--text-main);">Preview Pesan:</h3>
+                    <div style="background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 8px; padding: 1.5rem; margin-bottom: 1rem;">
+                        <p id="waPreviewText" style="white-space: pre-wrap; font-family: monospace; font-size: 14px; line-height: 1.5; color: var(--text-main); margin: 0;"></p>
+                    </div>
+                    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                        <button id="waSendBtn" style="background: #25D366; color: #fff; border: none; padding: 0.8rem 1.5rem; border-radius: 6px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;"><i class="fa-brands fa-whatsapp" style="font-size: 1.2rem;"></i> Kirim via WhatsApp</button>
+                        <button id="waCopyBtn" style="background: transparent; color: var(--text-main); border: 1px solid var(--border); padding: 0.8rem 1.5rem; border-radius: 6px; cursor: pointer; font-weight: 600;"><i class="fa-regular fa-copy"></i> Copy Text</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- Guide View -->
         <section id="guide-view" class="view-section">
             <div id="guideLoginBanner" style="display: none; background: rgba(168, 85, 247, 0.1); border: 1px solid #a855f7; padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem; text-align: center;">
@@ -511,15 +698,18 @@
                                     <li>Pilih rentang <strong>Start Date</strong> (Tanggal Mulai) dan <strong>End Date</strong> (Tanggal Selesai). <em>Contoh: Start Date "01-06-2024" dan End Date "30-06-2024".</em></li>
                                     <li>Isi data proyek, task, dan catatan seperti biasa.</li>
                                     <li>Centang kotak <strong>Lewati Sabtu & Minggu (Exclude Weekends)</strong>. Mesin kalender internal kami akan mendeteksi hari Sabtu & Minggu secara cerdas dan secara otomatis melewati hari tersebut! (Sangat berguna jika Anda tidak bekerja di akhir pekan).</li>
-                                    <li>Klik <strong>Buat Data Fast-Track</strong>, dan bot akan langsung menghasilkan puluhan baris log secara instan ke Google Sheets Anda!</li>
+                                    <li>Klik <strong>Tambah Massal</strong>, sistem akan otomatis melakukan loop pengisian tanggal ke Spreadsheet satu per satu.</li>
                                 </ul>
                             </li>
-                            <li><strong>Presence-Track:</strong> Akses tab ini setiap pagi untuk langsung mengisi kehadiran HCA Anda. (Membutuhkan URL Google Form di Settings).</li>
+                            <li><strong>Presence-Track:</strong> Fitur akses cepat untuk mengisi form absensi kehadiran kantor secara terintegrasi (URL form diatur di halaman Settings).</li>
+                            <li><strong>WA Approval (Khusus Shift):</strong> Fitur untuk *generate* pesan permintaan *approval* atasan via WhatsApp. Anda cukup memilih *Tab* bulan dan Nama Anda, lalu sistem akan secara otomatis menarik jadwal *shift* Anda dari Sheet Shift terpisah dan menyajikannya dalam kelompok tanggal. Klik tombol <strong>[+] Gunakan</strong> untuk langsung menyalin jadwal tersebut ke form tanpa mengetik manual.</li>
                             <li><strong>Data Logs:</strong> Di menu ini, Anda bisa melihat semua riwayat input Anda. Anda bisa mencentang kotak <strong>Select All</strong> untuk melakukan <strong>Hapus Terpilih (Bulk Delete)</strong> atau <strong>Set Status (Bulk Status)</strong> secara massal dan aman!</li>
-                            <li><strong>Sync Manager:</strong> Pastikan semua data di Data Logs berstatus `final`. Buka tab Sync Manager, lalu klik <strong>Start Sync</strong>. Bot akan mengirim semuanya ke Zoho secara otomatis!</li>
                         </ol>
 
-                        <h3 style="color: var(--primary); border-bottom: 1px solid var(--panel-border); padding-bottom: 0.5rem;">Bagian 5: Lupa Password & Keamanan Profil</h3>
+                        <h3 style="color: var(--primary); border-bottom: 1px solid var(--panel-border); padding-bottom: 0.5rem;">Bagian 5: Sinkronisasi ke Zoho</h3>
+                        <p>Pastikan semua data di Data Logs berstatus `final`. Buka tab Sync Manager, lalu klik <strong>Start Sync</strong>. Bot akan mengirim semuanya ke Zoho secara otomatis!</p>
+
+                        <h3 style="color: var(--primary); border-bottom: 1px solid var(--panel-border); padding-bottom: 0.5rem;">Bagian 6: Lupa Password & Keamanan Profil</h3>
                         <p style="margin-bottom: 1rem;">Aplikasi ini mendukung sistem banyak profil (multi-user) yang diproteksi kata sandi secara independen. Jika Anda mengalami kendala saat masuk:</p>
                         <ul style="margin-left: 1.5rem; margin-bottom: 1.5rem;">
                             <li>Jika Anda <strong>lupa password</strong> profil, Anda tidak akan bisa mengakses <em>dashboard</em> maupun mengubah pengaturan sinkronisasi Anda.</li>

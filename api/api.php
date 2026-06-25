@@ -48,6 +48,8 @@ function getSettings() {
         'refreshToken' => '',
         'portalName' => '',
         'sheetName' => 'Sheet1',
+        'shiftSpreadsheetId' => '',
+        'shiftSheetName' => 'Sheet1',
         'accountsUrl' => 'https://accounts.zoho.com',
         'apiUrl' => 'https://projectsapi.zoho.com'
     ];
@@ -130,6 +132,158 @@ function getLogsFromSheet() {
         ];
     }
     return $logs;
+}
+
+function getShiftTabs($reqId = '') {
+    $settings = getSettings();
+    $token = getGoogleAccessToken($settings['googleCredentials']);
+    $spreadsheetId = !empty($reqId) ? $reqId : $settings['shiftSpreadsheetId'];
+    
+    if (!$token || !$spreadsheetId) return ['success' => false, 'message' => 'Shift Spreadsheet ID atau Credentials tidak valid'];
+    
+    $url = "https://sheets.googleapis.com/v4/spreadsheets/$spreadsheetId";
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer $token"]);
+    $res = curl_exec($ch);
+    curl_close($ch);
+    
+    $data = json_decode($res, true);
+    if (!isset($data['sheets'])) {
+        return ['success' => false, 'message' => 'Tidak dapat membaca daftar sheet dari Google Sheet', 'google_error' => $data];
+    }
+    
+    $tabs = [];
+    foreach ($data['sheets'] as $sheet) {
+        $tabs[] = $sheet['properties']['title'];
+    }
+    return ['success' => true, 'tabs' => $tabs];
+}
+
+function getShiftNames($sheetNameReq = '') {
+    $settings = getSettings();
+    $token = getGoogleAccessToken($settings['googleCredentials']);
+    $spreadsheetId = $settings['shiftSpreadsheetId'];
+    
+    if (!$token || !$spreadsheetId) return ['success' => false, 'message' => 'Shift Spreadsheet ID atau Credentials tidak valid'];
+    
+    $sheetName = !empty($sheetNameReq) ? $sheetNameReq : (!empty($settings['shiftSheetName']) ? $settings['shiftSheetName'] : 'Sheet1');
+    $url = "https://sheets.googleapis.com/v4/spreadsheets/$spreadsheetId/values/" . urlencode($sheetName) . "!A1:Z10";
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer $token"]);
+    $res = curl_exec($ch);
+    curl_close($ch);
+    
+    $data = json_decode($res, true);
+    if (!isset($data['values']) || count($data['values']) === 0) {
+        return ['success' => false, 'message' => 'Tidak dapat membaca data dari sheet (A1:Z10 kosong)'];
+    }
+    
+    // Scan dynamically to find the header row (the one containing employee names)
+    $headerRow = [];
+    $headerRowIndex = 0;
+    foreach ($data['values'] as $idx => $row) {
+        if (count($row) > 3) { // It has names in column D and beyond
+            $headerRow = $row;
+            $headerRowIndex = $idx + 1; // 1-indexed
+            break;
+        }
+    }
+    
+    if (empty($headerRow)) {
+        return ['success' => false, 'message' => 'Tidak dapat menemukan baris nama karyawan di 10 baris pertama'];
+    }
+    
+    $names = [];
+    // Start reading names from column D (index 3)
+    for ($i = 3; $i < count($headerRow); $i++) {
+        $n = trim($headerRow[$i] ?? '');
+        if (!empty($n) && stripos($n, 'Change Shift') === false && strlen($n) < 50) {
+            $names[] = $n;
+        }
+    }
+    return ['success' => true, 'names' => $names, 'raw_row' => $headerRow, 'headerRowIndex' => $headerRowIndex, 'sheetNameFetched' => $sheetName];
+}
+
+function getShiftSchedule($name, $sheetNameReq = '') {
+    $settings = getSettings();
+    $token = getGoogleAccessToken($settings['googleCredentials']);
+    $spreadsheetId = $settings['shiftSpreadsheetId'];
+    
+    if (!$token || !$spreadsheetId) return ['success' => false, 'message' => 'Shift Spreadsheet ID tidak valid'];
+    
+    $sheetName = !empty($sheetNameReq) ? $sheetNameReq : (!empty($settings['shiftSheetName']) ? $settings['shiftSheetName'] : 'Sheet1');
+    // Read A1:Z10 to dynamically find the header row
+    $urlNames = "https://sheets.googleapis.com/v4/spreadsheets/$spreadsheetId/values/" . urlencode($sheetName) . "!A1:Z10";
+    $ch = curl_init($urlNames);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer $token"]);
+    $resNames = curl_exec($ch);
+    curl_close($ch);
+    
+    $dataNames = json_decode($resNames, true);
+    if (!isset($dataNames['values']) || count($dataNames['values']) === 0) {
+        return ['success' => false, 'message' => 'Sheet kosong atau tidak bisa dibaca'];
+    }
+    
+    $headerRow = [];
+    $headerRowIndex = 0;
+    foreach ($dataNames['values'] as $idx => $row) {
+        if (count($row) > 3) {
+            $headerRow = $row;
+            $headerRowIndex = $idx + 1; // 1-indexed
+            break;
+        }
+    }
+    
+    if (empty($headerRow)) {
+        return ['success' => false, 'message' => 'Tidak dapat menemukan baris nama karyawan'];
+    }
+    
+    $targetColIndex = -1;
+    for ($i = 3; $i < count($headerRow); $i++) {
+        if (trim($headerRow[$i]) === trim($name)) {
+            $targetColIndex = $i;
+            break;
+        }
+    }
+    
+    if ($targetColIndex === -1) {
+        return ['success' => false, 'message' => 'Nama tidak ditemukan di baris header'];
+    }
+    
+    // Convert targetColIndex to letter (e.g. 3 => D, 4 => E)
+    $colLetter = chr(65 + $targetColIndex);
+    
+    // Data starts exactly after the header row
+    $dataStartRow = $headerRowIndex + 1;
+    
+    // Read Dates (Column C) and Target column
+    $urlSchedule = "https://sheets.googleapis.com/v4/spreadsheets/$spreadsheetId/values:batchGet?ranges=" . urlencode($sheetName) . "!C$dataStartRow:C&ranges=" . urlencode($sheetName) . "!$colLetter$dataStartRow:$colLetter";
+    $ch2 = curl_init($urlSchedule);
+    curl_setopt($ch2, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch2, CURLOPT_HTTPHEADER, ["Authorization: Bearer $token"]);
+    $resSchedule = curl_exec($ch2);
+    curl_close($ch2);
+    
+    $dataSchedule = json_decode($resSchedule, true);
+    
+    $datesCol = $dataSchedule['valueRanges'][0]['values'] ?? [];
+    $shiftCol = $dataSchedule['valueRanges'][1]['values'] ?? [];
+    
+    $activeDates = [];
+    for ($i = 0; $i < count($datesCol); $i++) {
+        $dateStr = $datesCol[$i][0] ?? '';
+        $shiftVal = $shiftCol[$i][0] ?? '';
+        
+        // If they have a shift (1 or 2)
+        if (!empty($dateStr) && (trim($shiftVal) === '1' || trim($shiftVal) === '2')) {
+            $activeDates[] = $dateStr;
+        }
+    }
+    
+    return ['success' => true, 'dates' => $activeDates];
 }
 
 function updateRowInSheet($rowIndex, $log, $newStatus, $taskUrl) {
@@ -404,6 +558,29 @@ if ($action === 'update_status' && $method === 'POST') {
     } else {
         echo json_encode(['success' => false, 'message' => "Gagal update status: $res"]);
     }
+    exit;
+}
+
+if ($action === 'get_shift_tabs' && $method === 'POST') {
+    $reqId = $input['settings']['shiftSpreadsheetId'] ?? '';
+    echo json_encode(getShiftTabs($reqId));
+    exit;
+}
+
+if ($action === 'get_shift_names' && $method === 'POST') {
+    $sheetNameReq = $input['sheetName'] ?? '';
+    echo json_encode(getShiftNames($sheetNameReq));
+    exit;
+}
+
+if ($action === 'get_shift_schedule' && $method === 'POST') {
+    $name = $input['name'] ?? '';
+    $sheetNameReq = $input['sheetName'] ?? '';
+    if (empty($name)) {
+        echo json_encode(['success' => false, 'message' => 'Nama diperlukan']);
+        exit;
+    }
+    echo json_encode(getShiftSchedule($name, $sheetNameReq));
     exit;
 }
 
@@ -756,6 +933,152 @@ if ($action === 'get_zoho_projects' && $method === 'POST') {
     exit;
 }
 
+if ($action === 'get_project_tasks' && $method === 'POST') {
+    $settings = getSettings();
+    $projectName = $input['projectName'] ?? '';
+    if (!$projectName) {
+        echo json_encode(['success' => false, 'message' => 'Project Name required']);
+        exit;
+    }
+    
+    // Auth
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $settings['accountsUrl'] . '/oauth/v2/token');
+    curl_setopt($ch, CURLOPT_POST, 1);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query([
+        'grant_type' => 'refresh_token',
+        'client_id' => $settings['clientId'],
+        'client_secret' => $settings['clientSecret'],
+        'refresh_token' => $settings['refreshToken']
+    ]));
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    $tokenResponse = curl_exec($ch);
+    curl_close($ch);
+    
+    $tokenData = json_decode($tokenResponse, true);
+    if (empty($tokenData['access_token'])) {
+        echo json_encode(['success' => false, 'message' => 'Failed to refresh Zoho token']);
+        exit;
+    }
+    $accessToken = $tokenData['access_token'];
+    $portal = $settings['portalName'];
+    $apiUrl = $settings['apiUrl'];
+
+    function localApiCall($endpoint) {
+        global $apiUrl, $portal, $accessToken;
+        $url = rtrim($apiUrl, '/') . '/restapi/portal/' . $portal . $endpoint;
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Authorization: Bearer ' . $accessToken]);
+        $res = curl_exec($ch);
+        curl_close($ch);
+        return json_decode($res, true);
+    }
+    
+    // Find project ID by name
+    $projData = localApiCall('/projects/');
+    $pid = null;
+    if (isset($projData['projects'])) {
+        foreach ($projData['projects'] as $p) {
+            if (strtolower($p['name']) === strtolower($projectName)) {
+                $pid = $p['id_string'];
+                break;
+            }
+        }
+    }
+    
+    if (!$pid) {
+        echo json_encode(['success' => false, 'message' => 'Project not found in Zoho']);
+        exit;
+    }
+    
+    // Get Tasks
+    $taskRes = localApiCall('/projects/' . $pid . '/tasks/');
+    $allTasks = [];
+    if (isset($taskRes['tasks'])) {
+        foreach ($taskRes['tasks'] as $t) {
+            $allTasks[] = [
+                'id' => $t['id_string'],
+                'name' => $t['name'],
+                'parent' => null,
+                'status' => is_array($t['status']) ? $t['status']['name'] : $t['status']
+            ];
+            
+            // Fetch subtasks
+            $subRes = localApiCall('/projects/' . $pid . '/tasks/' . $t['id_string'] . '/subtasks/');
+            if (isset($subRes['tasks'])) {
+                foreach ($subRes['tasks'] as $st) {
+                    $allTasks[] = [
+                        'id' => $st['id_string'],
+                        'name' => $st['name'],
+                        'parent' => $t['id_string'],
+                        'status' => is_array($st['status']) ? $st['status']['name'] : $st['status']
+                    ];
+                }
+            }
+        }
+    }
+    
+    echo json_encode(['success' => true, 'tasks' => $allTasks, 'projectId' => $pid]);
+    exit;
+}
+
+if ($action === 'create_project_task' && $method === 'POST') {
+    $settings = getSettings();
+    $pid = $input['projectId'] ?? '';
+    $taskName = $input['taskName'] ?? '';
+    $parentId = $input['parentId'] ?? null;
+    
+    if (!$pid || !$taskName) {
+        echo json_encode(['success' => false, 'message' => 'Missing project or task name']);
+        exit;
+    }
+    
+    // Auth
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $settings['accountsUrl'] . '/oauth/v2/token');
+    curl_setopt($ch, CURLOPT_POST, 1);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query([
+        'grant_type' => 'refresh_token',
+        'client_id' => $settings['clientId'],
+        'client_secret' => $settings['clientSecret'],
+        'refresh_token' => $settings['refreshToken']
+    ]));
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    $tokenResponse = curl_exec($ch);
+    curl_close($ch);
+    
+    $tokenData = json_decode($tokenResponse, true);
+    $accessToken = $tokenData['access_token'] ?? '';
+    $portal = $settings['portalName'];
+    $apiUrl = $settings['apiUrl'];
+    
+    $endpoint = '/projects/' . $pid . '/tasks/';
+    if ($parentId) {
+        $endpoint = '/projects/' . $pid . '/tasks/' . $parentId . '/subtasks/';
+    }
+    
+    $url = rtrim($apiUrl, '/') . '/restapi/portal/' . $portal . $endpoint;
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query(['name' => $taskName]));
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        'Authorization: Bearer ' . $accessToken,
+        'Content-Type: application/x-www-form-urlencoded'
+    ]);
+    $res = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    
+    if ($httpCode >= 200 && $httpCode < 300) {
+        echo json_encode(['success' => true]);
+    } else {
+        echo json_encode(['success' => false, 'message' => 'Failed to create task', 'res' => $res]);
+    }
+    exit;
+}
+
 if ($action === 'sync' && $method === 'POST') {
     $settings = getSettings();
     $logsData = getLogsFromSheet();
@@ -930,24 +1253,47 @@ if ($action === 'sync' && $method === 'POST') {
             }
         }
 
-        $tNameLower = strtolower($tName);
+        // Parse task hierarchy (e.g., "Main Task > Subtask > Sub-subtask")
+        $taskChain = array_map('trim', explode('>', $tName));
         $tid = null;
-        if (isset($taskCache[$pid][$tNameLower])) {
-            $tid = $taskCache[$pid][$tNameLower];
-            logMsg("Found existing task: {$tName}", 'success');
-        } else {
-            logMsg("Task '{$tName}' not found. Creating...", 'warning');
-            $createRes = apiCall('/projects/' . $pid . '/tasks/', 'POST', ['name' => $tName]);
-            if ($createRes['code'] == 201 && isset($createRes['data']['tasks'][0])) {
-                $tid = $createRes['data']['tasks'][0]['id_string'];
-                $taskCache[$pid][$tNameLower] = $tid;
-                logMsg("Task created successfully.", 'success');
+        $parentId = null;
+        
+        foreach ($taskChain as $index => $chainName) {
+            $chainNameLower = strtolower($chainName);
+            
+            if (isset($taskCache[$pid][$chainNameLower])) {
+                $tid = $taskCache[$pid][$chainNameLower];
+                $parentId = $tid;
+                logMsg("Found existing task in chain: {$chainName}", 'success');
             } else {
-                logMsg("Failed to create task '{$tName}'.", 'error');
-                $syncSuccess = false;
-                updateRowInSheet($log['rowIndex'], $log, 'pending', '');
-                continue;
+                logMsg("Task '{$chainName}' not found. Creating...", 'warning');
+                
+                $createPayload = ['name' => $chainName];
+                $createUrl = '/projects/' . $pid . '/tasks/';
+                
+                // If this is a subtask (we have a parent ID), use the subtasks endpoint
+                if ($parentId !== null) {
+                    $createUrl = '/projects/' . $pid . '/tasks/' . $parentId . '/subtasks/';
+                }
+                
+                $createRes = apiCall($createUrl, 'POST', $createPayload);
+                if ($createRes['code'] == 201 && isset($createRes['data']['tasks'][0])) {
+                    $tid = $createRes['data']['tasks'][0]['id_string'];
+                    $taskCache[$pid][$chainNameLower] = $tid;
+                    $parentId = $tid; // This new task becomes the parent for the next one in chain
+                    logMsg("Task '{$chainName}' created successfully.", 'success');
+                } else {
+                    logMsg("Failed to create task '{$chainName}': " . json_encode($createRes), 'error');
+                    $tid = null;
+                    break;
+                }
             }
+        }
+
+        if (!$tid) {
+            $syncSuccess = false;
+            updateRowInSheet($log['rowIndex'], $log, 'pending', '');
+            continue;
         }
 
         $hoursStr = '';

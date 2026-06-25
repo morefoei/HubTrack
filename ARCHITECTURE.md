@@ -40,7 +40,16 @@ Ini adalah jantung dari aplikasi HubTrack. Alurnya adalah memindahkan data dari 
 5. **Eksekusi Log (Zoho Time Log)**: Setelah mendapatkan Project ID dan Task ID, bot memasukkan durasi (Hours) dan catatan (Notes) menggunakan API Time Log Zoho.
 6. **Update Spreadsheet**: Jika sukses, bot memodifikasi baris log tersebut di Google Sheets menjadi **Final** agar tidak ditarik lagi pada sinkronisasi berikutnya.
 
-## 5. Analytics & Visualisasi Data
+## 5. Modul Kehadiran & Shift (Absensi)
+Selain sinkronisasi Zoho, HubTrack juga memfasilitasi kebutuhan HR dan kehadiran:
+- **Presence-Track**: Modul ini meload URL eksternal (Google Form/Sistem HR) ke dalam *iframe* di dalam aplikasi, memungkinkan pengguna melakukan absen tanpa meninggalkan dashboard HubTrack.
+- **WA Approval**: Sistem pembuat pesan *WhatsApp* otomatis untuk pengajuan *Shift/Lembur*.
+  - **Dynamic Schedule Fetcher**: Fitur ini membaca jadwal karyawan dari Google Sheet terpisah berdasarkan nama yang dipilih.
+  - **Auto-Grouping**: Jika terdapat shift berurutan (misal: 10 Jan - 15 Jan), sistem akan menggabungkannya secara dinamis menjadi rentang (*range*).
+  - **Multi-Range Selection**: Pengguna bisa memilih dan menambahkan lebih dari satu *date-range* sekaligus ke dalam satu pesan pengajuan yang profesional, menghemat waktu pengetikan manual.
+
+## 6. Analytics & Visualisasi Data
 Setiap kali data log di-*render* di halaman **Data Logs**, `app.js` akan memanggil fungsi `updateAnalytics()`.
 - **Grafik Harian**: Mengelompokkan log berdasarkan tanggal untuk membuat kurva grafik intensitas kerja menggunakan *Chart.js*.
 - **Top Projects Leaderboard**: Menghitung seberapa banyak *Project* dan *Task* digunakan, kemudian mengurutkannya dalam format *dropdown* interaktif berdasarkan popularitas dari paling banyak hingga paling sedikit.
+- **Navigasi Dinamis**: Seluruh UI dirancang modular menggunakan *accordion dropdown* (*Zoho Sync, Absensi, Sistem*) agar mendukung ekspansi fitur lanjutan tanpa mengorbankan ruang antarmuka.
