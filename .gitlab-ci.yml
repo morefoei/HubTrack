@@ -11,7 +11,7 @@ deploy:
     
     - apk add --no-cache lftp
     
-    # Tambahkan opsi --no-perms agar lftp tidak mencoba mengubah hak akses file
-    - lftp -c "set ftp:ssl-allow no; open -u $FTP_USERNAME,$FTP_PASSWORD $FTP_SERVER; mirror -Rnv ./ /htdocs --ignore-time --parallel=10 --no-perms --exclude-glob .git* --exclude .gitlab-ci.yml --exclude admin_notes.txt --exclude ARCHITECTURE.md"
+    # Menggunakan regex (--exclude) yang dibungkus tanda kutip tunggal agar lebih aman
+    - lftp -c "set ftp:ssl-allow no; open -u $FTP_USERNAME,$FTP_PASSWORD $FTP_SERVER; mirror -Rnv ./ /htdocs --ignore-time --parallel=10 --no-perms --exclude '^\.git/' --exclude '\.gitlab-ci\.yml$' --exclude 'admin_notes\.txt$' --exclude 'ARCHITECTURE\.md$'"
   only:
     - main
