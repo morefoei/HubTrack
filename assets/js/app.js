@@ -77,6 +77,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Data Management
     const API_URL = 'api/api.php';
     let currentLogs = [];
+    let currentPage = 1;
+    let itemsPerPage = 10;
 
     // Profile Management
     let userProfile = sessionStorage.getItem('zohoProfile') || '';
@@ -196,7 +198,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             const data = await res.json();
             currentLogs = data.logs || [];
-            renderLogs(currentLogs);
+            renderLogs();
         } catch (err) {
             showToast('Failed to load logs', 'error');
         }
@@ -348,14 +350,56 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    const renderLogs = (logs) => {
+    const renderLogs = () => {
+        const logs = currentLogs;
         updateAnalytics(logs);
         const tbody = document.getElementById('logsTableBody');
         tbody.innerHTML = '';
         
-        if (logs.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">No logs found. Add one above.</td></tr>';
+        const statusFilter = document.getElementById('filterLogStatus') ? document.getElementById('filterLogStatus').value : 'all';
+        let filteredLogs = logs;
+        if (statusFilter !== 'all') {
+            filteredLogs = logs.filter(l => l.status === statusFilter);
+        }
+
+        if (filteredLogs.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-muted);">No logs found.</td></tr>';
+            const paginationContainer = document.getElementById('logsPagination');
+            if (paginationContainer) paginationContainer.innerHTML = '';
             return;
+        }
+
+        const totalPages = Math.ceil(filteredLogs.length / itemsPerPage);
+        if (currentPage > totalPages) currentPage = totalPages;
+        if (currentPage < 1) currentPage = 1;
+
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        const endIndex = startIndex + itemsPerPage;
+        const paginatedLogs = filteredLogs.slice(startIndex, endIndex);
+
+        const paginationContainer = document.getElementById('logsPagination');
+        if (paginationContainer) {
+            let pHtml = '';
+            pHtml += `<button class="secondary action-btn" data-page="${currentPage - 1}" ${currentPage === 1 ? 'disabled' : ''} style="padding: 0.2rem 0.8rem; display: flex; align-items: center; gap: 0.3rem;"><i class="fa-solid fa-chevron-left"></i> Prev</button>`;
+            
+            let startPage = Math.max(1, currentPage - 2);
+            let endPage = Math.min(totalPages, startPage + 4);
+            if (endPage - startPage < 4) {
+                startPage = Math.max(1, endPage - 4);
+            }
+            for (let i = startPage; i <= endPage; i++) {
+                pHtml += `<button class="action-btn ${i === currentPage ? 'active' : 'secondary'}" data-page="${i}" style="padding: 0.2rem 0.6rem; ${i === currentPage ? 'background: var(--primary); border-color: var(--primary); color: white;' : ''}">${i}</button>`;
+            }
+            pHtml += `<button class="secondary action-btn" data-page="${currentPage + 1}" ${currentPage === totalPages ? 'disabled' : ''} style="padding: 0.2rem 0.8rem; display: flex; align-items: center; gap: 0.3rem;">Next <i class="fa-solid fa-chevron-right"></i></button>`;
+            
+            paginationContainer.innerHTML = pHtml;
+            paginationContainer.querySelectorAll('button').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    if (e.currentTarget.disabled) return;
+                    currentPage = parseInt(e.currentTarget.getAttribute('data-page'));
+                    renderLogs();
+                });
+            });
         }
 
         const sanitizeHTML = (str) => {
@@ -363,7 +407,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return str.toString().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
         };
 
-        logs.forEach(log => {
+        paginatedLogs.forEach(log => {
             const tr = document.createElement('tr');
             tr.setAttribute('data-status', log.status);
             
@@ -917,22 +961,19 @@ document.addEventListener('DOMContentLoaded', () => {
     // Filter Logic
     const filterLogStatus = document.getElementById('filterLogStatus');
     if (filterLogStatus) {
-        filterLogStatus.addEventListener('change', (e) => {
-            const status = e.target.value;
-            const rows = document.querySelectorAll('#logsTableBody tr');
-            rows.forEach(row => {
-                // skip empty row message if any
-                if (!row.hasAttribute('data-status')) return;
-                
-                if (status === 'all' || row.getAttribute('data-status') === status) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
-                    const cb = row.querySelector('.log-checkbox');
-                    if (cb) cb.checked = false;
-                }
-            });
+        filterLogStatus.addEventListener('change', () => {
+            currentPage = 1;
             document.getElementById('selectAllLogs').checked = false;
+            renderLogs();
+        });
+    }
+
+    const logsPerPageSelect = document.getElementById('logsPerPage');
+    if (logsPerPageSelect) {
+        logsPerPageSelect.addEventListener('change', (e) => {
+            itemsPerPage = parseInt(e.target.value);
+            currentPage = 1;
+            renderLogs();
         });
     }
 
@@ -1070,6 +1111,41 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.disabled = false;
         btn.innerHTML = '<i class="fa-solid fa-check-double"></i> Set Status';
         fetchLogs();
+    });
+
+    // Auto-calculate Duration
+    const calculateDuration = (startId, endId, durationId) => {
+        const start = document.getElementById(startId).value;
+        const end = document.getElementById(endId).value;
+        const durationInput = document.getElementById(durationId);
+
+        if (start && end) {
+            const [startHours, startMinutes] = start.split(':').map(Number);
+            const [endHours, endMinutes] = end.split(':').map(Number);
+            
+            let startMins = startHours * 60 + startMinutes;
+            let endMins = endHours * 60 + endMinutes;
+            
+            if (endMins < startMins) {
+                endMins += 24 * 60; // Assume crosses midnight
+            }
+            
+            const diffMins = endMins - startMins;
+            const hours = Math.floor(diffMins / 60);
+            const minutes = diffMins % 60;
+            
+            durationInput.value = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+        }
+    };
+
+    ['startTime', 'endTime'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('change', () => calculateDuration('startTime', 'endTime', 'duration'));
+    });
+
+    ['bulkStartTime', 'bulkEndTime'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('change', () => calculateDuration('bulkStartTime', 'bulkEndTime', 'bulkDuration'));
     });
 
     // Initialization
