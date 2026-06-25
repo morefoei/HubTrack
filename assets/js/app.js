@@ -526,9 +526,21 @@ document.addEventListener('DOMContentLoaded', () => {
                     document.getElementById('endDate').value = parseDate(log.endDate);
                     document.getElementById('endTime').value = parseTime(log.endTime);
                     document.getElementById('duration').value = log.duration;
-                    document.getElementById('vendor').value = log.vendor;
-                    document.getElementById('projectName').value = log.project;
-                    document.getElementById('taskName').value = log.task;
+                    
+                    const singleContainer = document.getElementById('dynamicSingleProjectTaskContainer');
+                    const extraRows = singleContainer.querySelectorAll('.single-project-task-row:not(:first-child)');
+                    extraRows.forEach(r => r.remove());
+                    if (typeof updateSingleRemoveButtons === 'function') updateSingleRemoveButtons();
+                    
+                    const firstRow = singleContainer.querySelector('.single-project-task-row');
+                    if (firstRow) {
+                        firstRow.querySelector('.singleVendor').value = log.vendor || '';
+                        firstRow.querySelector('.singleProjectName').value = log.project || '';
+                        firstRow.querySelector('.singleTaskName').value = log.task || '';
+                    }
+
+                    document.querySelectorAll('.add-btn-daily').forEach(btn => btn.style.display = 'none');
+                    
                     document.getElementById('notes').value = log.notes;
                     document.getElementById('zohoStatus').value = log.status || 'final';
                     
@@ -585,6 +597,12 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('cancelEditBtn').style.display = 'none';
         document.getElementById('zohoStatus').value = 'final';
         document.getElementById('startDate').valueAsDate = new Date();
+        document.querySelectorAll('.add-btn-daily').forEach(btn => btn.style.display = 'inline-block');
+        
+        const singleContainer = document.getElementById('dynamicSingleProjectTaskContainer');
+        const extraRows = singleContainer.querySelectorAll('.single-project-task-row:not(:first-child)');
+        extraRows.forEach(r => r.remove());
+        if (typeof updateSingleRemoveButtons === 'function') updateSingleRemoveButtons();
     });
 
     // Add / Edit Log Form
@@ -594,7 +612,23 @@ document.addEventListener('DOMContentLoaded', () => {
         const rowIndex = document.getElementById('editRowIndex').value;
         const action = rowIndex ? 'edit_log' : 'add_log';
 
-        const payload = {
+        const taskCombinations = [];
+        const rows = document.querySelectorAll('.single-project-task-row');
+        rows.forEach(row => {
+            const vendor = row.querySelector('.singleVendor').value;
+            const project = row.querySelector('.singleProjectName').value;
+            const task = row.querySelector('.singleTaskName').value;
+            if (project && task) {
+                taskCombinations.push({ vendor, project, task });
+            }
+        });
+
+        if (taskCombinations.length === 0) {
+            showToast('Silakan isi setidaknya satu kombinasi Project & Task', 'error');
+            return;
+        }
+
+        const basePayload = {
             id: document.getElementById('logId').value,
             startDate: document.getElementById('startDate').value,
             startTime: document.getElementById('startTime').value,
@@ -603,50 +637,193 @@ document.addEventListener('DOMContentLoaded', () => {
             endTime: document.getElementById('endTime').value,
             duration: document.getElementById('duration').value,
             status: document.getElementById('zohoStatus').value,
-            vendor: document.getElementById('vendor').value,
-            project: document.getElementById('projectName').value,
-            task: document.getElementById('taskName').value,
             notes: document.getElementById('notes').value
         };
 
-        if (rowIndex) {
-            payload.rowIndex = rowIndex;
-            const existingLog = currentLogs.find(l => l.rowIndex == rowIndex);
-            payload.taskUrl = existingLog ? existingLog.taskUrl : '';
+        const submitBtn = document.querySelector('#submitLogBtn');
+        submitBtn.disabled = true;
+        let successCount = 0;
+        let errorCount = 0;
+
+        for(let i=0; i<taskCombinations.length; i++) {
+            const combo = taskCombinations[i];
+            const payload = { ...basePayload, vendor: combo.vendor, project: combo.project, task: combo.task };
+
+            if (rowIndex) {
+                payload.rowIndex = rowIndex;
+                const existingLog = currentLogs.find(l => l.rowIndex == rowIndex);
+                payload.taskUrl = existingLog ? existingLog.taskUrl : '';
+            }
+
+            try {
+                const res = await fetch(`${API_URL}?action=${action}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(attachSettings(payload))
+                });
+                const data = await res.json();
+                if (data.success) {
+                    successCount++;
+                } else {
+                    errorCount++;
+                    console.error(`Error on task ${combo.task}: ${data.message}`);
+                }
+            } catch (err) {
+                errorCount++;
+                console.error(`Network error on task ${combo.task}`);
+            }
         }
 
-        try {
-            const res = await fetch(`${API_URL}?action=${action}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(attachSettings(payload))
-            });
-            const data = await res.json();
-            if (data.success) {
-                showToast(rowIndex ? 'Activity updated successfully' : 'Activity logged successfully', 'success');
-                if (rowIndex) {
-                    // Mode edit: kembalikan ke default mode add
-                    document.getElementById('cancelEditBtn').click(); 
-                } else {
-                    // Mode add: Jangan bersihkan nama project dan task untuk mempermudah multiple input!
-                    // Hanya bersihkan jam, durasi, notes, lembur
-                    document.getElementById('startTime').value = '';
-                    document.getElementById('endTime').value = '';
-                    document.getElementById('duration').value = '';
-                    document.getElementById('notes').value = '';
-                    document.getElementById('logId').value = '';
-                    document.getElementById('lembur').value = '';
-                    // Notifikasi khusus
-                    showToast('Project & Task dipertahankan untuk input berikutnya', 'info');
-                }
-                fetchLogs();
+        submitBtn.disabled = false;
+
+        if (successCount > 0) {
+            showToast(rowIndex ? 'Activity updated successfully' : `Berhasil menyimpan ${successCount} log`, 'success');
+            if (rowIndex) {
+                document.getElementById('cancelEditBtn').click(); 
             } else {
-                showToast(data.message || 'Error saving log', 'error');
+                document.getElementById('startTime').value = '';
+                document.getElementById('endTime').value = '';
+                document.getElementById('duration').value = '';
+                document.getElementById('notes').value = '';
+                document.getElementById('logId').value = '';
+                document.getElementById('lembur').value = '';
+                showToast('Project & Task dipertahankan untuk input berikutnya', 'info');
             }
-        } catch (err) {
-            showToast('Network error', 'error');
+            fetchLogs();
+        } else {
+            showToast('Gagal menyimpan data log', 'error');
         }
     });
+
+    // Dynamic Single Project & Task Rows (Daily Track)
+    const singleContainer = document.getElementById('dynamicSingleProjectTaskContainer');
+    
+    function attachSingleRowListeners(row) {
+        const btnAddTask = row.querySelector('.btn-add-single-task');
+        const btnAddProject = row.querySelector('.btn-add-single-project');
+        const btnAddBoth = row.querySelector('.btn-add-single-both');
+        const btnRemove = row.querySelector('.btn-remove-single-row');
+
+        if (btnAddTask) {
+            btnAddTask.addEventListener('click', () => {
+                duplicateSingleRow(row, { keepProject: true, keepTask: false, keepVendor: true });
+            });
+        }
+        if (btnAddProject) {
+            btnAddProject.addEventListener('click', () => {
+                duplicateSingleRow(row, { keepProject: false, keepTask: true, keepVendor: true });
+            });
+        }
+        if (btnAddBoth) {
+            btnAddBoth.addEventListener('click', () => {
+                duplicateSingleRow(row, { keepProject: false, keepTask: false, keepVendor: false });
+            });
+        }
+        if (btnRemove) {
+            btnRemove.addEventListener('click', () => {
+                if (singleContainer.querySelectorAll('.single-project-task-row').length > 1) {
+                    row.remove();
+                    updateSingleRemoveButtons();
+                }
+            });
+        }
+    }
+
+    function duplicateSingleRow(sourceRow, options) {
+        const newRow = sourceRow.cloneNode(true);
+        const vendorInput = newRow.querySelector('.singleVendor');
+        const projectInput = newRow.querySelector('.singleProjectName');
+        const taskInput = newRow.querySelector('.singleTaskName');
+        if (!options.keepVendor) vendorInput.value = '';
+        if (!options.keepProject) projectInput.value = '';
+        if (!options.keepTask) taskInput.value = '';
+        singleContainer.appendChild(newRow);
+        attachSingleRowListeners(newRow);
+        updateSingleRemoveButtons();
+    }
+
+    function updateSingleRemoveButtons() {
+        if (!singleContainer) return;
+        const rows = singleContainer.querySelectorAll('.single-project-task-row');
+        rows.forEach(row => {
+            const btnRemove = row.querySelector('.btn-remove-single-row');
+            if (rows.length > 1) btnRemove.style.display = 'block';
+            else btnRemove.style.display = 'none';
+        });
+    }
+
+    if (singleContainer) {
+        const firstRow = singleContainer.querySelector('.single-project-task-row');
+        if (firstRow) attachSingleRowListeners(firstRow);
+    }
+
+    // Dynamic Project & Task Rows
+    const dynamicContainer = document.getElementById('dynamicProjectTaskContainer');
+    
+    function attachDynamicRowListeners(row) {
+        const btnAddTask = row.querySelector('.btn-add-task');
+        const btnAddProject = row.querySelector('.btn-add-project');
+        const btnAddBoth = row.querySelector('.btn-add-both');
+        const btnRemove = row.querySelector('.btn-remove-row');
+
+        if (btnAddTask) {
+            btnAddTask.addEventListener('click', () => {
+                duplicateRow(row, { keepProject: true, keepTask: false, keepVendor: true });
+            });
+        }
+        if (btnAddProject) {
+            btnAddProject.addEventListener('click', () => {
+                duplicateRow(row, { keepProject: false, keepTask: true, keepVendor: true });
+            });
+        }
+        if (btnAddBoth) {
+            btnAddBoth.addEventListener('click', () => {
+                duplicateRow(row, { keepProject: false, keepTask: false, keepVendor: false });
+            });
+        }
+        if (btnRemove) {
+            btnRemove.addEventListener('click', () => {
+                if (dynamicContainer.querySelectorAll('.project-task-row').length > 1) {
+                    row.remove();
+                    updateRemoveButtons();
+                }
+            });
+        }
+    }
+
+    function duplicateRow(sourceRow, options) {
+        const newRow = sourceRow.cloneNode(true);
+        
+        const vendorInput = newRow.querySelector('.bulkVendor');
+        const projectInput = newRow.querySelector('.bulkProjectName');
+        const taskInput = newRow.querySelector('.bulkTaskName');
+        
+        if (!options.keepVendor) vendorInput.value = '';
+        if (!options.keepProject) projectInput.value = '';
+        if (!options.keepTask) taskInput.value = '';
+        
+        dynamicContainer.appendChild(newRow);
+        attachDynamicRowListeners(newRow);
+        updateRemoveButtons();
+    }
+
+    function updateRemoveButtons() {
+        const rows = dynamicContainer.querySelectorAll('.project-task-row');
+        rows.forEach(row => {
+            const btnRemove = row.querySelector('.btn-remove-row');
+            if (rows.length > 1) {
+                btnRemove.style.display = 'block';
+            } else {
+                btnRemove.style.display = 'none';
+            }
+        });
+    }
+
+    // Initialize first row
+    if (dynamicContainer) {
+        const firstRow = dynamicContainer.querySelector('.project-task-row');
+        if (firstRow) attachDynamicRowListeners(firstRow);
+    }
 
     // Bulk Log Form Submission
     document.getElementById('bulkLogForm').addEventListener('submit', async (e) => {
@@ -659,12 +836,25 @@ document.addEventListener('DOMContentLoaded', () => {
         const endTime = document.getElementById('bulkEndTime').value;
         const duration = document.getElementById('bulkDuration').value;
         const lembur = document.getElementById('bulkLembur').value;
-        const vendor = document.getElementById('bulkVendor').value;
-        const project = document.getElementById('bulkProjectName').value;
-        const task = document.getElementById('bulkTaskName').value;
         const notes = document.getElementById('bulkNotes').value;
         const submitBtn = document.getElementById('submitBulkBtn');
         const progressDiv = document.getElementById('bulkProgress');
+
+        const taskCombinations = [];
+        const rows = document.querySelectorAll('.project-task-row');
+        rows.forEach(row => {
+            const vendor = row.querySelector('.bulkVendor').value;
+            const project = row.querySelector('.bulkProjectName').value;
+            const task = row.querySelector('.bulkTaskName').value;
+            if (project && task) {
+                taskCombinations.push({ vendor, project, task });
+            }
+        });
+
+        if (taskCombinations.length === 0) {
+            showToast('Silakan isi setidaknya satu kombinasi Project & Task', 'error');
+            return;
+        }
 
         let start = new Date(startDateStr);
         let end = new Date(endDateStr);
@@ -697,59 +887,92 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        if (!confirm(`Anda akan membuat ${datesToProcess.length} log terpisah dari ${datesToProcess[0]} sampai ${datesToProcess[datesToProcess.length-1]}. Lanjutkan?`)) {
+        const totalLogsToCreate = datesToProcess.length * taskCombinations.length;
+        if (!confirm(`Anda akan membuat ${totalLogsToCreate} log terpisah (${taskCombinations.length} tugas x ${datesToProcess.length} hari). Lanjutkan?`)) {
             return;
         }
 
         submitBtn.disabled = true;
         let successCount = 0;
         let errorCount = 0;
+        let processed = 0;
 
         for (let i = 0; i < datesToProcess.length; i++) {
             const dateStr = datesToProcess[i];
-            progressDiv.innerText = `Processing ${i+1}/${datesToProcess.length}: Menambahkan log untuk tanggal ${dateStr}...`;
-            
-            const payload = {
-                id: '', // Biarkan backend generate ID kosong
-                startDate: dateStr,
-                startTime: startTime,
-                lembur: lembur,
-                endDate: dateStr,
-                endTime: endTime,
-                duration: duration,
-                status: 'pending', // Biarkan pending agar bisa dicek dulu sebelum sync
-                vendor: vendor,
-                project: project,
-                task: task,
-                notes: notes
-            };
+            for (let j = 0; j < taskCombinations.length; j++) {
+                processed++;
+                const combo = taskCombinations[j];
+                progressDiv.innerText = `Processing ${processed}/${totalLogsToCreate}: Menambahkan ${combo.task} (${dateStr})...`;
+                
+                const payload = {
+                    id: '', // Biarkan backend generate ID kosong
+                    startDate: dateStr,
+                    startTime: startTime,
+                    lembur: lembur,
+                    endDate: dateStr,
+                    endTime: endTime,
+                    duration: duration,
+                    status: 'pending', // Biarkan pending agar bisa dicek dulu sebelum sync
+                    vendor: combo.vendor,
+                    project: combo.project,
+                    task: combo.task,
+                    notes: notes
+                };
 
-            try {
-                const res = await fetch(`${API_URL}?action=add_log`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(attachSettings(payload))
-                });
-                const data = await res.json();
-                if (data.success) {
-                    successCount++;
-                } else {
+                try {
+                    const res = await fetch(`${API_URL}?action=add_log`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(attachSettings(payload))
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        successCount++;
+                    } else {
+                        errorCount++;
+                        console.error(`Error pada tanggal ${dateStr} - Task: ${combo.task}: ${data.message}`);
+                    }
+                } catch (err) {
                     errorCount++;
-                    console.error(`Error pada tanggal ${dateStr}: ${data.message}`);
+                    console.error(`Network error pada tanggal ${dateStr} - Task: ${combo.task}`);
                 }
-            } catch (err) {
-                errorCount++;
-                console.error(`Network error pada tanggal ${dateStr}`);
             }
         }
 
-        progressDiv.innerText = `Selesai! Berhasil: ${successCount}, Gagal: ${errorCount}.`;
-        showToast(`Bulk input selesai!`, 'success');
+        progressDiv.innerText = `Selesai! Berhasil: ${successCount}, Gagal: ${errorCount}`;
+        setTimeout(() => {
+            progressDiv.innerText = '';
+        }, 3000);
         submitBtn.disabled = false;
-        fetchLogs(); // Reload table
         
-        // Cukup clear notes dan tanggal, pertahankan sisanya
-        document.getElementById('bulkNotes').value = '';
+        if (successCount > 0) {
+            const keepValues = document.getElementById('keepValues') ? document.getElementById('keepValues').checked : false;
+            if (!keepValues) {
+                // Clear the first row task combinations, and remove the rest
+                const rows = document.querySelectorAll('.project-task-row');
+                for (let i = 1; i < rows.length; i++) {
+                    rows[i].remove();
+                }
+                updateRemoveButtons();
+                const firstRow = document.querySelector('.project-task-row');
+                if (firstRow) {
+                    firstRow.querySelector('.bulkProjectName').value = '';
+                    firstRow.querySelector('.bulkTaskName').value = '';
+                    firstRow.querySelector('.bulkVendor').value = '';
+                }
+                document.getElementById('bulkNotes').value = '';
+                document.getElementById('bulkStartDate').value = '';
+                document.getElementById('bulkEndDate').value = '';
+                showToast('Fast-Track berhasil, form dibersihkan', 'success');
+            } else {
+                // Cukup clear notes dan tanggal, pertahankan sisanya
+                document.getElementById('bulkNotes').value = '';
+                document.getElementById('bulkStartDate').value = '';
+                document.getElementById('bulkEndDate').value = '';
+                showToast('Fast-Track berhasil, nilai form dipertahankan', 'info');
+            }
+            fetchLogs();
+        }
     });
 
     // Settings Management

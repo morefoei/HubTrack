@@ -119,19 +119,30 @@
                             <label>Duration</label>
                             <input type="text" id="duration" placeholder="HH:MM (e.g. 02:30)" title="Overrides Start/End math if set">
                         </div>
-                        <div class="form-group">
-                            <label>Vendor (OPTIONAL)</label>
-                            <input type="text" id="vendor">
-                        </div>
                     </div>
-                    <div class="form-row">
-                        <div class="form-group" style="position: relative;">
-                            <label>Project Name <button type="button" id="refreshProjectsBtn" style="background: none; border: none; color: var(--primary); padding: 0; margin-left: 0.5rem; cursor: pointer; font-size: 0.8rem;" title="Ambil list project dari Zoho"><i class="fa-solid fa-rotate"></i> Load Projects</button></label>
-                            <input type="text" id="projectName" list="zohoProjectsList" placeholder="Ketik atau pilih dari list..." required autocomplete="off">
-                        </div>
-                        <div class="form-group">
-                            <label>Task Name</label>
-                            <input type="text" id="taskName" placeholder="Zoho Task Name" required>
+                    <div id="dynamicSingleProjectTaskContainer">
+                        <div class="form-row single-project-task-row">
+                            <div class="form-group" style="flex: 0 0 20%;">
+                                <label>Vendor (Opsional)</label>
+                                <input type="text" class="singleVendor">
+                            </div>
+                            <div class="form-group" style="flex: 1; position: relative;">
+                                <label>Project Name 
+                                    <button type="button" class="btn-add-single-task add-btn-daily" style="padding: 2px 6px; font-size: 0.7rem; margin-left: 5px; background: rgba(59,130,246,0.2); color: #93c5fd; border: none; border-radius: 4px; cursor: pointer;" title="Tambah Task baru untuk Proyek ini">+ Task</button>
+                                    <button type="button" class="btn-add-single-both add-btn-daily" style="padding: 2px 6px; font-size: 0.7rem; margin-left: 2px; background: rgba(16,185,129,0.2); color: #6ee7b7; border: none; border-radius: 4px; cursor: pointer;" title="Tambah Baris Kosong Baru">+ Baru</button>
+                                    <button type="button" class="refreshProjectsBtn" style="background: none; border: none; color: var(--primary); padding: 0; margin-left: 0.5rem; cursor: pointer; font-size: 0.8rem;" title="Ambil list project dari Zoho"><i class="fa-solid fa-rotate"></i> Load Projects</button>
+                                </label>
+                                <input type="text" class="singleProjectName" list="zohoProjectsList" placeholder="Ketik atau pilih dari list..." required autocomplete="off">
+                            </div>
+                            <div class="form-group" style="flex: 1; position: relative;">
+                                <label>Task Name
+                                    <button type="button" class="btn-add-single-project add-btn-daily" style="padding: 2px 6px; font-size: 0.7rem; margin-left: 5px; background: rgba(245,158,11,0.2); color: #fcd34d; border: none; border-radius: 4px; cursor: pointer;" title="Tambah Proyek baru untuk Task ini">+ Proyek</button>
+                                </label>
+                                <div style="display: flex; gap: 0.5rem;">
+                                    <input type="text" class="singleTaskName" placeholder="Zoho Task Name" required style="flex: 1;">
+                                    <button type="button" class="btn-remove-single-row" style="background: transparent; color: var(--danger); border: none; cursor: pointer; padding: 0 0.5rem; display: none;"><i class="fa-solid fa-trash"></i></button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div class="form-group">
@@ -292,18 +303,28 @@
                             <input type="text" id="bulkLembur">
                         </div>
                     </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Vendor (OPTIONAL)</label>
-                            <input type="text" id="bulkVendor">
-                        </div>
-                        <div class="form-group">
-                            <label>Project Name</label>
-                            <input type="text" id="bulkProjectName" list="zohoProjectsList" placeholder="Ketik atau pilih dari list..." required autocomplete="off">
-                        </div>
-                        <div class="form-group">
-                            <label>Task Name</label>
-                            <input type="text" id="bulkTaskName" required>
+                    <div id="dynamicProjectTaskContainer">
+                        <div class="form-row project-task-row">
+                            <div class="form-group" style="flex: 0 0 20%;">
+                                <label>Vendor (Opsional)</label>
+                                <input type="text" class="bulkVendor">
+                            </div>
+                            <div class="form-group" style="flex: 1;">
+                                <label>Project Name 
+                                    <button type="button" class="btn-add-task" style="padding: 2px 6px; font-size: 0.7rem; margin-left: 5px; background: rgba(59,130,246,0.2); color: #93c5fd; border: none; border-radius: 4px; cursor: pointer;" title="Tambah Task baru untuk Proyek ini">+ Task</button>
+                                    <button type="button" class="btn-add-both" style="padding: 2px 6px; font-size: 0.7rem; margin-left: 2px; background: rgba(16,185,129,0.2); color: #6ee7b7; border: none; border-radius: 4px; cursor: pointer;" title="Tambah Baris Kosong Baru">+ Baru</button>
+                                </label>
+                                <input type="text" class="bulkProjectName" list="zohoProjectsList" placeholder="Ketik atau pilih dari list..." required autocomplete="off">
+                            </div>
+                            <div class="form-group" style="flex: 1; position: relative;">
+                                <label>Task Name 
+                                    <button type="button" class="btn-add-project" style="padding: 2px 6px; font-size: 0.7rem; margin-left: 5px; background: rgba(245,158,11,0.2); color: #fcd34d; border: none; border-radius: 4px; cursor: pointer;" title="Tambah Proyek baru untuk Task ini">+ Proyek</button>
+                                </label>
+                                <div style="display: flex; gap: 0.5rem;">
+                                    <input type="text" class="bulkTaskName" required style="flex: 1;">
+                                    <button type="button" class="btn-remove-row" style="background: transparent; color: var(--danger); border: none; cursor: pointer; padding: 0 0.5rem; display: none;"><i class="fa-solid fa-trash"></i></button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div class="form-group">
