@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HubTrack Dashboard</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/style.css?v=<?= time() ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <!-- PWA / Android App Integration -->
@@ -599,8 +599,8 @@
     <div id="toast-container"></div>
     <datalist id="zohoProjectsList"></datalist>
 
-    <script src="assets/js/lang.js"></script>
-    <script src="assets/js/app.js"></script>
+    <script src="assets/js/lang.js?v=<?= time() ?>"></script>
+    <script src="assets/js/app.js?v=<?= time() ?>"></script>
 </body>
 
 </html>

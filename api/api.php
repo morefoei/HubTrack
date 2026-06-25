@@ -407,6 +407,123 @@ if ($action === 'update_status' && $method === 'POST') {
     exit;
 }
 
+if ($action === 'bulk_update_status' && $method === 'POST') {
+    $settings = getSettings();
+    $token = getGoogleAccessToken($settings['googleCredentials']);
+    $spreadsheetId = $settings['spreadsheetId'];
+    if (!$token || !$spreadsheetId) {
+        echo json_encode(['success' => false, 'message' => 'Settings missing']);
+        exit;
+    }
+    
+    $updates = $input['updates'] ?? [];
+    if (empty($updates)) {
+        echo json_encode(['success' => false, 'message' => 'No updates provided']);
+        exit;
+    }
+
+    $sheetName = !empty($settings['sheetName']) ? $settings['sheetName'] : 'Sheet1';
+    $safeSheetName = "'" . str_replace("'", "''", $sheetName) . "'";
+    
+    $data = [];
+    foreach ($updates as $upd) {
+        $rIdx = intval($upd['rowIndex']);
+        if ($rIdx < 1) continue;
+        $data[] = [
+            'range' => "$safeSheetName!H$rIdx",
+            'values' => [[$upd['status']]]
+        ];
+    }
+    
+    if (empty($data)) {
+        echo json_encode(['success' => true]);
+        exit;
+    }
+    
+    $url = "https://sheets.googleapis.com/v4/spreadsheets/$spreadsheetId/values:batchUpdate";
+    $payload = [
+        'valueInputOption' => 'USER_ENTERED',
+        'data' => $data
+    ];
+    
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        "Authorization: Bearer $token",
+        "Content-Type: application/json"
+    ]);
+    
+    $res = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    
+    if ($httpCode >= 200 && $httpCode < 300) {
+        echo json_encode(['success' => true]);
+    } else {
+        echo json_encode(['success' => false, 'message' => "Gagal bulk update status: $res"]);
+    }
+    exit;
+}
+
+if ($action === 'bulk_delete_logs' && $method === 'POST') {
+    $settings = getSettings();
+    $token = getGoogleAccessToken($settings['googleCredentials']);
+    $spreadsheetId = $settings['spreadsheetId'];
+    if (!$token || !$spreadsheetId) {
+        echo json_encode(['success' => false, 'message' => 'Settings missing']);
+        exit;
+    }
+    
+    $rowIndices = $input['rowIndices'] ?? [];
+    if (empty($rowIndices)) {
+        echo json_encode(['success' => false, 'message' => 'No rows provided']);
+        exit;
+    }
+
+    $sheetName = !empty($settings['sheetName']) ? $settings['sheetName'] : 'Sheet1';
+    $safeSheetName = "'" . str_replace("'", "''", $sheetName) . "'";
+    
+    $ranges = [];
+    foreach ($rowIndices as $rIdx) {
+        $idx = intval($rIdx);
+        if ($idx > 0) {
+            $ranges[] = "$safeSheetName!A$idx:M$idx";
+        }
+    }
+    
+    if (empty($ranges)) {
+        echo json_encode(['success' => true]);
+        exit;
+    }
+    
+    $url = "https://sheets.googleapis.com/v4/spreadsheets/$spreadsheetId/values:batchClear";
+    $payload = [
+        'ranges' => $ranges
+    ];
+    
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        "Authorization: Bearer $token",
+        "Content-Type: application/json"
+    ]);
+    
+    $res = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    
+    if ($httpCode >= 200 && $httpCode < 300) {
+        echo json_encode(['success' => true]);
+    } else {
+        echo json_encode(['success' => false, 'message' => "Gagal bulk delete: $res"]);
+    }
+    exit;
+}
+
 // -- HELPER: Mencegah Formula Injection --
 function escapeFormula($str) {
     if (is_string($str) && strlen($str) > 0) {

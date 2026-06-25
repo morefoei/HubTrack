@@ -1047,25 +1047,21 @@ document.addEventListener('DOMContentLoaded', () => {
         let rowIndices = Array.from(checkboxes).map(cb => parseInt(cb.getAttribute('data-rowindex')));
         rowIndices.sort((a, b) => b - a);
 
-        let successCount = 0;
-        let errorCount = 0;
-
-        for (const rowIndex of rowIndices) {
-            try {
-                const res = await fetch(`${API_URL}?action=delete_log`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(attachSettings({ rowIndex }))
-                });
-                const data = await res.json();
-                if (data.success) successCount++;
-                else errorCount++;
-            } catch (err) {
-                errorCount++;
+        try {
+            const res = await fetch(`${API_URL}?action=bulk_delete_logs`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(attachSettings({ rowIndices }))
+            });
+            const data = await res.json();
+            if (data.success) {
+                showToast(`Selesai! Berhasil hapus ${rowIndices.length} log.`, 'success');
+            } else {
+                showToast(`Gagal: ${data.message || 'Error'}`, 'error');
             }
+        } catch (err) {
+            showToast('Kesalahan jaringan', 'error');
         }
-
-        showToast(`Selesai! Berhasil hapus: ${successCount}, Gagal: ${errorCount}`, successCount > 0 ? 'success' : 'error');
         document.getElementById('selectAllLogs').checked = false;
         btn.disabled = false;
         btn.innerHTML = '<i class="fa-solid fa-trash"></i> Hapus Terpilih';
@@ -1088,25 +1084,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const rowIndices = Array.from(checkboxes).map(cb => cb.getAttribute('data-rowindex'));
         
-        let successCount = 0;
-        let errorCount = 0;
+        const updates = rowIndices.map(rowIndex => ({ rowIndex, status: newStatus }));
 
-        for (const rowIndex of rowIndices) {
-            try {
-                const res = await fetch(`${API_URL}?action=update_status`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(attachSettings({ rowIndex, status: newStatus }))
-                });
-                const data = await res.json();
-                if (data.success) successCount++;
-                else errorCount++;
-            } catch (err) {
-                errorCount++;
+        try {
+            const res = await fetch(`${API_URL}?action=bulk_update_status`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(attachSettings({ updates }))
+            });
+            const data = await res.json();
+            if (data.success) {
+                showToast(`Selesai! Berhasil ubah status ${updates.length} log.`, 'success');
+            } else {
+                showToast(`Gagal: ${data.message || 'Error'}`, 'error');
             }
+        } catch (err) {
+            showToast('Kesalahan jaringan', 'error');
         }
-
-        showToast(`Selesai! Berhasil ubah: ${successCount}, Gagal: ${errorCount}`, successCount > 0 ? 'success' : 'error');
         document.getElementById('selectAllLogs').checked = false;
         btn.disabled = false;
         btn.innerHTML = '<i class="fa-solid fa-check-double"></i> Set Status';
