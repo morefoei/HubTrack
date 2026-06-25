@@ -14,42 +14,15 @@
     <meta name="theme-color" content="#0f172a">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1356/1356479.png">
     <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js');
-            });
+        // Redirect to login.php if not authenticated
+        if (!sessionStorage.getItem('zohoProfile') || !sessionStorage.getItem('zohoPassword')) {
+            window.location.href = 'login.php';
         }
     </script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body>
-
-    <!-- Login Overlay -->
-    <div id="loginOverlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.95); display: none; justify-content: center; align-items: center; z-index: 9999; backdrop-filter: blur(5px);">
-        <div class="card" style="width: 100%; max-width: 400px; padding: 2rem;">
-            <div style="text-align: center; margin-bottom: 2rem; display: flex; flex-direction: column; align-items: center;">
-                <div class="logo" style="font-size: 2.5rem; justify-content: center; margin-bottom: 0.5rem;">
-                    <i class="fa-solid fa-rocket" style="-webkit-text-fill-color: initial; color: #f43f5e;"></i> HubTrack
-                </div>
-                <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0;">Log in or create a new profile</p>
-            </div>
-            <form id="loginForm">
-                <div class="form-group">
-                    <label>Username / Profile Name</label>
-                    <input type="text" id="loginUsername" placeholder="e.g. udin" required autocomplete="username">
-                </div>
-                <div class="form-group">
-                    <label>Password</label>
-                    <input type="password" id="loginPassword" placeholder="Enter password (creates new if not exist)" required autocomplete="current-password">
-                </div>
-                <button type="submit" style="width: 100%; margin-top: 1rem;"><i class="fa-solid fa-right-to-bracket"></i> Login / Register</button>
-                <div style="text-align: center; margin-top: 1rem; color: var(--text-muted); font-size: 0.8rem;">
-                    *Jika profile belum ada, akan otomatis dibuat.
-                </div>
-            </form>
-        </div>
-    </div>
 
     <header>
         <div class="header-top">
@@ -641,11 +614,6 @@
 
         <!-- Guide View -->
         <section id="guide-view" class="view-section">
-            <div id="guideLoginBanner" style="display: none; background: rgba(168, 85, 247, 0.1); border: 1px solid #a855f7; padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem; text-align: center;">
-                <h3 style="margin-top: 0; color: #a855f7; font-size: 1.3rem;">Siap Menggunakan HubTrack?</h3>
-                <p style="color: var(--text-muted); margin-bottom: 1.2rem;">Masuk atau buat profil baru Anda untuk membuka semua fitur pencatatan dan sinkronisasi.</p>
-                <button onclick="document.getElementById('loginOverlay').style.display = 'flex';" style="padding: 0.75rem 2.5rem; font-size: 1rem; border-radius: 25px;"><i class="fa-solid fa-right-to-bracket"></i> Login Sekarang</button>
-            </div>
             <div class="card" style="max-width: 900px; margin: 0 auto; line-height: 1.6;">
                 <div class="card-header">
                     <h2 class="card-title"><i class="fa-solid fa-book-open" style="color: var(--primary-color);"></i> Dokumentasi Instalasi & Penggunaan HubTrack</h2>

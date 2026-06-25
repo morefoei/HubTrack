@@ -145,51 +145,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    document.getElementById('loginForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const u = document.getElementById('loginUsername').value.trim();
-        const p = document.getElementById('loginPassword').value.trim();
-        
-        if (u === 'superman' && p === 'musikrock1') {
-            try {
-                const res = await fetch(`${API_URL}?action=get_all_profiles`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ profile: 'superman', password: 'musikrock1' })
-                });
-                const data = await res.json();
-                if (data.success) {
-                    const targetUser = prompt('📋 DAFTAR USER YANG TERDAFTAR:\n- ' + data.profiles.join('\n- ') + '\n\nKetik username yang ingin di-RESET passwordnya:');
-                    if (targetUser) {
-                        const resetRes = await fetch(`${API_URL}?action=reset_password`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ profile: 'superman', password: 'musikrock1', targetUser: targetUser.trim() })
-                        });
-                        const resetData = await resetRes.json();
-                        alert(resetData.message);
-                    }
-                } else {
-                    alert('Akses Admin Ditolak!');
-                }
-            } catch (err) {
-                alert('Gagal mengambil data.');
-            }
-            return;
-        }
 
-        userProfile = u;
-        userPassword = p;
-        sessionStorage.setItem('zohoProfile', userProfile);
-        sessionStorage.setItem('zohoPassword', userPassword);
-        
-        const valid = await checkAuth();
-        if (valid) {
-            showToast('Login berhasil!', 'success');
-            fetchLogs();
-            loadSettings();
-        }
-    });
 
     document.getElementById('profileDisplay').addEventListener('click', () => {
         if (!confirm('Apakah Anda yakin ingin Logout?')) return;
@@ -1721,26 +1677,43 @@ document.addEventListener('DOMContentLoaded', () => {
                     } else {
                         // Parse dates
                         const indonesianMonths = {
-                            'Jan': 0, 'Feb': 1, 'Mar': 2, 'Apr': 3, 'Mei': 4, 'Jun': 5,
-                            'Jul': 6, 'Ags': 7, 'Sep': 8, 'Okt': 9, 'Nov': 10, 'Des': 11
+                            'jan': 0, 'januari': 0, 'january': 0,
+                            'feb': 1, 'februari': 1, 'february': 1,
+                            'mar': 2, 'maret': 2, 'march': 2,
+                            'apr': 3, 'april': 3,
+                            'mei': 4, 'may': 4,
+                            'jun': 5, 'juni': 5, 'june': 5,
+                            'jul': 6, 'juli': 6, 'july': 6,
+                            'ags': 7, 'agt': 7, 'agustus': 7, 'aug': 7, 'august': 7,
+                            'sep': 8, 'sept': 8, 'september': 8,
+                            'okt': 9, 'oct': 9, 'oktober': 9, 'october': 9,
+                            'nov': 10, 'november': 10,
+                            'des': 11, 'dec': 11, 'desember': 11, 'december': 11
                         };
                         const parsedDates = [];
                         data.dates.forEach(dStr => {
                             const parts = dStr.split('-');
                             if (parts.length === 3) {
                                 let day = parseInt(parts[0]);
-                                let monStr = parts[1];
+                                let monStr = parts[1].toLowerCase();
                                 let year = parseInt(parts[2]);
                                 if (year < 100) year += 2000;
+                                
                                 let mon = indonesianMonths[monStr];
                                 if (mon === undefined) {
-                                    const mNames = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
-                                    const enNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-                                    mon = mNames.findIndex(m => m.toLowerCase().startsWith(monStr.toLowerCase()));
-                                    if (mon === -1) {
-                                        mon = enNames.findIndex(m => m.toLowerCase().startsWith(monStr.toLowerCase()));
+                                    // Fallback: loop all keys and check if monStr starts with any key
+                                    for (let key in indonesianMonths) {
+                                        if (monStr.startsWith(key)) {
+                                            mon = indonesianMonths[key];
+                                            break;
+                                        }
                                     }
                                 }
+                                if (mon === undefined) {
+                                    // Final fallback for missing exact matches
+                                    mon = -1;
+                                }
+                                
                                 if (mon !== -1) {
                                     parsedDates.push(new Date(year, mon, day));
                                 }
