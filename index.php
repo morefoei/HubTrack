@@ -192,7 +192,7 @@
                         <thead>
                             <tr>
                                 <th style="width: 40px; text-align: center;"><input type="checkbox" id="selectAllLogs"></th>
-                                <th>Date</th>
+                                <th id="sortDateHeader" style="cursor: pointer; user-select: none;" title="Urutkan berdasarkan Tanggal">Date <i id="sortDateIcon" class="fa-solid fa-sort-down" style="margin-left: 5px; color: var(--primary);"></i></th>
                                 <th>Time</th>
                                 <th>Project & Task</th>
                                 <th>Notes</th>

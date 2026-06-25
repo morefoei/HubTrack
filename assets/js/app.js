@@ -79,6 +79,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentLogs = [];
     let currentPage = 1;
     let itemsPerPage = 10;
+    let currentSortOrder = 'desc';
 
     // Profile Management
     let userProfile = sessionStorage.getItem('zohoProfile') || '';
@@ -357,10 +358,18 @@ document.addEventListener('DOMContentLoaded', () => {
         tbody.innerHTML = '';
         
         const statusFilter = document.getElementById('filterLogStatus') ? document.getElementById('filterLogStatus').value : 'all';
-        let filteredLogs = logs;
+        let filteredLogs = [...logs]; // make a shallow copy to sort safely
         if (statusFilter !== 'all') {
-            filteredLogs = logs.filter(l => l.status === statusFilter);
+            filteredLogs = filteredLogs.filter(l => l.status === statusFilter);
         }
+
+        filteredLogs.sort((a, b) => {
+            if (currentSortOrder === 'asc') {
+                return a.rowIndex - b.rowIndex;
+            } else {
+                return b.rowIndex - a.rowIndex;
+            }
+        });
 
         if (filteredLogs.length === 0) {
             tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-muted);">No logs found.</td></tr>';
@@ -958,12 +967,25 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Filter Logic
+    // Filter & Sort Logic
     const filterLogStatus = document.getElementById('filterLogStatus');
     if (filterLogStatus) {
         filterLogStatus.addEventListener('change', () => {
             currentPage = 1;
             document.getElementById('selectAllLogs').checked = false;
+            renderLogs();
+        });
+    }
+
+    const sortDateHeader = document.getElementById('sortDateHeader');
+    if (sortDateHeader) {
+        sortDateHeader.addEventListener('click', () => {
+            currentSortOrder = currentSortOrder === 'desc' ? 'asc' : 'desc';
+            const icon = document.getElementById('sortDateIcon');
+            if (icon) {
+                icon.className = currentSortOrder === 'desc' ? 'fa-solid fa-sort-down' : 'fa-solid fa-sort-up';
+            }
+            currentPage = 1;
             renderLogs();
         });
     }
