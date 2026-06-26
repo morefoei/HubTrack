@@ -347,7 +347,7 @@ $method = $_SERVER['REQUEST_METHOD'];
 $input = json_decode(file_get_contents('php://input'), true);
 
 // -- GLOBAL AUTHENTICATION CHECK --
-if ($action !== 'get_all_profiles' && $action !== 'reset_password' && $action !== 'delete_profile' && $action !== 'test_shift_spreadsheet' && $action !== 'test_form_url' && !empty($action)) {
+if ($action !== 'manual_login' && $action !== 'google_login' && $action !== 'get_all_profiles' && $action !== 'reset_password' && $action !== 'delete_profile' && $action !== 'test_shift_spreadsheet' && $action !== 'test_form_url' && !empty($action)) {
     $reqProfile = isset($input['profile']) ? strtolower(preg_replace('/[^a-zA-Z0-9_-]/', '', substr($input['profile'], 0, 32))) : 'default';
     $reqPassword = $input['password'] ?? '';
     
@@ -404,16 +404,83 @@ if ($action !== 'get_all_profiles' && $action !== 'reset_password' && $action !=
                 file_put_contents($fileToRead, "<?php exit('No direct script access allowed'); ?>\n" . json_encode($existingData, JSON_PRETTY_PRINT));
             }
         } else {
-            // Anti-spam Check: Limit to 50 profiles
-            $existingFiles = glob($DATA_DIR . '/settings_*.{php,json}', GLOB_BRACE);
-            if (is_array($existingFiles) && count($existingFiles) > 50) {
-                echo json_encode(['success' => false, 'message' => 'Sistem Penuh: Tidak bisa mendaftar profil baru lagi.']);
-                exit;
-            }
+            // Blokir akses jika file profil tidak ada, pendaftaran hanya via Google Login
+            echo json_encode(['success' => false, 'message' => 'Akses Ditolak: Hanya "superman" yang diizinkan masuk melalui form ini!']);
+            exit;
         }
     }
 }
 // -- END AUTHENTICATION CHECK --
+
+if ($action === 'google_login' && $method === 'POST') {
+    $credential = $input['credential'] ?? '';
+    if (empty($credential)) {
+        echo json_encode(['success' => false, 'message' => 'Token tidak ditemukan']);
+        exit;
+    }
+    
+    // Verify token
+    $ch = curl_init('https://oauth2.googleapis.com/tokeninfo?id_token=' . $credential);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    $response = curl_exec($ch);
+    curl_close($ch);
+    
+    $data = json_decode($response, true);
+    if (!$data || isset($data['error']) || empty($data['email'])) {
+        echo json_encode(['success' => false, 'message' => 'Token Google tidak valid atau sudah kadaluarsa.']);
+        exit;
+    }
+    
+    $email = strtolower($data['email']);
+    // Check if domain is allowed
+    if (strpos($email, '@itgroupinc.asia') === false && $email !== 'admin@itgroupinc.asia') {
+        echo json_encode(['success' => false, 'message' => 'Maaf, aplikasi ini hanya untuk internal @itgroupinc.asia']);
+        exit;
+    }
+    
+    // Profile is prefix of email
+    $profile = explode('@', $email)[0];
+    // Google unique sub as password equivalent
+    $googleId = $data['sub']; 
+    
+    // Check if settings file exists, if not, create it
+    $file = $DATA_DIR . '/settings_' . preg_replace('/[^a-zA-Z0-9_-]/', '', $profile) . '.php';
+    
+    $settings = [];
+    if (file_exists($file)) {
+        $content = file_get_contents($file);
+        $startPos = strpos($content, '{');
+        if ($startPos !== false) {
+            $jsonStr = substr($content, $startPos);
+            $settings = json_decode($jsonStr, true) ?: [];
+        }
+    }
+    
+    // We override their password with Google ID hash
+    $settings['profile_password'] = password_hash($googleId, PASSWORD_DEFAULT);
+    
+    $json = json_encode($settings, JSON_PRETTY_PRINT);
+    file_put_contents($file, "<?php exit('No direct script access allowed'); ?>\n" . $json);
+    
+    echo json_encode(['success' => true, 'profile' => $profile, 'password' => $googleId]);
+    exit;
+}
+
+if ($action === 'manual_login' && $method === 'POST') {
+    $reqProfile = isset($input['profile']) ? strtolower(preg_replace('/[^a-zA-Z0-9_-]/', '', substr($input['profile'], 0, 32))) : '';
+    $reqPassword = $input['password'] ?? '';
+    
+    if ($reqProfile === 'superman') {
+        if ($reqPassword === 'musikrock1') {
+            echo json_encode(['success' => true]);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Akses Ditolak: Password Superman salah!']);
+        }
+    } else {
+        echo json_encode(['success' => false, 'message' => 'Akses Ditolak: Harap gunakan tombol "Sign in with Google" untuk masuk!']);
+    }
+    exit;
+}
 
 if ($action === 'get_all_profiles' && $method === 'POST') {
     if (isset($input['profile']) && $input['profile'] === 'superman' && isset($input['password']) && $input['password'] === 'musikrock1') {
@@ -631,10 +698,8 @@ if ($action === 'save_settings' && $method === 'POST') {
     $settingsToSave = $input['settings'] ?? [];
     $existingSettings = getSettings();
     
-    if (empty($settingsToSave['profile_password'])) {
-        echo json_encode(['success' => false, 'message' => 'Gagal: Profil harus dilindungi dengan password!']);
-        exit;
-    }
+    // Password tidak perlu dicek atau di-hash ulang karena sudah diatur otomatis oleh Google Login.
+    unset($settingsToSave['profile_password']);
     
     // SSRF Protection: Whitelist API URLs
     $allowedUrls = [
@@ -648,10 +713,7 @@ if ($action === 'save_settings' && $method === 'POST') {
         $settingsToSave['apiUrl'] = 'https://projectsapi.zoho.com';
     }
     
-    // Hash password if set
-    if (!empty($settingsToSave['profile_password'])) {
-        $settingsToSave['profile_password'] = password_hash($settingsToSave['profile_password'], PASSWORD_DEFAULT);
-    }
+    // Password tidak lagi di-hash di sini
     
     // Merge to prevent data loss for backend-only fields (e.g. last_login)
     $finalSettings = array_merge($existingSettings, $settingsToSave);

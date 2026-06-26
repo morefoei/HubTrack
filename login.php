@@ -92,25 +92,52 @@ $v = time();
         <div id="login-view" class="view-section active" style="max-width: 400px;">
             <div class="card" style="padding: 2.5rem 2rem;">
                 <div style="text-align: center; margin-bottom: 2rem; display: flex; flex-direction: column; align-items: center;">
-                    <div class="logo" style="font-size: 2.5rem; justify-content: center; margin-bottom: 0.5rem;">
+                    <div class="logo" id="secretAdminTrigger" style="font-size: 2.5rem; justify-content: center; margin-bottom: 0.5rem; cursor: pointer; user-select: none;">
                         <i class="fa-solid fa-rocket" style="-webkit-text-fill-color: initial; color: #f43f5e;"></i> TrackHub
                     </div>
                     <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0;">Log in or create a new profile</p>
                 </div>
-                <form id="loginForm">
+                <!-- Google Login Container -->
+                <div id="googleLoginContainer" style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%;">
+                    <div id="g_id_onload"
+                         data-client_id="123971535631-9m3udvk9ckj5fjh7kp9l2luo06l5ifh5.apps.googleusercontent.com"
+                         data-context="signin"
+                         data-ux_mode="popup"
+                         data-callback="handleGoogleLogin"
+                         data-auto_prompt="false">
+                    </div>
+                    <div class="g_id_signin"
+                         data-type="standard"
+                         data-shape="rectangular"
+                         data-theme="outline"
+                         data-text="signin_with"
+                         data-size="large"
+                         data-logo_alignment="left">
+                    </div>
+                    <div style="text-align: center; margin-top: 1rem; color: var(--text-muted); font-size: 0.85rem;">
+                        <i class="fa-solid fa-shield-halved"></i> Hanya email <strong>ITG Indonesia</strong> yang diizinkan.
+                    </div>
+                </div>
+
+                <!-- Old Login Form (Hidden by default, used for Super Admin) -->
+                <form id="loginForm" style="display: none;">
                     <div class="form-group">
                         <label>Username / Profile Name</label>
-                        <input type="text" id="loginUsername" placeholder="e.g. udin" required autocomplete="username">
+                        <input type="text" id="loginUsername" placeholder="e.g. udin" autocomplete="username">
                     </div>
                     <div class="form-group">
                         <label>Password</label>
-                        <input type="password" id="loginPassword" placeholder="Enter password (creates new if not exist)" required autocomplete="current-password">
+                        <input type="password" id="loginPassword" placeholder="Enter password (creates new if not exist)" autocomplete="current-password">
                     </div>
-                    <button type="submit" id="loginBtn" style="width: 100%; margin-top: 1rem;"><i class="fa-solid fa-right-to-bracket"></i> Login / Register</button>
-                    <div style="text-align: center; margin-top: 1rem; color: var(--text-muted); font-size: 0.8rem;">
-                        *Jika profile belum ada, akan otomatis dibuat.
+                    <button type="submit" id="loginBtn" style="width: 100%; margin-top: 1rem;"><i class="fa-solid fa-right-to-bracket"></i> Login</button>
+                    <div style="text-align: center; margin-top: 1rem;">
+                        <button type="button" id="btnBackToGoogle" style="background: none; border: none; color: var(--primary); cursor: pointer; font-size: 0.9rem;"><i class="fa-solid fa-arrow-left"></i> Kembali ke Google Login</button>
                     </div>
                 </form>
+
+                <div id="adminLinkContainer" style="text-align: center; margin-top: 2rem;">
+                    <button type="button" id="btnShowAdmin" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 0.8rem; text-decoration: underline;">Login</button>
+                </div>
             </div>
         </div>
 
@@ -210,7 +237,7 @@ $v = time();
             btn.disabled = true;
 
             try {
-                const res = await fetch(`api/api.php?action=get_settings`, {
+                const res = await fetch(`api/api.php?action=manual_login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ profile: p, password: pwd })
@@ -233,6 +260,85 @@ $v = time();
             btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Login / Register';
             btn.disabled = false;
         });
+
+        // Toggle Old Form using ?admin=1
+        if (new URLSearchParams(window.location.search).get('admin') === '1') {
+            document.getElementById('googleLoginContainer').style.display = 'none';
+            document.getElementById('loginForm').style.display = 'block';
+            document.getElementById('loginUsername').required = true;
+            document.getElementById('loginPassword').required = true;
+        }
+
+        // Explicitly show admin form via button
+        const btnShowAdmin = document.getElementById('btnShowAdmin');
+        const btnBackToGoogle = document.getElementById('btnBackToGoogle');
+        const adminLinkContainer = document.getElementById('adminLinkContainer');
+
+        if (btnShowAdmin && btnBackToGoogle) {
+            btnShowAdmin.addEventListener('click', () => {
+                document.getElementById('googleLoginContainer').style.display = 'none';
+                document.getElementById('loginForm').style.display = 'block';
+                adminLinkContainer.style.display = 'none';
+                document.getElementById('loginUsername').required = true;
+                document.getElementById('loginPassword').required = true;
+            });
+
+            btnBackToGoogle.addEventListener('click', () => {
+                document.getElementById('googleLoginContainer').style.display = 'flex';
+                document.getElementById('loginForm').style.display = 'none';
+                adminLinkContainer.style.display = 'block';
+                document.getElementById('loginUsername').required = false;
+                document.getElementById('loginPassword').required = false;
+            });
+        }
+
+        // Secret Admin Click Trigger
+        const secretTrigger = document.getElementById('secretAdminTrigger');
+        let clickCount = 0;
+        let clickTimer;
+        
+        if (secretTrigger) {
+            secretTrigger.addEventListener('click', () => {
+                clickCount++;
+                if (clickCount === 3) {
+                    document.getElementById('googleLoginContainer').style.display = 'none';
+                    document.getElementById('loginForm').style.display = 'block';
+                    document.getElementById('loginUsername').required = true;
+                    document.getElementById('loginPassword').required = true;
+                    clickCount = 0;
+                }
+                
+                clearTimeout(clickTimer);
+                clickTimer = setTimeout(() => {
+                    clickCount = 0;
+                }, 1000); // Harus klik 3x dalam 1 detik
+            });
+        }
+
+        // Handle Google Login Callback
+        async function handleGoogleLogin(response) {
+            try {
+                const res = await fetch(`api/api.php?action=google_login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ credential: response.credential })
+                });
+                
+                const data = await res.json();
+                
+                if (data.success === false) {
+                    alert(data.message || 'Gagal login dengan Google!');
+                } else {
+                    sessionStorage.setItem('zohoProfile', data.profile);
+                    sessionStorage.setItem('zohoPassword', data.password);
+                    window.location.href = './';
+                }
+            } catch (err) {
+                alert('Terjadi kesalahan koneksi ke server.');
+            }
+        }
     </script>
+    <!-- Google Identity Services -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
 </body>
 </html>

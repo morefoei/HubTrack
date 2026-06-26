@@ -21,10 +21,9 @@
                         <small style="color: var(--text-muted);">This is stored securely on your local server.</small>
                     </div>
 
-                    <div class="form-group">
+                    <div class="form-group" style="display: none;">
                         <label>Profile Password</label>
-                        <input type="password" id="profilePassword" placeholder="Set a password for your profile (keep it safe!)" required>
-                        <small style="color: var(--text-muted);">Wajib diisi! Password ini melindungi file konfigurasi Anda di server.</small>
+                        <input type="password" id="profilePassword">
                     </div>
                     <hr style="border-color: var(--panel-border); margin: 1.5rem 0;">
                     <div class="form-group">
