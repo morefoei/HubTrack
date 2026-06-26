@@ -2127,6 +2127,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnCreateRootTask = document.getElementById('btnCreateRootTask');
     let currentTasks = [];
     let currentProjectId = null;
+    
+    const taskStatusFilter = document.getElementById('taskStatusFilter');
+    if (taskStatusFilter) {
+        taskStatusFilter.addEventListener('change', () => {
+            if (currentTasks.length > 0) {
+                renderTaskManager();
+            }
+        });
+    }
 
     if (btnFetchTasks) {
         btnFetchTasks.addEventListener('click', async () => {
@@ -2255,8 +2264,39 @@ document.addEventListener('DOMContentLoaded', () => {
             return `<select class="status-select" data-id="${node.id}" style="font-size: 0.7rem; background: var(--panel-bg); color: ${node.status.toLowerCase().includes('closed') ? 'var(--danger)' : 'var(--success)'}; border: 1px solid var(--panel-border); border-radius: 4px; padding: 0.1rem; cursor: pointer;">${opts}</select>`;
         };
 
+        const filterVal = document.getElementById('taskStatusFilter') ? document.getElementById('taskStatusFilter').value : 'all';
+
         function buildHtml(node, depth = 0, currentPath = '') {
             const nodePath = currentPath ? `${currentPath} > ${node.name}` : node.name;
+            const statusLower = (node.status || '').toLowerCase();
+
+            let childrenHtml = '';
+            let hasVisibleChild = false;
+            if (node.children.length > 0) {
+                node.children.forEach(child => {
+                    const childResult = buildHtml(child, depth + 1, nodePath);
+                    if (childResult.isVisible) {
+                        hasVisibleChild = true;
+                        childrenHtml += childResult.html;
+                    }
+                });
+            }
+
+            let matchesFilter = true;
+            if (filterVal !== 'all') {
+                if (filterVal === 'open') {
+                    matchesFilter = !statusLower.includes('complete') && !statusLower.includes('closed') && !statusLower.includes('backlog');
+                } else if (filterVal === 'backlog') {
+                    matchesFilter = statusLower.includes('backlog');
+                } else if (filterVal === 'complete') {
+                    matchesFilter = statusLower.includes('complete') || statusLower.includes('closed');
+                }
+            }
+
+            if (!matchesFilter && !hasVisibleChild) {
+                return { isVisible: false, html: '' };
+            }
+
             let html = `
                 <div style="margin-left: ${depth * 20}px; border-left: ${depth > 0 ? '1px dashed var(--panel-border)' : 'none'}; padding-left: ${depth > 0 ? '15px' : '0'}; margin-bottom: 0.5rem; position: relative;">
                     ${depth > 0 ? '<div style="position: absolute; left: 0; top: 12px; width: 10px; border-top: 1px dashed var(--panel-border);"></div>' : ''}
@@ -2272,21 +2312,24 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                     </div>
             `;
-            if (node.children.length > 0) {
-                html += '<div style="margin-top: 0.5rem;">';
-                node.children.forEach(child => {
-                    html += buildHtml(child, depth + 1, nodePath);
-                });
-                html += '</div>';
+            if (childrenHtml) {
+                html += '<div style="margin-top: 0.5rem;">' + childrenHtml + '</div>';
             }
             html += '</div>';
-            return html;
+            return { isVisible: true, html };
         }
 
         let finalHtml = '';
         roots.forEach(root => {
-            finalHtml += buildHtml(root);
+            const res = buildHtml(root);
+            if (res.isVisible) {
+                finalHtml += res.html;
+            }
         });
+
+        if (!finalHtml) {
+            finalHtml = '<p style="color: var(--text-muted); text-align: center;">Tidak ada task yang sesuai dengan filter.</p>';
+        }
 
         taskManagerContainer.innerHTML = finalHtml;
 
