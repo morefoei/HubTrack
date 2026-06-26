@@ -54,8 +54,28 @@
                                     <li>Klik <strong>Tambah Massal</strong>, sistem akan otomatis melakukan loop pengisian tanggal ke Spreadsheet satu per satu.</li>
                                 </ul>
                             </li>
-                            <li><strong>Presence-Track:</strong> Fitur akses cepat untuk mengisi form absensi kehadiran kantor secara terintegrasi (URL form diatur di halaman Settings).</li>
-                            <li><strong>WA Approval (Khusus Shift):</strong> Fitur untuk *generate* pesan permintaan *approval* atasan via WhatsApp. Anda cukup memilih *Tab* bulan dan Nama Anda, lalu sistem akan secara otomatis menarik jadwal *shift* Anda dari Sheet Shift terpisah dan menyajikannya dalam kelompok tanggal. Klik tombol <strong>[+] Gunakan</strong> untuk langsung menyalin jadwal tersebut ke form tanpa mengetik manual.</li>
+                            <li><strong>Absensi - Presence-Track (Absen Harian):</strong>
+                                <ul style="margin-top: 0.5rem; margin-bottom: 0.5rem;">
+                                    <li>Buka menu <strong>Sistem > Settings</strong> dan masukkan link Google Form absensi perusahaan Anda di kolom <strong>URL Google Form Absensi</strong>.</li>
+                                    <li>Setelah disimpan, klik menu <strong>Absensi > Presence-Track</strong>. Google Form tersebut akan otomatis terbuka langsung di dalam aplikasi (tanpa perlu membuka tab baru).</li>
+                                    <li>Gunakan fitur ini setiap kali Anda akan *clock-in* atau *clock-out*.</li>
+                                </ul>
+                            </li>
+                            <li><strong>Absensi - WA Approval (Pembuat Pesan Izin):</strong>
+                                <ul style="margin-top: 0.5rem; margin-bottom: 0.5rem;">
+                                    <li>Fitur ini digunakan untuk membuat pesan teks *request approval* (minta izin kehadiran) ke atasan via WhatsApp secara otomatis.</li>
+                                    <li><strong>Mode Reguler / Dedicated:</strong> Digunakan jika jadwal Anda bersifat tetap/normal (Senin - Jumat). Cukup pilih rentang <em>Start Date</em> dan <em>End Date</em>. Biarkan kotak <strong>Exclude Weekends</strong> tercentang agar hari Sabtu & Minggu tidak dimasukkan ke dalam teks pesan.</li>
+                                    <li><strong>Mode Shift / Manual:</strong> Digunakan jika jadwal Anda fleksibel dan ditarik langsung dari Google Sheets.
+                                        <ol style="margin-top: 0.3rem; margin-left: 1.2rem;">
+                                            <li>Klik tombol <strong><i class="fa-solid fa-cloud-arrow-down"></i> Sync List Sheet/Tab</strong> agar sistem mengambil daftar Sheet dari file Google Sheets Anda.</li>
+                                            <li>Pilih <strong>Bulan (Sheet Tab)</strong> dan <strong>Nama Karyawan</strong> Anda. Jadwal shift Anda di bulan tersebut akan langsung ditampilkan.</li>
+                                            <li>Klik <strong>[+] Tambah Rentang Tanggal</strong>, lalu masukkan <em>Start Date</em> dan <em>End Date</em> sesuai jadwal Anda.</li>
+                                        </ol>
+                                    </li>
+                                    <li>Klik tombol <strong>Generate Pesan</strong>. Sistem akan menyusun tanggal-tanggal yang Anda pilih menjadi format pengelompokan yang sangat rapi dan mudah dibaca (contoh: <code>20 - 24 Mei 2026</code>, <code>27 - 30 Mei 2026</code>).</li>
+                                    <li>Klik tombol hijau <strong>Kirim via WhatsApp</strong> untuk mengirimkannya langsung!</li>
+                                </ul>
+                            </li>
                             <li><strong>Data Logs:</strong> Di menu ini, Anda bisa melihat semua riwayat input Anda. Anda bisa mencentang kotak <strong>Select All</strong> untuk melakukan <strong>Hapus Terpilih (Bulk Delete)</strong> atau <strong>Set Status (Bulk Status)</strong> secara massal dan aman!</li>
                         </ol>
 
@@ -128,7 +148,28 @@
                                     <li>Click <strong>Generate Fast-Track</strong>, and the bot will instantly generate dozens of log rows into your Google Sheets!</li>
                                 </ul>
                             </li>
-                            <li><strong>Presence-Track:</strong> Access this tab every morning to fill out your daily attendance. (Requires a Google Form URL in Settings).</li>
+                            <li><strong>Attendance - Presence-Track:</strong>
+                                <ul style="margin-top: 0.5rem; margin-bottom: 0.5rem;">
+                                    <li>Open the <strong>System > Settings</strong> menu and enter your company's Google Form link into the <strong>Google Form Attendance URL</strong> field.</li>
+                                    <li>Once saved, click the <strong>Attendance > Presence-Track</strong> menu. The form will seamlessly open inside the app without needing a new tab.</li>
+                                    <li>Use this feature to clock-in or clock-out easily every day!</li>
+                                </ul>
+                            </li>
+                            <li><strong>Attendance - WA Approval Generator:</strong>
+                                <ul style="margin-top: 0.5rem; margin-bottom: 0.5rem;">
+                                    <li>This feature generates a formatted WhatsApp text message to request attendance approval from your manager.</li>
+                                    <li><strong>Regular / Dedicated Mode:</strong> Use this if you have a fixed schedule (Monday - Friday). Simply pick a <em>Start Date</em> and <em>End Date</em>. Keep the <strong>Exclude Weekends</strong> box checked so that Saturdays and Sundays are skipped automatically.</li>
+                                    <li><strong>Shift / Manual Mode:</strong> Use this if your schedule is flexible and managed via Google Sheets.
+                                        <ol style="margin-top: 0.3rem; margin-left: 1.2rem;">
+                                            <li>Click <strong><i class="fa-solid fa-cloud-arrow-down"></i> Sync List Sheet/Tab</strong> to load available tabs from your Google Sheet.</li>
+                                            <li>Select the <strong>Month (Sheet Tab)</strong> and your <strong>Name</strong>. Your shift schedule will be displayed on-screen.</li>
+                                            <li>Click <strong>[+] Add Date Range</strong> and input the dates corresponding to your shifts.</li>
+                                        </ol>
+                                    </li>
+                                    <li>Click <strong>Generate Message</strong>. The system will intelligently group consecutive dates into a highly readable format (e.g., <code>20 - 24 May 2026</code>).</li>
+                                    <li>Click the green <strong>Send via WhatsApp</strong> button to dispatch it instantly!</li>
+                                </ul>
+                            </li>
                             <li><strong>Data Logs:</strong> View all your input history here. Use the <strong>Select All</strong> checkbox to perform safe <strong>Bulk Delete</strong> or <strong>Bulk Status Updates</strong>!</li>
                             <li><strong>Sync Manager:</strong> Ensure all logs in Data Logs are marked as `final`. Open the Sync Manager tab and click <strong>Start Sync</strong> to push everything to Zoho automatically!</li>
                         </ol>
