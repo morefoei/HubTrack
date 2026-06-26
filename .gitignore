@@ -12,3 +12,6 @@ api/data/
 # Node modules / Vendor (jika ada di masa depan)
 node_modules/
 vendor/
+
+#Notes
+admin_notes.txt

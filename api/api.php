@@ -9,7 +9,7 @@ function getSettingsFile() {
     global $input, $DATA_DIR;
     $profile = 'default';
     if (!empty($input['profile'])) {
-        $profile = preg_replace('/[^a-zA-Z0-9_-]/', '', substr($input['profile'], 0, 32)); // Max 32 chars
+        $profile = strtolower(preg_replace('/[^a-zA-Z0-9_-]/', '', substr($input['profile'], 0, 32))); // Max 32 chars, lowercase
     }
     return $DATA_DIR . '/settings_' . $profile . '.php';
 }
@@ -18,7 +18,7 @@ function getSettingsFileOld() {
     global $input, $DATA_DIR;
     $profile = 'default';
     if (!empty($input['profile'])) {
-        $profile = preg_replace('/[^a-zA-Z0-9_-]/', '', substr($input['profile'], 0, 32));
+        $profile = strtolower(preg_replace('/[^a-zA-Z0-9_-]/', '', substr($input['profile'], 0, 32)));
     }
     return $DATA_DIR . '/settings_' . $profile . '.json';
 }
@@ -36,8 +36,12 @@ function getSettings() {
 
     if (file_exists($file)) {
         $content = file_get_contents($file);
-        $jsonStr = preg_replace('/^<\?php exit\(.*?\); \?>\n/', '', $content);
-        return json_decode($jsonStr, true) ?: [];
+        $startPos = strpos($content, '{');
+        if ($startPos !== false) {
+            $jsonStr = substr($content, $startPos);
+            return json_decode($jsonStr, true) ?: [];
+        }
+        return [];
     }
     // Fallback if settings not passed
     return [
@@ -324,7 +328,7 @@ $input = json_decode(file_get_contents('php://input'), true);
 
 // -- GLOBAL AUTHENTICATION CHECK --
 if ($action !== 'get_all_profiles' && $action !== 'reset_password' && !empty($action)) {
-    $reqProfile = isset($input['profile']) ? preg_replace('/[^a-zA-Z0-9_-]/', '', substr($input['profile'], 0, 32)) : 'default';
+    $reqProfile = isset($input['profile']) ? strtolower(preg_replace('/[^a-zA-Z0-9_-]/', '', substr($input['profile'], 0, 32))) : 'default';
     $reqPassword = $input['password'] ?? '';
     
     if (empty($reqPassword)) {
@@ -339,7 +343,8 @@ if ($action !== 'get_all_profiles' && $action !== 'reset_password' && !empty($ac
     
     if ($fileToRead) {
         $content = file_get_contents($fileToRead);
-        $jsonStr = preg_replace('/^<\?php exit\(.*?\); \?>\n/', '', $content);
+        $startPos = strpos($content, '{');
+        $jsonStr = $startPos !== false ? substr($content, $startPos) : '{}';
         $existingData = json_decode($jsonStr, true) ?: [];
         
         if (!empty($existingData['profile_password'])) {
@@ -379,7 +384,8 @@ if ($action === 'get_all_profiles' && $method === 'POST') {
             foreach ($files as $file) {
                 $basename = preg_replace('/\.(php|json)$/', '', basename($file));
                 $content = file_get_contents($file);
-                $jsonStr = preg_replace('/^<\?php exit\(.*?\); \?>\n/', '', $content);
+                $startPos = strpos($content, '{');
+                $jsonStr = $startPos !== false ? substr($content, $startPos) : '{}';
                 $data = json_decode($jsonStr, true) ?: [];
                 
                 $pass = !empty($data['profile_password']) ? '(Aman)' : '(Tanpa Password)';
@@ -401,7 +407,7 @@ if ($action === 'get_all_profiles' && $method === 'POST') {
 
 if ($action === 'reset_password' && $method === 'POST') {
     if (isset($input['profile']) && $input['profile'] === 'superman' && isset($input['password']) && $input['password'] === 'musikrock1') {
-        $targetUser = preg_replace('/[^a-zA-Z0-9_-]/', '', substr($input['targetUser'] ?? '', 0, 32));
+        $targetUser = strtolower(preg_replace('/[^a-zA-Z0-9_-]/', '', substr($input['targetUser'] ?? '', 0, 32)));
         if (empty($targetUser)) {
             echo json_encode(['success' => false, 'message' => 'Username tidak valid.']);
             exit;
@@ -414,7 +420,8 @@ if ($action === 'reset_password' && $method === 'POST') {
         
         if ($fileToEdit) {
             $content = file_get_contents($fileToEdit);
-            $jsonStr = preg_replace('/^<\?php exit\(.*?\); \?>\n/', '', $content);
+            $startPos = strpos($content, '{');
+            $jsonStr = $startPos !== false ? substr($content, $startPos) : '{}';
             $data = json_decode($jsonStr, true) ?: [];
             
             $data['profile_password'] = ''; // Kosongkan password saja

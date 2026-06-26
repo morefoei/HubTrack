@@ -42,6 +42,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     iframe.style.display = 'none';
                     emptyMsg.style.display = 'block';
                 }
+            } else if (targetId === 'settings-view') {
+                loadSettings();
+            } else if (targetId === 'logs-view' || targetId === 'data-view') {
+                loadProjects();
             }
         });
     });
@@ -116,6 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({ profile: userProfile, password: userPassword })
             });
             const data = await res.json();
+            
             if (data.success === false && data.message && data.message.includes('Password Salah')) {
                 showToast(data.message, 'error');
                 userPassword = '';
@@ -127,8 +132,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 return false;
             }
             // Auth OK
-            document.getElementById('loginOverlay').style.display = 'none';
-            document.querySelector('header').style.display = '';
+            const loginOverlay = document.getElementById('loginOverlay');
+            if (loginOverlay) loginOverlay.style.display = 'none';
+            const header = document.querySelector('header');
+            if (header) header.style.display = '';
             const banner = document.getElementById('guideLoginBanner');
             if (banner) banner.style.display = 'none';
             
@@ -138,7 +145,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('logs-view').classList.add('active');
             }
 
-            document.getElementById('profileNameDisplay').innerText = userProfile;
+            document.getElementById('profileNameDisplay').innerText = userProfile || 'Profile';
             return true;
         } catch (err) {
             return false;
@@ -1025,7 +1032,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify(attachSettings())
             });
             const data = await res.json();
-            if (data.settings) {
+
+            if (data.success === false) {
+                alert('Gagal memuat pengaturan: ' + (data.message || 'Unknown error'));
+            } else if (data.settings) {
                 document.getElementById('spreadsheetId').value = data.settings.spreadsheetId || '';
                 document.getElementById('sheetName').value = data.settings.sheetName || 'Sheet1';
                 document.getElementById('shiftSpreadsheetId').value = data.settings.shiftSpreadsheetId || '';
@@ -1049,6 +1059,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if(data.settings.apiUrl) document.getElementById('apiUrl').value = data.settings.apiUrl;
             }
         } catch (err) {
+            alert('Fatal error loading settings: ' + err.message);
             console.error('Error loading settings', err);
         }
     };
@@ -2048,11 +2059,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
-    checkAuth().then(valid => {
+    checkAuth().then(async valid => {
         if (valid) {
-            fetchLogs();
-            loadSettings();
-            loadZohoProjects();
+            await loadSettings();
+            await fetchLogs();
+            await loadZohoProjects();
         }
     });
 

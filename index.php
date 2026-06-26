@@ -30,7 +30,7 @@
                 <span class="logo"><i class="fa-solid fa-rocket" style="-webkit-text-fill-color: initial; color: #f43f5e;"></i> HubTrack</span>
                 <div style="display: flex; gap: 0.5rem; align-items: center;">
                     <button id="langToggleBtn" style="font-size: 0.75rem; padding: 0.3rem 0.6rem; background: rgba(255,255,255,0.1); border: none; color: white; border-radius: 4px; cursor: pointer;" title="Ubah Bahasa / Change Language">ID</button>
-                    <button id="profileDisplay" style="font-size: 0.8rem; margin: 0; padding: 0.3rem 0.8rem; background: transparent; border: 1px solid var(--primary); color: var(--primary); border-radius: 20px; cursor: pointer; display: flex; align-items: center; gap: 0.4rem;" title="Logout Aplikasi"><i class="fa-solid fa-user"></i> <span id="profileNameDisplay">Profile</span> <i class="fa-solid fa-sign-out-alt"></i></button>
+                    <button id="profileDisplay" style="font-size: 0.8rem; margin: 0; padding: 0.3rem 0.8rem; background: transparent; border: 1px solid var(--primary); color: var(--primary); border-radius: 20px; cursor: pointer; display: flex; align-items: center; gap: 0.4rem;" title="Logout Aplikasi"><i class="fa-solid fa-user"></i> <span id="profileNameDisplay"><script>var up = sessionStorage.getItem('zohoProfile') || 'Profile'; document.write(up);</script></span> <i class="fa-solid fa-sign-out-alt"></i></button>
                 </div>
             </div>
             <button id="mobileMenuBtn" style="display: none; background: transparent; border: none; color: var(--text-main); font-size: 1.5rem; cursor: pointer; padding: 0.5rem;"><i class="fa-solid fa-bars"></i></button>
@@ -779,7 +779,7 @@
     <datalist id="zohoProjectsList"></datalist>
 
     <script src="assets/js/lang.js?v=<?= time() ?>"></script>
-    <script src="assets/js/app.js?v=<?= time() ?>"></script>
+    <script src="assets/js/app.js?v=<?php echo time(); ?>"></script>
 </body>
 
 </html>
