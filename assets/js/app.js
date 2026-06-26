@@ -1,4 +1,10 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // Clean up index.php from URL for a cleaner look
+    if (window.location.pathname.endsWith('index.php')) {
+        const cleanUrl = window.location.pathname.replace(/index\.php$/, '') + window.location.search;
+        window.history.replaceState(null, '', cleanUrl);
+    }
+
     // Navigation
     const navBtns = document.querySelectorAll('.nav-btn');
     const viewSections = document.querySelectorAll('.view-section');
@@ -63,7 +69,44 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (targetId === 'logs-view' || targetId === 'data-view') {
                 loadProjects();
             }
+
+            // --- SPA ROUTING: Update URL dynamically ---
+            const routeName = targetId.replace('-view', ''); // 'logs-view' -> 'logs'
+            // Only push if it's not already the current path to avoid duplicate history states
+            const currentPath = window.location.pathname.replace(/^\/|\/$/g, '');
+            if (currentPath !== routeName) {
+                // Determine base path to avoid breaking if app is in a subfolder
+                const pathPrefix = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/'));
+                window.history.pushState({ target: targetId }, '', `${pathPrefix}/${routeName}`);
+            }
         });
+    });
+
+    // --- SPA ROUTING: Read URL on initial load ---
+    const initRouting = () => {
+        let path = window.location.pathname.substring(window.location.pathname.lastIndexOf('/') + 1).replace('.php', '');
+        if (path && path !== 'index' && path !== 'login') {
+            const targetViewId = path + '-view';
+            const targetBtn = document.querySelector(`.nav-btn[data-target="${targetViewId}"]`);
+            if (targetBtn) {
+                targetBtn.click();
+                // Open parent details dropdown if necessary
+                const parentDetails = targetBtn.closest('details.nav-dropdown');
+                if (parentDetails) parentDetails.setAttribute('open', 'true');
+            }
+        }
+    };
+    initRouting();
+
+    // Handle Browser Back/Forward buttons
+    window.addEventListener('popstate', (e) => {
+        if (e.state && e.state.target) {
+            const targetBtn = document.querySelector(`.nav-btn[data-target="${e.state.target}"]`);
+            if (targetBtn) targetBtn.click();
+        } else {
+            // Fallback for default route
+            initRouting();
+        }
     });
 
     // Close dropdowns when clicking outside
@@ -1563,29 +1606,47 @@ document.addEventListener('DOMContentLoaded', () => {
             
             let finalLines = [];
             if (activeDates.length > 0) {
-                let startNum = activeDates[0].getDate();
-                let endNum = activeDates[0].getDate();
-                let singles = [];
+                const monthsIndo = ["januari", "februari", "maret", "april", "mei", "juni", "juli", "agustus", "september", "oktober", "november", "desember"];
                 
-                const pushRange = (s, e) => {
-                    if (s === e) singles.push(s);
-                    else finalLines.push(`${s} ${monthName} - ${e} ${monthName}`);
-                };
+                let rangeStart = activeDates[0];
+                let rangeEnd = activeDates[0];
                 
-                for (let i = 1; i < activeDates.length; i++) {
-                    const curr = activeDates[i].getDate();
-                    if (curr === endNum + 1) {
-                        endNum = curr;
+                const formatRange = (startDt, endDt) => {
+                    let sDay = startDt.getDate();
+                    let sMonth = monthsIndo[startDt.getMonth()];
+                    let sYear = startDt.getFullYear();
+                    
+                    let eDay = endDt.getDate();
+                    let eMonth = monthsIndo[endDt.getMonth()];
+                    let eYear = endDt.getFullYear();
+                    
+                    if (startDt.getTime() === endDt.getTime()) {
+                        return `${sDay} ${sMonth} ${sYear}`;
+                    }
+                    
+                    if (sMonth === eMonth && sYear === eYear) {
+                        return `${sDay} - ${eDay} ${sMonth} ${sYear}`;
+                    } else if (sYear === eYear) {
+                        return `${sDay} ${sMonth} - ${eDay} ${eMonth} ${sYear}`;
                     } else {
-                        pushRange(startNum, endNum);
-                        startNum = curr;
-                        endNum = curr;
+                        return `${sDay} ${sMonth} ${sYear} - ${eDay} ${eMonth} ${eYear}`;
+                    }
+                };
+
+                for (let i = 1; i < activeDates.length; i++) {
+                    const curr = activeDates[i];
+                    const diffTime = curr.getTime() - rangeEnd.getTime();
+                    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+                    
+                    if (diffDays === 1) {
+                        rangeEnd = curr;
+                    } else {
+                        finalLines.push(formatRange(rangeStart, rangeEnd));
+                        rangeStart = curr;
+                        rangeEnd = curr;
                     }
                 }
-                pushRange(startNum, endNum);
-                if (singles.length > 0) {
-                    finalLines.push(`${singles.join(', ')} ${monthName}`);
-                }
+                finalLines.push(formatRange(rangeStart, rangeEnd));
             }
             
             const msg = `selamat Pagi ${bossName}, mohon izin untuk minta approval kehadiran di bulan ${monthName}, berikut jadwal saya masuk:\n\n${finalLines.join('\n')}\n\nTerima kasih 🙏`;

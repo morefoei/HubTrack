@@ -55,11 +55,20 @@ ServerSignature Off
     # Header set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
 </IfModule>
 
-# 6. PROTECT API DIRECTORY SPECIFICALLY
-# Melindungi folder /api/data agar tidak bisa diakses langsung via URL browser
+# 6. ROUTING & API PROTECTION
 <IfModule mod_rewrite.c>
     RewriteEngine On
+    
+    # Melindungi folder /api/data agar tidak bisa diakses langsung via URL browser
     RewriteRule ^api/data/.*$ - [F,L]
+
+    # Route /login to login.php
+    RewriteRule ^login/?$ login.php [QSA,L]
+
+    # SPA Routing: Hilangkan ekstensi .php dan arahkan semua request URL ke index.php
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^(.*)$ index.php [QSA,L]
 </IfModule>
 
 # 7. DENY ACCESS TO BACKUP/TEMP FILES

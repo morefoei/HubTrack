@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HubTrack Dashboard</title>
+    <title>HubTrack</title>
     <link rel="icon" type="image/png" href="assets/css/img/logo.png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="assets/css/style.css?v=<?= time() ?>">
@@ -15,9 +15,9 @@
     <meta name="theme-color" content="#0f172a">
     <link rel="apple-touch-icon" href="assets/css/img/logo.png">
     <script>
-        // Redirect to login.php if not authenticated
+        // Redirect to login if not authenticated
         if (!sessionStorage.getItem('zohoProfile') || !sessionStorage.getItem('zohoPassword')) {
-            window.location.href = 'login.php';
+            window.location.href = 'login';
         }
     </script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -60,6 +60,7 @@
                     <button class="nav-btn" data-target="analytics-view" title="Analytics"><i class="fa-solid fa-chart-pie"></i> <span class="nav-text">Analytics</span></button>
                     <button class="nav-btn" data-target="settings-view" title="Settings"><i class="fa-solid fa-gear"></i> <span class="nav-text">Settings</span></button>
                     <button class="nav-btn" data-target="guide-view" title="Dokumentasi"><i class="fa-solid fa-book"></i> <span class="nav-text">Dokumentasi</span></button>
+                    <button class="nav-btn" data-target="about-view" title="About"><i class="fa-solid fa-circle-info"></i> <span class="nav-text">About</span></button>
                 </div>
             </details>
         </nav>
@@ -112,14 +113,10 @@
             <?php include 'absen/wa_approval.php'; ?>
 
             <!-- Guide View -->
-            <!-- Guide View -->
             <?php include 'components/guide.php'; ?>
 
-            <footer style="text-align: center; padding: 2rem 1rem; margin-top: auto; border-top: 1px solid rgba(255,255,255,0.05); color: var(--text-muted); font-size: 0.85rem;">
-                <div style="font-family: 'Inter', sans-serif; opacity: 0.8;">
-                    &copy; 2026 <span style="font-weight: 800; font-size: 1.1rem; background: linear-gradient(135deg, #f43f5e, #a855f7, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: 1px; margin: 0 0.2rem;">FAFA</span> HubTrack. All Rights Reserved.
-                </div>
-            </footer>
+            <!-- About View -->
+            <?php include 'components/about.php'; ?>
         </div>
     </main>
 

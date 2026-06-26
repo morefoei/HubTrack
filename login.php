@@ -30,18 +30,21 @@ $v = time();
             padding: 2rem;
             overflow-y: auto;
         }
+        .nav-btn:active, .nav-link:active {
+            transform: scale(0.95);
+        }
         .view-section {
             display: none;
             width: 100%;
             max-width: 900px;
-            animation: fadeIn 0.3s ease;
+            animation: fadeSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
         .view-section.active {
             display: block;
         }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+        @keyframes fadeSlideUp {
+            0% { opacity: 0; transform: translateY(15px) scale(0.98); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
         }
         .top-nav-right {
             display: flex;
@@ -159,9 +162,15 @@ $v = time();
     </main>
 
     <script>
+        // Clean up login.php from URL for a cleaner look
+        if (window.location.pathname.endsWith('login.php')) {
+            const cleanUrl = window.location.pathname.replace(/login\.php$/, 'login') + window.location.search;
+            window.history.replaceState(null, '', cleanUrl);
+        }
+
         // Check if already logged in
         if (sessionStorage.getItem('zohoProfile') && sessionStorage.getItem('zohoPassword')) {
-            window.location.href = 'index.php';
+            window.location.href = './';
         }
 
         const sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
@@ -241,7 +250,7 @@ $v = time();
                     // Success login
                     sessionStorage.setItem('zohoProfile', p);
                     sessionStorage.setItem('zohoPassword', pwd);
-                    window.location.href = 'index.php';
+                    window.location.href = './';
                 }
             } catch (err) {
                 alert('Terjadi kesalahan koneksi ke server.');
