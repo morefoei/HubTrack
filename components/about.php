@@ -5,7 +5,7 @@
         </div>
         <h2 class="card-title" style="font-size: 2rem; margin-bottom: 1rem;">HubTrack</h2>
         <p style="color: var(--text-muted); margin-bottom: 2rem; max-width: 500px; margin-left: auto; margin-right: auto; line-height: 1.6;">
-            Sistem manajemen absensi, integrasi Zoho, dan penjadwalan terpadu. Dibangun dengan fokus pada efisiensi, desain modern, dan automasi proses bisnis Anda.
+            Sistem manajemen absensi, integrasi Zoho, dan penjadwalan terpadu. Dibangun dengan fokus pada efisiensi, desain modern.
         </p>
         <div style="margin-bottom: 2.5rem;">
             <p style="color: var(--text-main); font-size: 0.95rem; margin-bottom: 1rem;">Suka dengan aplikasi ini? Dukung pengembangan lebih lanjut:</p>
