@@ -6,7 +6,7 @@ $v = time();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HubTrack - Login</title>
+    <title>TrackHub - Login</title>
     <link rel="icon" type="image/png" href="assets/css/img/logo.png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="assets/css/style.css?v=<?= $v ?>">
@@ -66,7 +66,7 @@ $v = time();
         <div class="header-top">
             <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 1.5rem; width: 100%;">
                 <div style="display: flex; justify-content: center; width: 100%; align-items: center;">
-                    <span class="logo"><i class="fa-solid fa-rocket" style="-webkit-text-fill-color: initial; color: #f43f5e;"></i> <span class="nav-text">HubTrack</span></span>
+                    <span class="logo"><i class="fa-solid fa-rocket" style="-webkit-text-fill-color: initial; color: #f43f5e;"></i> <span class="nav-text">TrackHub</span></span>
                 </div>
             </div>
         </div>
@@ -93,7 +93,7 @@ $v = time();
             <div class="card" style="padding: 2.5rem 2rem;">
                 <div style="text-align: center; margin-bottom: 2rem; display: flex; flex-direction: column; align-items: center;">
                     <div class="logo" style="font-size: 2.5rem; justify-content: center; margin-bottom: 0.5rem;">
-                        <i class="fa-solid fa-rocket" style="-webkit-text-fill-color: initial; color: #f43f5e;"></i> HubTrack
+                        <i class="fa-solid fa-rocket" style="-webkit-text-fill-color: initial; color: #f43f5e;"></i> TrackHub
                     </div>
                     <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0;">Log in or create a new profile</p>
                 </div>

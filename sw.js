@@ -1,4 +1,4 @@
-const CACHE_NAME = 'hubtrack-v1';
+const CACHE_NAME = 'trackhub-v1';
 
 self.addEventListener('install', (e) => {
     // Instalasi service worker (bisa ditambahkan file untuk offline cache di masa depan)

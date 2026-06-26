@@ -1427,7 +1427,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const link = document.createElement('a');
         link.setAttribute('href', url);
         const dateStr = new Date().toISOString().split('T')[0];
-        link.setAttribute('download', `HubTrack_Export_${dateStr}.csv`);
+        link.setAttribute('download', `TrackHub_Export_${dateStr}.csv`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);

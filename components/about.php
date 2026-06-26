@@ -3,7 +3,7 @@
         <div style="font-size: 3rem; margin-bottom: 1rem;">
             <i class="fa-solid fa-rocket" style="-webkit-text-fill-color: initial; color: #f43f5e;"></i>
         </div>
-        <h2 class="card-title" style="font-size: 2rem; margin-bottom: 1rem;">HubTrack</h2>
+        <h2 class="card-title" style="font-size: 2rem; margin-bottom: 1rem;">TrackHub</h2>
         <p style="color: var(--text-muted); margin-bottom: 2rem; max-width: 500px; margin-left: auto; margin-right: auto; line-height: 1.6;">
             <span class="lang-id">Sistem manajemen absensi, integrasi Zoho, dan penjadwalan terpadu. Dibangun dengan fokus pada efisiensi, desain modern.</span><span class="lang-en">Attendance management, Zoho integration, and unified scheduling system. Built with a focus on efficiency and modern design.</span>
         </p>
@@ -15,7 +15,7 @@
         </div>
 
         <div style="font-family: 'Inter', sans-serif; opacity: 0.8; color: var(--text-muted); font-size: 0.9rem;">
-            &copy; 2026 <span style="font-weight: 800; font-size: 1.1rem; background: linear-gradient(135deg, #f43f5e, #a855f7, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: 1px; margin: 0 0.2rem;">FAFA</span> HubTrack. All Rights Reserved.
+            &copy; 2026 <span style="font-weight: 800; font-size: 1.1rem; background: linear-gradient(135deg, #f43f5e, #a855f7, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: 1px; margin: 0 0.2rem;">FAFA</span> TrackHub. All Rights Reserved.
         </div>
     </div>
 </section>

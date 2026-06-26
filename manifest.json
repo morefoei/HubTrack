@@ -1,6 +1,6 @@
 {
-  "name": "HubTrack Dashboard",
-  "short_name": "HubTrack",
+  "name": "TrackHub Dashboard",
+  "short_name": "TrackHub",
   "start_url": ".",
   "display": "standalone",
   "background_color": "#0f172a",

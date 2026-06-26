@@ -18,7 +18,7 @@ for line in lines:
                         <h3 style="color: var(--primary); border-bottom: 1px solid var(--panel-border); padding-bottom: 0.5rem; margin-top: 1rem;">Part 1: Google Sheets API Setup (Google Bot)</h3>
                         <ol style="margin-left: 1.5rem; margin-bottom: 1.5rem;">
                             <li>Open <strong>Google Cloud Console</strong> (console.cloud.google.com).</li>
-                            <li>Create a new Project (e.g., <em>HubTrack-App</em>).</li>
+                            <li>Create a new Project (e.g., <em>TrackHub-App</em>).</li>
                             <li>Go to <strong>APIs & Services &gt; Library</strong>. Search for <strong>Google Sheets API</strong> and click <strong>Enable</strong>.</li>
                             <li>Go to <strong>APIs & Services &gt; Credentials</strong>.</li>
                             <li>Click <strong>Create Credentials &gt; Service Account</strong>. Enter a bot name (e.g., <em>zoho-bot</em>) and click Done.</li>

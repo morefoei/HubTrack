@@ -1,7 +1,7 @@
 <section id="guide-view" class="view-section">
             <div class="card" style="max-width: 900px; margin: 0 auto; line-height: 1.6;">
                 <div class="card-header">
-                    <h2 class="card-title"><i class="fa-solid fa-book-open" style="color: var(--primary-color);"></i> Dokumentasi Instalasi & Penggunaan HubTrack</h2>
+                    <h2 class="card-title"><i class="fa-solid fa-book-open" style="color: var(--primary-color);"></i> Dokumentasi Instalasi & Penggunaan TrackHub</h2>
                 </div>
                 <div style="padding: 1rem; max-height: 70vh; overflow-y: auto;">
 
@@ -28,7 +28,7 @@
                             </li>
                             <li>Pilih durasi <strong>10 Minutes</strong> atau lebih, lalu tuliskan deskripsi bebas, dan klik <strong>Create</strong>. Pilih portal organisasi Anda dan tekan <strong>Accept/Terima</strong>.</li>
                             <li>Zoho akan menampilkan kode Authorization sementara (Authorization Code). Segera <em>copy</em> kode tersebut.</li>
-                            <li>Buka menu <strong>Settings</strong> di aplikasi HubTrack ini. Pastikan Anda sudah menyalin <strong>Zoho Client ID</strong> dan <strong>Zoho Client Secret</strong>.</li>
+                            <li>Buka menu <strong>Settings</strong> di aplikasi TrackHub ini. Pastikan Anda sudah menyalin <strong>Zoho Client ID</strong> dan <strong>Zoho Client Secret</strong>.</li>
                             <li>Pada kotak <strong>Auto-Generate Refresh Token</strong> di menu Settings, <em>Paste</em> kode Authorization sementara tersebut <em>(contoh: <code>1000.e574a13a804f9...</code>)</em>, lalu klik <strong>⚡ Generate</strong>. Token akan otomatis dibuat dan tersimpan!</li>
                         </ol>
 
@@ -103,7 +103,7 @@
                         <h3 style="color: var(--primary); border-bottom: 1px solid var(--panel-border); padding-bottom: 0.5rem; margin-top: 1rem;">Part 1: Google Sheets API Setup (Google Bot)</h3>
                         <ol style="margin-left: 1.5rem; margin-bottom: 1.5rem;">
                             <li>Open <strong>Google Cloud Console</strong> (console.cloud.google.com).</li>
-                            <li>Create a new Project (e.g., <em>HubTrack-App</em>).</li>
+                            <li>Create a new Project (e.g., <em>TrackHub-App</em>).</li>
                             <li>Go to <strong>APIs & Services &gt; Library</strong>. Search for <strong>Google Sheets API</strong> and click <strong>Enable</strong>.</li>
                             <li>Go to <strong>APIs & Services &gt; Credentials</strong>.</li>
                             <li>Click <strong>Create Credentials &gt; Service Account</strong>. Enter a bot name (e.g., <em>zoho-bot</em>) and click Done.</li>
@@ -122,7 +122,7 @@
                             </li>
                             <li>Select a duration of <strong>10 Minutes</strong> or more, enter any description, and click <strong>Create</strong>. Select your portal and click <strong>Accept</strong>.</li>
                             <li>Zoho will display a temporary Authorization Code. Copy it immediately.</li>
-                            <li>Go to the <strong>Settings</strong> menu in this HubTrack app. Make sure you have entered your <strong>Zoho Client ID</strong> and <strong>Zoho Client Secret</strong>.</li>
+                            <li>Go to the <strong>Settings</strong> menu in this TrackHub app. Make sure you have entered your <strong>Zoho Client ID</strong> and <strong>Zoho Client Secret</strong>.</li>
                             <li>In the <strong>Auto-Generate Refresh Token</strong> box, <em>Paste</em> the temporary Authorization Code <em>(example: <code>1000.e574a13a804f9...</code>)</em> and click <strong>⚡ Generate</strong>. The token will be automatically created and filled!</li>
                         </ol>
 

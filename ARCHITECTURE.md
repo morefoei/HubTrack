@@ -1,9 +1,9 @@
-# Alur Sistem (Workflow) HubTrack
+# Alur Sistem (Workflow) TrackHub
 
-Dokumen ini menjelaskan alur kerja dari aplikasi HubTrack. File ini **hanya untuk dokumentasi repositori (GitLab)** dan dieksklusi dari server hosting.
+Dokumen ini menjelaskan alur kerja dari aplikasi TrackHub. File ini **hanya untuk dokumentasi repositori (GitLab)** dan dieksklusi dari server hosting.
 
 ## 1. Arsitektur Multi-Profile (Login & Auth)
-HubTrack menggunakan sistem otentikasi berbasis *Profile Name* dan *Password*.
+TrackHub menggunakan sistem otentikasi berbasis *Profile Name* dan *Password*.
 - **Otentikasi Awal**: Saat halaman `index.php` dibuka, aplikasi (`app.js`) akan mengecek apakah pengguna memiliki sesi login yang tersimpan di `sessionStorage`.
 - **Sesi Sementara (Auto-Logout)**: Karena menggunakan `sessionStorage`, sistem akan otomatis mengeluarkan pengguna (logout) ketika tab atau browser ditutup.
 - **Tidak Login**: Jika tidak ada sesi aktif, pengguna hanya dapat melihat halaman **Dokumentasi** dengan ajakan untuk Login.
@@ -29,7 +29,7 @@ Setelah pengguna masuk ke dalam aplikasi, mereka perlu menarik tugas-tugas yang 
 - **Logika Penyimpanan Lokal**: Saat pengguna mengklik *Submit*, log dikirimkan kembali ke `api.php` dan ditambahkan (Append) ke dalam file Google Sheets (dengan status awal **Pending**).
 
 ## 4. Sinkronisasi Utama (Sync Manager)
-Ini adalah jantung dari aplikasi HubTrack. Alurnya adalah memindahkan data dari Google Sheets (Pending) ke Zoho Projects.
+Ini adalah jantung dari aplikasi TrackHub. Alurnya adalah memindahkan data dari Google Sheets (Pending) ke Zoho Projects.
 1. **Validasi**: `api.php` membaca seluruh log yang berstatus *Pending*.
 2. **Hitung Batas Jam**: Sistem menghitung total jam di setiap tanggal. Jika `> 24 Jam`, sistem akan membatalkan sinkronisasi pada baris tersebut dan mencaplok tulisan error `REMAINING_LOG_HOURS_DAYS`.
 3. **Pencarian Project (Zoho)**: Sistem mengambil `Project Name` dari log, mencari ID-nya di Zoho menggunakan Zoho API (`/portals/.../projects/`). Jika gagal, sistem memberi label `Project tidak ditemukan`.
@@ -41,8 +41,8 @@ Ini adalah jantung dari aplikasi HubTrack. Alurnya adalah memindahkan data dari 
 6. **Update Spreadsheet**: Jika sukses, bot memodifikasi baris log tersebut di Google Sheets menjadi **Final** agar tidak ditarik lagi pada sinkronisasi berikutnya.
 
 ## 5. Modul Kehadiran & Shift (Absensi)
-Selain sinkronisasi Zoho, HubTrack juga memfasilitasi kebutuhan HR dan kehadiran:
-- **Presence-Track**: Modul ini meload URL eksternal (Google Form/Sistem HR) ke dalam *iframe* di dalam aplikasi, memungkinkan pengguna melakukan absen tanpa meninggalkan dashboard HubTrack.
+Selain sinkronisasi Zoho, TrackHub juga memfasilitasi kebutuhan HR dan kehadiran:
+- **Presence-Track**: Modul ini meload URL eksternal (Google Form/Sistem HR) ke dalam *iframe* di dalam aplikasi, memungkinkan pengguna melakukan absen tanpa meninggalkan dashboard TrackHub.
 - **WA Approval**: Sistem pembuat pesan *WhatsApp* otomatis untuk pengajuan *Shift/Lembur*.
   - **Dynamic Schedule Fetcher**: Fitur ini membaca jadwal karyawan dari Google Sheet terpisah berdasarkan nama yang dipilih.
   - **Auto-Grouping**: Jika terdapat shift berurutan (misal: 10 Jan - 15 Jan), sistem akan menggabungkannya secara dinamis menjadi rentang (*range*).

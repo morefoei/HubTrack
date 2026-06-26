@@ -1,6 +1,6 @@
 // English -> Indonesian Dictionary
 const dict = {
-    "Welcome to HubTrack": "Selamat Datang di HubTrack",
+    "Welcome to TrackHub": "Selamat Datang di TrackHub",
     "Log in or create a new profile": "Masuk atau buat profil baru",
     "Username / Profile Name": "Nama Pengguna / Nama Profil",
     "Password": "Kata Sandi",
@@ -8,7 +8,7 @@ const dict = {
     
     "Attendance": "Absensi",
     "Documentation": "Dokumentasi",
-    "Documentation & HubTrack Setup Guide": "Dokumentasi Instalasi & Penggunaan HubTrack",
+    "Documentation & TrackHub Setup Guide": "Dokumentasi Instalasi & Penggunaan TrackHub",
     "Settings": "Pengaturan",
     "About": "Tentang",
     "Global Config": "Konfigurasi Global",
@@ -63,7 +63,7 @@ for (const key in dict) {
     reverseDict[dict[key]] = key;
 }
 
-let currentLang = localStorage.getItem('hubtrack_lang') || 'id';
+let currentLang = localStorage.getItem('trackhub_lang') || 'id';
 
 function applyLanguage(lang) {
     document.body.setAttribute('data-lang', lang);
@@ -149,7 +149,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (toggleBtn) {
         toggleBtn.addEventListener('click', () => {
             currentLang = (currentLang === 'id') ? 'en' : 'id';
-            localStorage.setItem('hubtrack_lang', currentLang);
+            localStorage.setItem('trackhub_lang', currentLang);
             applyLanguage(currentLang);
         });
     }

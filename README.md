@@ -1,6 +1,6 @@
-# HubTrack - Universal Zoho Time Sync Dashboard
+# TrackHub - Universal Zoho Time Sync Dashboard
 
-HubTrack adalah aplikasi web modern berbasis PHP dan JavaScript murni yang berfungsi sebagai jembatan (middleware) antara **Google Sheets** dan **Zoho Projects API**. Aplikasi ini dirancang secara khusus untuk mempermudah, mempercepat, dan mengotomatisasi proses pelaporan jam kerja (Time Logs) tim ke platform manajemen Zoho.
+TrackHub adalah aplikasi web modern berbasis PHP dan JavaScript murni yang berfungsi sebagai jembatan (middleware) antara **Google Sheets** dan **Zoho Projects API**. Aplikasi ini dirancang secara khusus untuk mempermudah, mempercepat, dan mengotomatisasi proses pelaporan jam kerja (Time Logs) tim ke platform manajemen Zoho.
 
 ## Latar Belakang & Masalah
 Dalam operasional harian, tim (terutama engineer/developer) seringkali diwajibkan untuk melaporkan jam kerja (Timesheet) ke dalam dua platform berbeda secara bersamaan: 
@@ -9,8 +9,8 @@ Dalam operasional harian, tim (terutama engineer/developer) seringkali diwajibka
 
 Proses input ganda (double-entry) ini sangat memakan waktu, membosankan, dan rawan kesalahan (*human error*).
 
-## Solusi: HubTrack
-HubTrack memecahkan masalah ini dengan skema **Input Satu Pintu (Single Source of Truth)**. Karyawan hanya perlu menginput log aktivitas mereka di Google Sheets melalui *user interface* (UI) HubTrack yang elegan, dan HubTrack akan mengurus sisanya (mentransfer dan menyinkronkan data tersebut ke server Zoho secara otomatis).
+## Solusi: TrackHub
+TrackHub memecahkan masalah ini dengan skema **Input Satu Pintu (Single Source of Truth)**. Karyawan hanya perlu menginput log aktivitas mereka di Google Sheets melalui *user interface* (UI) TrackHub yang elegan, dan TrackHub akan mengurus sisanya (mentransfer dan menyinkronkan data tersebut ke server Zoho secara otomatis).
 
 ## Fitur Utama
 
@@ -26,14 +26,14 @@ HubTrack memecahkan masalah ini dengan skema **Input Satu Pintu (Single Source o
    - Menarik data status "Pending" dari Google Sheets.
    - Mencari ID Project dan ID Task secara otomatis di sistem Zoho (berdasarkan nama).
    - Memasukkan *Time Log* secara otomatis ke server Zoho.
-   - Jika Task belum pernah ada di Zoho, HubTrack akan membuatkan Task tersebut secara *on-the-fly* tanpa campur tangan pengguna.
+   - Jika Task belum pernah ada di Zoho, TrackHub akan membuatkan Task tersebut secara *on-the-fly* tanpa campur tangan pengguna.
 
 4. **Modul Absensi Terpadu**
    - **Presence-Track**: Iframe bawaan untuk mengakses form absensi internal/HR tanpa perlu membuka tab browser baru.
    - **WA Approval Generator**: Sistem pintar yang mampu mengekstrak jadwal shift karyawan langsung dari Google Sheets (secara dinamis), mengelompokkan hari-hari yang berurutan, dan membantu karyawan men-generate teks pengajuan *Approval* via WhatsApp untuk atasan dalam hitungan detik.
 
 5. **Token Auto-Generator Terintegrasi**
-   Tidak perlu lagi menggunakan aplikasi *Postman* atau alat pihak ketiga yang rumit. HubTrack menyediakan modul khusus di halaman **Settings** untuk menukar *Zoho Authorization Code* menjadi *Refresh Token* dengan satu kali klik.
+   Tidak perlu lagi menggunakan aplikasi *Postman* atau alat pihak ketiga yang rumit. TrackHub menyediakan modul khusus di halaman **Settings** untuk menukar *Zoho Authorization Code* menjadi *Refresh Token* dengan satu kali klik.
 
 6. **Analytics Dashboard**
    Visualisasi aktivitas pengguna berbasis grafik dan peringkat top project/task yang paling sering dikerjakan, di-render menggunakan *Chart.js*.
