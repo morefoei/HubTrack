@@ -1,0 +1,78 @@
+# ==============================================================================
+# EXPERT SECURITY .HTACCESS CONFIGURATION
+# ==============================================================================
+
+# 1. DISABLE DIRECTORY BROWSING
+# Mencegah orang melihat daftar file di dalam folder (Directory Listing)
+Options -Indexes
+
+# 2. DISABLE SERVER SIGNATURE
+# Menyembunyikan informasi versi Apache dan OS dari halaman error
+ServerSignature Off
+
+# 3. PROTECT SENSITIVE FILES AND DIRECTORIES
+# Blokir akses ke file sistem, konfigurasi, dan file tersembunyi (seperti .git, .env)
+<FilesMatch "^\.">
+    Require all denied
+</FilesMatch>
+
+<FilesMatch "^(composer\.json|package\.json|package-lock\.json|README\.md|\.gitignore)$">
+    Require all denied
+</FilesMatch>
+
+# Lindungi file .htaccess dan .htpasswd secara eksplisit
+<FilesMatch "^\.ht">
+    Require all denied
+</FilesMatch>
+
+# 4. PREVENT SCRIPT INJECTION & MALICIOUS REQUESTS
+# Matikan metode HTTP yang tidak diperlukan (Hanya izinkan GET, POST, HEAD, OPTIONS)
+<LimitExcept GET POST HEAD OPTIONS>
+    Require all denied
+</LimitExcept>
+
+# 5. HTTP SECURITY HEADERS (Jika modul headers diaktifkan di Apache)
+<IfModule mod_headers.c>
+    # Mencegah Clickjacking (Melarang web di-iframe oleh web lain)
+    Header set X-Frame-Options "SAMEORIGIN"
+
+    # Mencegah MIME-type sniffing (Mencegah eksekusi file dengan ekstensi palsu)
+    Header set X-Content-Type-Options "nosniff"
+
+    # Mengaktifkan filter XSS (Cross-Site Scripting) bawaan browser
+    Header set X-XSS-Protection "1; mode=block"
+
+    # Kebijakan Referrer untuk menjaga privasi URL asal
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+
+    # Mencegah Caching untuk file API/Data (Opsional, khusus path tertentu)
+    <FilesMatch "\.(php|json)$">
+        Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+        Header set Pragma "no-cache"
+    </FilesMatch>
+    
+    # HSTS (Strict-Transport-Security) - Buka komentar di bawah JIKA server sudah pasti pakai HTTPS/SSL!
+    # Header set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+</IfModule>
+
+# 6. PROTECT API DIRECTORY SPECIFICALLY
+# Melindungi folder /api/data agar tidak bisa diakses langsung via URL browser
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^api/data/.*$ - [F,L]
+</IfModule>
+
+# 7. DENY ACCESS TO BACKUP/TEMP FILES
+# Melarang akses ke file sisa editor seperti .bak, .tmp, .swp, ~
+<FilesMatch "(~|\.bak|\.tmp|\.swp|\.swo|\.log)$">
+    Require all denied
+</FilesMatch>
+
+# 8. PREVENT IMAGE HOTLINKING (Opsional)
+# Cegah web lain mencuri bandwidth dengan me-load gambar dari server Anda
+# <IfModule mod_rewrite.c>
+#     RewriteEngine On
+#     RewriteCond %{HTTP_REFERER} !^$
+#     RewriteCond %{HTTP_REFERER} !^http(s)?://(www\.)?domain-anda.com [NC]
+#     RewriteRule \.(jpg|jpeg|png|gif)$ - [NC,F,L]
+# </IfModule>

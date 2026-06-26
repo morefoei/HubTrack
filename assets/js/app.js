@@ -2184,6 +2184,24 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
+        const uniqueStatuses = {};
+        currentTasks.forEach(t => {
+            if (t.status_id) {
+                uniqueStatuses[t.status_id] = t.status;
+            }
+        });
+
+        const buildStatusSelect = (node) => {
+            if (!node.status_id || Object.keys(uniqueStatuses).length === 0) {
+                return `<span style="font-size: 0.7rem; background: var(--panel-bg); padding: 0.1rem 0.4rem; border-radius: 4px; color: ${node.status.toLowerCase().includes('closed') ? 'var(--danger)' : 'var(--success)'};">${node.status}</span>`;
+            }
+            let opts = '';
+            for (let sid in uniqueStatuses) {
+                opts += `<option value="${sid}" ${sid === node.status_id ? 'selected' : ''}>${uniqueStatuses[sid]}</option>`;
+            }
+            return `<select class="status-select" data-id="${node.id}" style="font-size: 0.7rem; background: var(--panel-bg); color: ${node.status.toLowerCase().includes('closed') ? 'var(--danger)' : 'var(--success)'}; border: 1px solid var(--panel-border); border-radius: 4px; padding: 0.1rem; cursor: pointer;">${opts}</select>`;
+        };
+
         function buildHtml(node, depth = 0, currentPath = '') {
             const nodePath = currentPath ? `${currentPath} > ${node.name}` : node.name;
             let html = `
@@ -2193,7 +2211,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <div style="display: flex; align-items: center; gap: 0.5rem;">
                             <i class="fa-solid ${node.children.length > 0 ? 'fa-folder-open' : 'fa-list-check'}" style="color: ${depth === 0 ? 'var(--primary)' : 'var(--text-muted)'};"></i>
                             <span style="font-weight: ${depth === 0 ? '600' : '400'};">${sanitizeHTML(node.name)}</span>
-                            <span style="font-size: 0.7rem; background: var(--panel-bg); padding: 0.1rem 0.4rem; border-radius: 4px; color: ${node.status.toLowerCase().includes('closed') ? 'var(--danger)' : 'var(--success)'};">${node.status}</span>
+                            ${buildStatusSelect(node)}
                         </div>
                         <div>
                             <button class="use-task-btn" data-path="${sanitizeHTML(nodePath)}" style="background: var(--primary); color: white; border: none; padding: 0.2rem 0.6rem; font-size: 0.75rem; border-radius: 4px; cursor: pointer; margin-right: 0.5rem;"><i class="fa-solid fa-pen"></i> Log</button>
@@ -2245,6 +2263,31 @@ document.addEventListener('DOMContentLoaded', () => {
                 const dailyTrackBtn = document.querySelector('button[data-target="logs-view"]');
                 if (dailyTrackBtn) dailyTrackBtn.click();
                 window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        });
+
+        taskManagerContainer.querySelectorAll('.status-select').forEach(sel => {
+            sel.addEventListener('change', async (e) => {
+                const taskId = e.currentTarget.getAttribute('data-id');
+                const statusId = e.currentTarget.value;
+                showToast('Mengubah status task...', 'info');
+                
+                try {
+                    const res = await fetch(`${API_URL}?action=update_project_task_status`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(attachSettings({ projectId: currentProjectId, taskId, statusId }))
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        showToast('Status berhasil diubah!', 'success');
+                        btnFetchTasks.click(); // Reload tasks to see changes
+                    } else {
+                        alert('Gagal mengubah status. Pesan: ' + (data.message || 'Unknown error'));
+                    }
+                } catch (err) {
+                    showToast('Koneksi gagal saat mengubah status', 'error');
+                }
             });
         });
     }

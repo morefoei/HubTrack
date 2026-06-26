@@ -20,14 +20,20 @@
 
 body {
     font-family: 'Inter', sans-serif;
-    background-color: var(--bg-color);
-    background-image: 
-        radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.15) 0px, transparent 50%),
-        radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.1) 0px, transparent 50%);
+    background: linear-gradient(-45deg, #020617, #1e3a8a, #0f172a, #172554);
+    background-size: 400% 400%;
+    animation: gradientBG 45s ease infinite;
+    background-attachment: fixed;
     color: var(--text-main);
     min-height: 100vh;
     display: flex;
     flex-direction: column;
+}
+
+@keyframes gradientBG {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
 }
 
 header {

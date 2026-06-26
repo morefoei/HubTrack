@@ -480,7 +480,7 @@ if ($action === 'save_settings' && $method === 'POST') {
         $settingsToSave['profile_password'] = password_hash($settingsToSave['profile_password'], PASSWORD_DEFAULT);
     }
     
-    file_put_contents($file, "<?php exit('No direct script access allowed'); ?>\n" . json_encode($settingsToSave, JSON_PRETTY_PRINT));
+    file_put_contents($file, "<?php exit('No direct script access allowed'); ?>\n" . json_encode($settingsToSave, JSON_PRETTY_PRINT), LOCK_EX);
     echo json_encode(['success' => true]);
     exit;
 }
@@ -1008,7 +1008,8 @@ if ($action === 'get_project_tasks' && $method === 'POST') {
                 'id' => $t['id_string'],
                 'name' => $t['name'],
                 'parent' => null,
-                'status' => is_array($t['status']) ? $t['status']['name'] : $t['status']
+                'status' => is_array($t['status']) ? $t['status']['name'] : $t['status'],
+                'status_id' => is_array($t['status']) ? ($t['status']['id'] ?? '') : ''
             ];
             
             // Fetch subtasks
@@ -1019,7 +1020,8 @@ if ($action === 'get_project_tasks' && $method === 'POST') {
                         'id' => $st['id_string'],
                         'name' => $st['name'],
                         'parent' => $t['id_string'],
-                        'status' => is_array($st['status']) ? $st['status']['name'] : $st['status']
+                        'status' => is_array($st['status']) ? $st['status']['name'] : $st['status'],
+                        'status_id' => is_array($st['status']) ? ($st['status']['id'] ?? '') : ''
                     ];
                 }
             }

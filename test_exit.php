@@ -1,0 +1,4 @@
+<?php
+exit;
+?>
+THIS SHOULD NOT BE PRINTED
