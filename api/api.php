@@ -1264,6 +1264,60 @@ if ($action === 'create_project_task' && $method === 'POST') {
     exit;
 }
 
+if ($action === 'update_project_task_status' && $method === 'POST') {
+    $settings = getSettings();
+    $pid = $input['projectId'] ?? '';
+    $taskId = $input['taskId'] ?? '';
+    $statusId = $input['statusId'] ?? '';
+    
+    if (!$pid || !$taskId || !$statusId) {
+        echo json_encode(['success' => false, 'message' => 'Missing project, task, or status ID']);
+        exit;
+    }
+    
+    // Auth
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $settings['accountsUrl'] . '/oauth/v2/token');
+    curl_setopt($ch, CURLOPT_POST, 1);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query([
+        'grant_type' => 'refresh_token',
+        'client_id' => $settings['clientId'],
+        'client_secret' => $settings['clientSecret'],
+        'refresh_token' => $settings['refreshToken']
+    ]));
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    $tokenResponse = curl_exec($ch);
+    curl_close($ch);
+    
+    $tokenData = json_decode($tokenResponse, true);
+    $accessToken = $tokenData['access_token'] ?? '';
+    $portal = $settings['portalName'];
+    $apiUrl = $settings['apiUrl'];
+    
+    $endpoint = '/projects/' . $pid . '/tasks/' . $taskId . '/';
+    $url = rtrim($apiUrl, '/') . '/restapi/portal/' . $portal . $endpoint;
+    
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POST, true);
+    // Zoho Projects API accepts 'custom_status' for the status ID
+    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query(['custom_status' => $statusId]));
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        'Authorization: Bearer ' . $accessToken,
+        'Content-Type: application/x-www-form-urlencoded'
+    ]);
+    $res = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    
+    if ($httpCode >= 200 && $httpCode < 300) {
+        echo json_encode(['success' => true]);
+    } else {
+        echo json_encode(['success' => false, 'message' => 'Failed to update task status', 'res' => $res]);
+    }
+    exit;
+}
+
 if ($action === 'sync' && $method === 'POST') {
     $settings = getSettings();
     $logsData = getLogsFromSheet();

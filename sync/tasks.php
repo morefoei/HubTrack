@@ -15,14 +15,15 @@
                 <hr style="border-color: var(--panel-border); margin: 1.5rem 0;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                     <h3>Task Hierarchy</h3>
-                    <div style="display: flex; gap: 0.5rem; align-items: center;">
-                        <select id="taskStatusFilter" style="background: var(--input-bg); color: var(--text-main); border: 1px solid var(--panel-border); padding: 0.4rem; border-radius: 4px; font-size: 0.85rem;">
+                    <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; justify-content: flex-end;">
+                        <input type="text" id="taskSearchInput" placeholder="Cari task..." style="background: var(--input-bg); color: var(--text-main); border: 1px solid var(--panel-border); padding: 0.4rem 0.8rem; border-radius: 4px; font-size: 0.85rem; width: auto; min-width: 180px;">
+                        <select id="taskStatusFilter" style="background: var(--input-bg); color: var(--text-main); border: 1px solid var(--panel-border); padding: 0.4rem; border-radius: 4px; font-size: 0.85rem; width: auto;">
                             <option value="all">Semua Status</option>
                             <option value="open">Open / In Progress</option>
                             <option value="backlog">Backlog</option>
                             <option value="complete">Complete / Closed</option>
                         </select>
-                        <button id="btnCreateRootTask" style="padding: 0.4rem 0.8rem; font-size: 0.85rem; white-space: nowrap;"><i class="fa-solid fa-plus"></i> New Main Task</button>
+                        <button id="btnCreateRootTask" style="padding: 0.4rem 0.8rem; font-size: 0.85rem; white-space: nowrap; width: auto;"><i class="fa-solid fa-plus"></i> New Main Task</button>
                     </div>
                 </div>
                 <div id="taskManagerContainer" style="background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 8px; border: 1px solid var(--panel-border); min-height: 200px;">

@@ -2137,6 +2137,15 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    const taskSearchInput = document.getElementById('taskSearchInput');
+    if (taskSearchInput) {
+        taskSearchInput.addEventListener('input', () => {
+            if (currentTasks.length > 0) {
+                renderTaskManager();
+            }
+        });
+    }
+
     if (btnFetchTasks) {
         btnFetchTasks.addEventListener('click', async () => {
             const projectName = taskManagerProject.value;
@@ -2265,10 +2274,12 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         const filterVal = document.getElementById('taskStatusFilter') ? document.getElementById('taskStatusFilter').value : 'all';
+        const searchVal = document.getElementById('taskSearchInput') ? document.getElementById('taskSearchInput').value.toLowerCase().trim() : '';
 
         function buildHtml(node, depth = 0, currentPath = '') {
             const nodePath = currentPath ? `${currentPath} > ${node.name}` : node.name;
             const statusLower = (node.status || '').toLowerCase();
+            const nameLower = (node.name || '').toLowerCase();
 
             let childrenHtml = '';
             let hasVisibleChild = false;
@@ -2291,6 +2302,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else if (filterVal === 'complete') {
                     matchesFilter = statusLower.includes('complete') || statusLower.includes('closed');
                 }
+            }
+
+            if (searchVal && !nameLower.includes(searchVal)) {
+                matchesFilter = false;
             }
 
             if (!matchesFilter && !hasVisibleChild) {
