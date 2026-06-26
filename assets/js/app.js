@@ -63,13 +63,21 @@ document.addEventListener('DOMContentLoaded', () => {
                         const data = await res.json();
                         if (data.settings && data.settings.formAbsenUrl) {
                             formUrl = data.settings.formAbsenUrl.trim();
+                            
+                            // Sanitasi protocol untuk mencegah XSS via javascript: URI
+                            if (formUrl && !/^https?:\/\//i.test(formUrl)) {
+                                formUrl = 'https://' + formUrl;
+                            }
+                            
+                            const newTabBtn = document.getElementById('absenNewTabBtn');
+                            if (newTabBtn) {
+                                newTabBtn.href = formUrl;
+                                newTabBtn.style.display = 'inline-block';
+                            }
                         }
                     } catch(e) {}
                     
                     if (formUrl) {
-                        if (!/^https?:\/\//i.test(formUrl)) {
-                            formUrl = 'https://' + formUrl;
-                        }
                         if (iframe.src !== formUrl) iframe.src = formUrl;
                         iframe.style.display = 'block';
                         emptyMsg.style.display = 'none';
@@ -400,7 +408,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     let taskListHTML = '<ul style="margin: 0.5rem 0 0 2rem; padding: 0; color: var(--text-muted); font-size: 0.85rem; list-style-type: disc;">';
                     const sortedTasks = Object.keys(tasks).sort((a, b) => tasks[b] - tasks[a]);
                     sortedTasks.forEach(t => {
-                        taskListHTML += `<li style="margin-bottom: 0.2rem;">${t} <span style="color: #94a3b8; font-size: 0.75rem;">(${tasks[t]}x)</span></li>`;
+                        taskListHTML += `<li style="margin-bottom: 0.2rem;">${sanitizeHTML(t)} <span style="color: #94a3b8; font-size: 0.75rem;">(${tasks[t]}x)</span></li>`;
                     });
                     taskListHTML += '</ul>';
 
@@ -416,7 +424,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <summary style="display: flex; justify-content: space-between; padding: 0.75rem 1rem; align-items: center; list-style: none;">
                             <div style="display: flex; align-items: center; gap: 1rem;">
                                 <span style="font-weight: bold; color: ${rankColor}; font-size: 1.2rem; min-width: 25px;">#${index + 1}</span>
-                                <span style="color: var(--text-main); font-weight: 500;">${proj}</span>
+                                <span style="color: var(--text-main); font-weight: 500;">${sanitizeHTML(proj)}</span>
                             </div>
                             <span style="background: linear-gradient(135deg, #f43f5e, #a855f7); color: white; padding: 0.2rem 0.8rem; border-radius: 12px; font-size: 0.85rem; font-weight: bold;">${count} <i class="fa-solid fa-chevron-down" style="font-size: 0.7rem; margin-left: 0.3rem;"></i></span>
                         </summary>
@@ -554,7 +562,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <option value="pending" style="background: #1e293b; color: #fcd34d;">pending</option>
                             <option value="final" style="background: #1e293b; color: #93c5fd;">final</option>
                         </select>` :
-                        `<select class="status-dropdown status-badge ${statusClass}" data-prev="${log.status}" data-rowindex="${log.rowIndex}" style="cursor: pointer; outline: none; appearance: none; -webkit-appearance: none; padding-right: 1.5rem; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23ffffff%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right .4rem top 50%; background-size: .5rem auto;">
+                        `<select class="status-dropdown status-badge ${statusClass}" data-prev="${sanitizeHTML(log.status)}" data-rowindex="${log.rowIndex}" style="cursor: pointer; outline: none; appearance: none; -webkit-appearance: none; padding-right: 1.5rem; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23ffffff%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right .4rem top 50%; background-size: .5rem auto;">
                             <option value="pending" ${log.status !== 'final' ? 'selected' : ''} style="background: #1e293b; color: #fcd34d;">pending</option>
                             <option value="final" ${log.status === 'final' ? 'selected' : ''} style="background: #1e293b; color: #93c5fd;">final</option>
                             <option value="done" style="background: #1e293b; color: #34d399;">done</option>
@@ -2297,12 +2305,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         const buildStatusSelect = (node) => {
+            const safeStatus = sanitizeHTML(node.status);
             if (!node.status_id || Object.keys(uniqueStatuses).length === 0) {
-                return `<span style="font-size: 0.7rem; background: var(--panel-bg); padding: 0.1rem 0.4rem; border-radius: 4px; color: ${node.status.toLowerCase().includes('closed') ? 'var(--danger)' : 'var(--success)'};">${node.status}</span>`;
+                return `<span style="font-size: 0.7rem; background: var(--panel-bg); padding: 0.1rem 0.4rem; border-radius: 4px; color: ${node.status.toLowerCase().includes('closed') ? 'var(--danger)' : 'var(--success)'};">${safeStatus}</span>`;
             }
             let opts = '';
             for (let sid in uniqueStatuses) {
-                opts += `<option value="${sid}" ${sid === node.status_id ? 'selected' : ''}>${uniqueStatuses[sid]}</option>`;
+                opts += `<option value="${sid}" ${sid === node.status_id ? 'selected' : ''}>${sanitizeHTML(uniqueStatuses[sid])}</option>`;
             }
             return `<select class="status-select" data-id="${node.id}" style="font-size: 0.7rem; background: var(--panel-bg); color: ${node.status.toLowerCase().includes('closed') ? 'var(--danger)' : 'var(--success)'}; border: 1px solid var(--panel-border); border-radius: 4px; padding: 0.1rem; cursor: pointer;">${opts}</select>`;
         };

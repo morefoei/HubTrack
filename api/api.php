@@ -788,7 +788,7 @@ if ($action === 'update_status' && $method === 'POST') {
     $ch = curl_init($url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT");
-    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(['values' => [[$newStatus]]]));
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(['values' => [[escapeFormula($newStatus)]]]));
     curl_setopt($ch, CURLOPT_HTTPHEADER, [
         "Authorization: Bearer $token",
         "Content-Type: application/json"
@@ -853,7 +853,7 @@ if ($action === 'bulk_update_status' && $method === 'POST') {
         if ($rIdx < 1) continue;
         $data[] = [
             'range' => "$safeSheetName!H$rIdx",
-            'values' => [[$upd['status']]]
+            'values' => [[escapeFormula($upd['status'])]]
         ];
     }
     
