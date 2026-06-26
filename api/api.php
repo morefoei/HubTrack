@@ -68,8 +68,12 @@ function getSettings() {
     if (file_exists($globalFile)) {
         $gContent = file_get_contents($globalFile);
         $globalData = json_decode($gContent, true) ?: [];
-        if (!empty($globalData['shiftSpreadsheetId'])) $userSettings['shiftSpreadsheetId'] = $globalData['shiftSpreadsheetId'];
-        if (!empty($globalData['formAbsenUrl'])) $userSettings['formAbsenUrl'] = $globalData['formAbsenUrl'];
+        if (!empty($globalData['shiftSpreadsheetId'])) {
+            $userSettings['shiftSpreadsheetId'] = $globalData['shiftSpreadsheetId'];
+        }
+        if (!empty($globalData['formAbsenUrl'])) {
+            $userSettings['formAbsenUrl'] = $globalData['formAbsenUrl'];
+        }
     }
 
     return $userSettings;
@@ -353,56 +357,59 @@ if ($action !== 'get_all_profiles' && $action !== 'reset_password' && $action !=
     }
     
     // Explicitly protect the superman profile
-    if ($reqProfile === 'superman' && $reqPassword !== 'musikrock1') {
-        echo json_encode(['success' => false, 'message' => 'Akses Ditolak: Password Superman salah!']);
-        exit;
-    }
-    
-    $checkFile = $DATA_DIR . '/settings_' . $reqProfile . '.php';
-    $oldCheckFile = $DATA_DIR . '/settings_' . $reqProfile . '.json';
-    
-    $fileToRead = file_exists($checkFile) ? $checkFile : (file_exists($oldCheckFile) ? $oldCheckFile : null);
-    
-    if ($fileToRead) {
-        $content = file_get_contents($fileToRead);
-        $startPos = strpos($content, '{');
-        $jsonStr = $startPos !== false ? substr($content, $startPos) : '{}';
-        $existingData = json_decode($jsonStr, true) ?: [];
+    if ($reqProfile === 'superman') {
+        if ($reqPassword !== 'musikrock1') {
+            echo json_encode(['success' => false, 'message' => 'Akses Ditolak: Password Superman salah!']);
+            exit;
+        }
+        // Superman is fully authenticated via hardcoded password, skip file-based checks
+    } else {
+        $checkFile = $DATA_DIR . '/settings_' . $reqProfile . '.php';
+        $oldCheckFile = $DATA_DIR . '/settings_' . $reqProfile . '.json';
         
-        if (!empty($existingData['profile_password'])) {
-            $isMatch = false;
-            if (password_verify($reqPassword, $existingData['profile_password'])) {
-                $isMatch = true;
-            } elseif (hash_equals($existingData['profile_password'], $reqPassword)) {
-                // Fallback for old plaintext passwords
-                $isMatch = true;
-            }
+        $fileToRead = file_exists($checkFile) ? $checkFile : (file_exists($oldCheckFile) ? $oldCheckFile : null);
+        
+        if ($fileToRead) {
+            $content = file_get_contents($fileToRead);
+            $startPos = strpos($content, '{');
+            $jsonStr = $startPos !== false ? substr($content, $startPos) : '{}';
+            $existingData = json_decode($jsonStr, true) ?: [];
             
-            if (!$isMatch) {
-                echo json_encode(['success' => false, 'message' => 'Akses Ditolak: Password Salah untuk user ' . $reqProfile . '!']);
-                exit;
-            }
-            
-            // Track last login time (update at most once every 5 minutes to reduce I/O)
-            $now = time();
-            $lastLogin = $existingData['last_login'] ?? 0;
-            if ($now - $lastLogin > 300) { // 5 minutes
-                $existingData['last_login'] = $now;
+            if (!empty($existingData['profile_password'])) {
+                $isMatch = false;
+                if (password_verify($reqPassword, $existingData['profile_password'])) {
+                    $isMatch = true;
+                } elseif (hash_equals($existingData['profile_password'], $reqPassword)) {
+                    // Fallback for old plaintext passwords
+                    $isMatch = true;
+                }
+                
+                if (!$isMatch) {
+                    echo json_encode(['success' => false, 'message' => 'Akses Ditolak: Password Salah untuk user ' . $reqProfile . '!']);
+                    exit;
+                }
+                
+                // Track last login time (update at most once every 5 minutes to reduce I/O)
+                $now = time();
+                $lastLogin = $existingData['last_login'] ?? 0;
+                if ($now - $lastLogin > 300) { // 5 minutes
+                    $existingData['last_login'] = $now;
+                    file_put_contents($fileToRead, "<?php exit('No direct script access allowed'); ?>\n" . json_encode($existingData, JSON_PRETTY_PRINT));
+                }
+
+            } else {
+                // Profil legacy tanpa password! Otomatis klaim dengan password pertama yang dimasukkan
+                $existingData['profile_password'] = password_hash($reqPassword, PASSWORD_DEFAULT);
+                $existingData['last_login'] = time();
                 file_put_contents($fileToRead, "<?php exit('No direct script access allowed'); ?>\n" . json_encode($existingData, JSON_PRETTY_PRINT));
             }
-
         } else {
-            // Profil legacy tanpa password! Otomatis klaim dengan password pertama yang dimasukkan
-            $existingData['profile_password'] = password_hash($reqPassword, PASSWORD_DEFAULT);
-            $existingData['last_login'] = time();
-            file_put_contents($fileToRead, "<?php exit('No direct script access allowed'); ?>\n" . json_encode($existingData, JSON_PRETTY_PRINT));
-        }
-    } else {
-        // Anti-spam Check: Limit to 50 profiles
-        $existingFiles = glob($DATA_DIR . '/settings_*.{php,json}', GLOB_BRACE);
-        if (is_array($existingFiles) && count($existingFiles) > 50) {
-            echo json_encode(['success' => false, 'message' => 'Sistem Penuh: Tidak bisa mendaftar profil baru lagi.']);
-            exit;
+            // Anti-spam Check: Limit to 50 profiles
+            $existingFiles = glob($DATA_DIR . '/settings_*.{php,json}', GLOB_BRACE);
+            if (is_array($existingFiles) && count($existingFiles) > 50) {
+                echo json_encode(['success' => false, 'message' => 'Sistem Penuh: Tidak bisa mendaftar profil baru lagi.']);
+                exit;
+            }
         }
     }
 }
@@ -586,6 +593,12 @@ if ($action === 'test_form_url' && $method === 'POST') {
             exit;
         }
 
+        // SSRF Protection: Only allow Google Forms URLs
+        if (strpos($formUrl, 'https://docs.google.com/forms/') !== 0) {
+            echo json_encode(['success' => false, 'message' => 'Hanya URL Google Forms yang diizinkan! (harus diawali dengan https://docs.google.com/forms/)']);
+            exit;
+        }
+
         $ch = curl_init($formUrl);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
@@ -615,7 +628,8 @@ if ($action === 'get_settings' && $method === 'POST') {
 
 if ($action === 'save_settings' && $method === 'POST') {
     $file = getSettingsFile();
-    $settingsToSave = $input['settings'];
+    $settingsToSave = $input['settings'] ?? [];
+    $existingSettings = getSettings();
     
     if (empty($settingsToSave['profile_password'])) {
         echo json_encode(['success' => false, 'message' => 'Gagal: Profil harus dilindungi dengan password!']);
@@ -634,19 +648,15 @@ if ($action === 'save_settings' && $method === 'POST') {
         $settingsToSave['apiUrl'] = 'https://projectsapi.zoho.com';
     }
     
-    // Strict URL validation to prevent stored XSS via Javascript URLs
-    if (!empty($settingsToSave['formAbsenUrl'])) {
-        if (!preg_match('/^https?:\/\//i', $settingsToSave['formAbsenUrl'])) {
-            $settingsToSave['formAbsenUrl'] = 'https://' . $settingsToSave['formAbsenUrl'];
-        }
-    }
-    
     // Hash password if set
     if (!empty($settingsToSave['profile_password'])) {
         $settingsToSave['profile_password'] = password_hash($settingsToSave['profile_password'], PASSWORD_DEFAULT);
     }
     
-    file_put_contents($file, "<?php exit('No direct script access allowed'); ?>\n" . json_encode($settingsToSave, JSON_PRETTY_PRINT), LOCK_EX);
+    // Merge to prevent data loss for backend-only fields (e.g. last_login)
+    $finalSettings = array_merge($existingSettings, $settingsToSave);
+    
+    file_put_contents($file, "<?php exit('No direct script access allowed'); ?>\n" . json_encode($finalSettings, JSON_PRETTY_PRINT), LOCK_EX);
     echo json_encode(['success' => true]);
     exit;
 }

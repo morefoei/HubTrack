@@ -14,15 +14,7 @@
                         <input type="text" id="sheetName" placeholder="e.g. Sheet1 or tasklist" value="Sheet1">
                     </div>
 
-                    <div class="form-group">
-                        <label>Shift Google Sheet Tab Name (Optional)</label>
-                        <div style="display: flex; gap: 0.5rem;">
-                            <select id="shiftSheetName" style="flex: 1; background: var(--input-bg); color: var(--text-main); border: 1px solid var(--border); padding: 0.8rem; border-radius: 6px;">
-                                <option value="Sheet1">Sheet1</option>
-                            </select>
-                            <button type="button" id="btnSyncSettingsShiftTabs" style="background: rgba(59,130,246,0.1); color: #60a5fa; border: 1px solid #3b82f6; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; white-space: nowrap;"><i class="fa-solid fa-cloud-arrow-down"></i> Lihat Tab</button>
-                        </div>
-                    </div>
+
                     <div class="form-group">
                         <label>Google Service Account JSON</label>
                         <textarea id="googleCredentials" rows="4" placeholder="Paste the content of your google-credentials.json here"></textarea>

@@ -1141,15 +1141,6 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (data.settings) {
                 document.getElementById('spreadsheetId').value = data.settings.spreadsheetId || '';
                 document.getElementById('sheetName').value = data.settings.sheetName || 'Sheet1';
-                const shiftSheetSelect = document.getElementById('shiftSheetName');
-                const loadedVal = data.settings.shiftSheetName || 'Sheet1';
-                if (!Array.from(shiftSheetSelect.options).some(opt => opt.value === loadedVal)) {
-                    const newOpt = document.createElement('option');
-                    newOpt.value = loadedVal;
-                    newOpt.innerText = loadedVal;
-                    shiftSheetSelect.appendChild(newOpt);
-                }
-                shiftSheetSelect.value = loadedVal;
                 document.getElementById('googleCredentials').value = data.settings.googleCredentials || '';
                 document.getElementById('profilePassword').value = userPassword || ''; // backend no longer sends password
                 document.getElementById('clientId').value = data.settings.clientId || '';
@@ -1219,67 +1210,12 @@ document.addEventListener('DOMContentLoaded', () => {
         return val;
     };
 
-    const btnSyncSettingsShiftTabs = document.getElementById('btnSyncSettingsShiftTabs');
-    if (btnSyncSettingsShiftTabs) {
-        btnSyncSettingsShiftTabs.addEventListener('click', async (e) => {
-            e.preventDefault();
-            // Ensure ID is extracted first
-            const idInput = document.getElementById('shiftSpreadsheetId');
-            idInput.value = extractSpreadsheetId(idInput.value);
-
-            if (!idInput.value) {
-                showToast('Isi Spreadsheet ID terlebih dahulu', 'warning');
-                return;
-            }
-
-            const originalText = btnSyncSettingsShiftTabs.innerHTML;
-            btnSyncSettingsShiftTabs.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
-            btnSyncSettingsShiftTabs.disabled = true;
-
-            try {
-                const res = await fetch(`${API_URL}?action=get_shift_tabs`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(attachSettings({
-                        settings: { shiftSpreadsheetId: '' }
-                    }))
-                });
-                const data = await res.json();
-                if (data.success && data.tabs) {
-                    const shiftSheetName = document.getElementById('shiftSheetName');
-                    shiftSheetName.innerHTML = '';
-                    data.tabs.forEach((t) => {
-                        const opt = document.createElement('option');
-                        opt.value = t;
-                        opt.innerText = t;
-                        shiftSheetName.appendChild(opt);
-                    });
-                    showToast('Berhasil memuat daftar tab', 'success');
-                } else {
-                    let errMsg = data.message || 'Error';
-                    if (data.google_error) {
-                        console.error('Google Error (Settings):', data.google_error);
-                        if (data.google_error.error && data.google_error.error.message) {
-                            errMsg += ' | ' + data.google_error.error.message;
-                        }
-                    }
-                    showToast('Gagal memuat tabs: ' + errMsg, 'error');
-                }
-            } catch (err) {
-                showToast('Kesalahan jaringan saat memuat tabs', 'error');
-            }
-            btnSyncSettingsShiftTabs.innerHTML = originalText;
-            btnSyncSettingsShiftTabs.disabled = false;
-        });
-    }
-
     document.getElementById('saveSettingsBtn').addEventListener('click', async (e) => {
         e.preventDefault();
         const payload = {
             settings: {
                 spreadsheetId: extractSpreadsheetId(document.getElementById('spreadsheetId').value),
                 sheetName: document.getElementById('sheetName').value,
-                shiftSheetName: document.getElementById('shiftSheetName').value,
                 googleCredentials: document.getElementById('googleCredentials').value,
                 profile_password: document.getElementById('profilePassword').value,
                 clientId: document.getElementById('clientId').value,
