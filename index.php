@@ -64,7 +64,7 @@
                 </div>
             </details>
             
-            <button class="nav-btn" data-target="about-view" title="About" style="width: 100%; text-align: left; padding: 0.6rem 0.8rem; font-size: 0.95rem; font-weight: 600; gap: 0.5rem;"><i class="fa-solid fa-circle-info"></i> <span class="nav-text">About</span></button>
+            <button class="nav-btn" data-target="about-view" title="About" style="width: 100%; text-align: left; padding: 0.6rem 0.8rem; font-size: 0.95rem; font-weight: 600; gap: 0.5rem;"><i class="fa-solid fa-circle-info"></i> <span class="nav-text"><span class="lang-en">About</span><span class="lang-id">Tentang</span></span></button>
         </nav>
         
         <div class="desktop-only" style="margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--panel-border); display: flex; justify-content: center; width: 100%;">

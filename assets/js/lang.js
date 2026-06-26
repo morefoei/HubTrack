@@ -10,6 +10,10 @@ const dict = {
     "Documentation": "Dokumentasi",
     "Documentation & HubTrack Setup Guide": "Dokumentasi Instalasi & Penggunaan HubTrack",
     "Settings": "Pengaturan",
+    "About": "Tentang",
+    "Global Config": "Konfigurasi Global",
+    "Users Manager": "Manajer Pengguna",
+    "Analytics": "Analitik",
 
     "Add New Activity": "Tambah Aktivitas Baru",
     "Start Date": "Tanggal Mulai",
