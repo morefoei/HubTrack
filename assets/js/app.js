@@ -9,6 +9,22 @@ document.addEventListener('DOMContentLoaded', () => {
         mainNav.classList.toggle('show');
     });
 
+    const sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
+    if (sidebarToggleBtn) {
+        sidebarToggleBtn.addEventListener('click', () => {
+            document.body.classList.toggle('sidebar-minimized');
+            // Toggle icon
+            const icon = sidebarToggleBtn.querySelector('.toggle-icon');
+            if (document.body.classList.contains('sidebar-minimized')) {
+                icon.classList.remove('fa-angles-left');
+                icon.classList.add('fa-angles-right');
+            } else {
+                icon.classList.remove('fa-angles-right');
+                icon.classList.add('fa-angles-left');
+            }
+        });
+    }
+
     navBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             navBtns.forEach(b => b.classList.remove('active'));

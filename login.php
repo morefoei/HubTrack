@@ -7,6 +7,7 @@ $v = time();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HubTrack - Login</title>
+    <link rel="icon" type="image/png" href="assets/css/img/logo.png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="assets/css/style.css?v=<?= $v ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -16,18 +17,10 @@ $v = time();
             background: var(--bg-color);
             min-height: 100vh;
             display: flex;
-            flex-direction: column;
+            flex-direction: row;
             margin: 0;
             padding: 0;
-        }
-        .login-header {
-            padding: 1rem 2rem;
-            background: rgba(30, 41, 59, 0.5);
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid var(--panel-border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            overflow: hidden;
         }
         .login-container {
             flex: 1;
@@ -35,23 +28,7 @@ $v = time();
             justify-content: center;
             align-items: center;
             padding: 2rem;
-        }
-        .nav-menu {
-            display: flex;
-            gap: 1rem;
-        }
-        .nav-link {
-            color: var(--text-muted);
-            text-decoration: none;
-            padding: 0.5rem 1rem;
-            border-radius: 8px;
-            transition: all 0.2s;
-            cursor: pointer;
-            font-weight: 500;
-        }
-        .nav-link:hover, .nav-link.active {
-            background: rgba(255,255,255,0.1);
-            color: white;
+            overflow-y: auto;
         }
         .view-section {
             display: none;
@@ -66,21 +43,47 @@ $v = time();
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
+        .top-nav-right {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            padding: 1rem 2rem;
+            border-bottom: 1px solid var(--panel-border);
+            background: var(--panel-bg);
+            backdrop-filter: var(--glass-blur);
+            position: sticky;
+            top: 0;
+            z-index: 90;
+        }
     </style>
 </head>
 <body>
 
-    <header class="login-header">
-        <div style="display: flex; align-items: center; gap: 1rem;">
-            <span class="logo"><i class="fa-solid fa-rocket" style="-webkit-text-fill-color: initial; color: #f43f5e;"></i> HubTrack</span>
+    <header>
+        <div class="header-top">
+            <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 1.5rem; width: 100%;">
+                <div style="display: flex; justify-content: center; width: 100%; align-items: center;">
+                    <span class="logo"><i class="fa-solid fa-rocket" style="-webkit-text-fill-color: initial; color: #f43f5e;"></i> <span class="nav-text">HubTrack</span></span>
+                </div>
+            </div>
         </div>
-        <div class="nav-menu">
-            <div class="nav-link active" onclick="switchView('login-view', this)"><i class="fa-solid fa-right-to-bracket"></i> Login</div>
-            <div class="nav-link" onclick="switchView('docs-view', this)"><i class="fa-solid fa-book-open"></i> Dokumentasi</div>
+        <nav id="mainNav">
+            <button class="nav-btn" onclick="switchView('docs-view', this)" title="Dokumentasi"><i class="fa-solid fa-book-open"></i> <span class="nav-text">Dokumentasi</span></button>
+        </nav>
+        
+        <div class="desktop-only" style="margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--panel-border); display: flex; justify-content: center; width: 100%;">
+            <button id="sidebarToggleBtn" style="background: transparent; border: none; border-radius: 0.5rem; color: var(--text-muted); padding: 0.8rem; cursor: pointer; font-size: 1.1rem; transition: all 0.2s; width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem;" title="Toggle Sidebar" onmouseover="this.style.background='rgba(255,255,255,0.05)'; this.style.color='var(--text-main)';" onmouseout="this.style.background='transparent'; this.style.color='var(--text-muted)';">
+                <i class="fa-solid fa-angles-left toggle-icon"></i>
+            </button>
         </div>
     </header>
 
-    <div class="login-container">
+    <main style="flex: 1; display: flex; flex-direction: column; padding: 0; overflow: hidden;">
+        <div class="top-nav-right">
+            <button class="nav-btn active" onclick="switchView('login-view', this)" style="background: var(--primary); color: white; border: none; padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 0.5rem;"><i class="fa-solid fa-right-to-bracket"></i> Login</button>
+        </div>
+
+        <div class="login-container">
         
         <!-- LOGIN VIEW -->
         <div id="login-view" class="view-section active" style="max-width: 400px;">
@@ -151,7 +154,9 @@ $v = time();
             </div>
         </div>
 
-    </div>
+        </div>
+
+    </main>
 
     <script>
         // Check if already logged in
@@ -159,11 +164,26 @@ $v = time();
             window.location.href = 'index.php';
         }
 
+        const sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
+        if (sidebarToggleBtn) {
+            sidebarToggleBtn.addEventListener('click', () => {
+                document.body.classList.toggle('sidebar-minimized');
+                const icon = sidebarToggleBtn.querySelector('.toggle-icon');
+                if (document.body.classList.contains('sidebar-minimized')) {
+                    icon.classList.remove('fa-angles-left');
+                    icon.classList.add('fa-angles-right');
+                } else {
+                    icon.classList.remove('fa-angles-right');
+                    icon.classList.add('fa-angles-left');
+                }
+            });
+        }
+
         function switchView(viewId, element) {
             document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
             document.getElementById(viewId).classList.add('active');
             
-            document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
             element.classList.add('active');
         }
 
