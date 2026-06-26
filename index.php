@@ -15,9 +15,8 @@
     <meta name="theme-color" content="#0f172a">
     <link rel="apple-touch-icon" href="assets/css/img/logo.png">
     <script>
-        // Redirect to login if not authenticated
         if (!sessionStorage.getItem('zohoProfile') || !sessionStorage.getItem('zohoPassword')) {
-            window.location.href = 'login';
+            window.location.href = 'login.php';
         }
     </script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -58,8 +57,10 @@
                 <summary class="nav-dropdown-summary" title="Sistem"><i class="fa-solid fa-server"></i> <span class="nav-text"><span class="lang-en">System</span><span class="lang-id">Sistem</span></span> <i class="fa-solid fa-chevron-down dropdown-icon nav-text"></i></summary>
                 <div class="dropdown-content">
                     <button class="nav-btn" data-target="analytics-view" title="Analytics"><i class="fa-solid fa-chart-pie"></i> <span class="nav-text">Analytics</span></button>
-                    <button class="nav-btn" data-target="settings-view" title="Settings"><i class="fa-solid fa-gear"></i> <span class="nav-text">Settings</span></button>
+                    <button class="nav-btn" data-target="settings-view" title="Pengaturan"><i class="fa-solid fa-gear"></i> <span class="nav-text"><span class="lang-en">Settings</span><span class="lang-id">Pengaturan</span></span></button>
                     <button class="nav-btn" data-target="guide-view" title="Dokumentasi"><i class="fa-solid fa-book"></i> <span class="nav-text">Dokumentasi</span></button>
+                    <button class="nav-btn admin-only-btn" data-target="admin-global-view" title="Global Config" style="display: none;"><i class="fa-solid fa-globe"></i> <span class="nav-text">Global Config</span></button>
+                    <button class="nav-btn admin-only-btn" data-target="admin-users-view" title="Users Manager" style="display: none;"><i class="fa-solid fa-users-gear"></i> <span class="nav-text">Users Manager</span></button>
                     <button class="nav-btn" data-target="about-view" title="About"><i class="fa-solid fa-circle-info"></i> <span class="nav-text">About</span></button>
                 </div>
             </details>
@@ -117,6 +118,9 @@
 
             <!-- About View -->
             <?php include 'components/about.php'; ?>
+
+            <!-- Admin View -->
+            <?php include 'components/admin.php'; ?>
         </div>
     </main>
 

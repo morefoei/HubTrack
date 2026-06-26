@@ -13,11 +13,7 @@
                         <label>Google Sheet Tab Name</label>
                         <input type="text" id="sheetName" placeholder="e.g. Sheet1 or tasklist" value="Sheet1">
                     </div>
-                    <div class="form-group">
-                        <label>Shift Schedule Spreadsheet ID (Optional)</label>
-                        <input type="text" id="shiftSpreadsheetId" placeholder="ID from your Shift Google Sheet URL (View-Only is fine)">
-                        <small style="color: var(--text-muted);">Hanya diisi jika Anda ingin melakukan *sync* jadwal shift. Pastikan link Google Sheet ini diset "Anyone with the link can view".</small>
-                    </div>
+
                     <div class="form-group">
                         <label>Shift Google Sheet Tab Name (Optional)</label>
                         <div style="display: flex; gap: 0.5rem;">
@@ -32,13 +28,7 @@
                         <textarea id="googleCredentials" rows="4" placeholder="Paste the content of your google-credentials.json here"></textarea>
                         <small style="color: var(--text-muted);">This is stored securely on your local server.</small>
                     </div>
-                    <hr style="border-color: var(--panel-border); margin: 1.5rem 0;">
-                    <div class="form-group">
-                        <label>URL Google Form Absensi (Opsional)</label>
-                        <input type="url" id="formAbsenUrl" placeholder="https://docs.google.com/forms/d/e/.../viewform">
-                        <small style="color: var(--text-muted);">Masukkan link Google Form Absen dari HR/HCA di sini agar tampil di menu Absensi.</small>
-                    </div>
-                    <hr style="border-color: var(--panel-border); margin: 1.5rem 0;">
+
                     <div class="form-group">
                         <label>Profile Password</label>
                         <input type="password" id="profilePassword" placeholder="Set a password for your profile (keep it safe!)" required>

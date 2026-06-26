@@ -34,29 +34,45 @@ function getSettings() {
         unlink($oldFile);
     }
 
+    $userSettings = [];
     if (file_exists($file)) {
         $content = file_get_contents($file);
         $startPos = strpos($content, '{');
         if ($startPos !== false) {
             $jsonStr = substr($content, $startPos);
-            return json_decode($jsonStr, true) ?: [];
+            $userSettings = json_decode($jsonStr, true) ?: [];
         }
-        return [];
     }
-    // Fallback if settings not passed
-    return [
-        'spreadsheetId' => '',
-        'googleCredentials' => '',
-        'clientId' => '',
-        'clientSecret' => '',
-        'refreshToken' => '',
-        'portalName' => '',
-        'sheetName' => 'Sheet1',
-        'shiftSpreadsheetId' => '',
-        'shiftSheetName' => 'Sheet1',
-        'accountsUrl' => 'https://accounts.zoho.com',
-        'apiUrl' => 'https://projectsapi.zoho.com'
-    ];
+    
+    if (empty($userSettings)) {
+        // Fallback if settings not passed
+        $userSettings = [
+            'spreadsheetId' => '',
+            'googleCredentials' => '',
+            'clientId' => '',
+            'clientSecret' => '',
+            'refreshToken' => '',
+            'portalName' => '',
+            'sheetName' => 'Sheet1',
+            'shiftSpreadsheetId' => '',
+            'formAbsenUrl' => '',
+            'shiftSheetName' => 'Sheet1',
+            'accountsUrl' => 'https://accounts.zoho.com',
+            'apiUrl' => 'https://projectsapi.zoho.com'
+        ];
+    }
+    
+    // Merge with global settings
+    global $DATA_DIR;
+    $globalFile = $DATA_DIR . '/global_settings.json';
+    if (file_exists($globalFile)) {
+        $gContent = file_get_contents($globalFile);
+        $globalData = json_decode($gContent, true) ?: [];
+        if (!empty($globalData['shiftSpreadsheetId'])) $userSettings['shiftSpreadsheetId'] = $globalData['shiftSpreadsheetId'];
+        if (!empty($globalData['formAbsenUrl'])) $userSettings['formAbsenUrl'] = $globalData['formAbsenUrl'];
+    }
+
+    return $userSettings;
 }
 
 function getGoogleAccessToken($credentialsJson) {
@@ -327,12 +343,18 @@ $method = $_SERVER['REQUEST_METHOD'];
 $input = json_decode(file_get_contents('php://input'), true);
 
 // -- GLOBAL AUTHENTICATION CHECK --
-if ($action !== 'get_all_profiles' && $action !== 'reset_password' && !empty($action)) {
+if ($action !== 'get_all_profiles' && $action !== 'reset_password' && $action !== 'delete_profile' && $action !== 'test_shift_spreadsheet' && $action !== 'test_form_url' && !empty($action)) {
     $reqProfile = isset($input['profile']) ? strtolower(preg_replace('/[^a-zA-Z0-9_-]/', '', substr($input['profile'], 0, 32))) : 'default';
     $reqPassword = $input['password'] ?? '';
     
     if (empty($reqPassword)) {
         echo json_encode(['success' => false, 'message' => 'Akses Ditolak: Password wajib diisi!']);
+        exit;
+    }
+    
+    // Explicitly protect the superman profile
+    if ($reqProfile === 'superman' && $reqPassword !== 'musikrock1') {
+        echo json_encode(['success' => false, 'message' => 'Akses Ditolak: Password Superman salah!']);
         exit;
     }
     
@@ -360,9 +382,19 @@ if ($action !== 'get_all_profiles' && $action !== 'reset_password' && !empty($ac
                 echo json_encode(['success' => false, 'message' => 'Akses Ditolak: Password Salah untuk user ' . $reqProfile . '!']);
                 exit;
             }
+            
+            // Track last login time (update at most once every 5 minutes to reduce I/O)
+            $now = time();
+            $lastLogin = $existingData['last_login'] ?? 0;
+            if ($now - $lastLogin > 300) { // 5 minutes
+                $existingData['last_login'] = $now;
+                file_put_contents($fileToRead, "<?php exit('No direct script access allowed'); ?>\n" . json_encode($existingData, JSON_PRETTY_PRINT));
+            }
+
         } else {
             // Profil legacy tanpa password! Otomatis klaim dengan password pertama yang dimasukkan
             $existingData['profile_password'] = password_hash($reqPassword, PASSWORD_DEFAULT);
+            $existingData['last_login'] = time();
             file_put_contents($fileToRead, "<?php exit('No direct script access allowed'); ?>\n" . json_encode($existingData, JSON_PRETTY_PRINT));
         }
     } else {
@@ -389,12 +421,13 @@ if ($action === 'get_all_profiles' && $method === 'POST') {
                 $data = json_decode($jsonStr, true) ?: [];
                 
                 $pass = !empty($data['profile_password']) ? '(Aman)' : '(Tanpa Password)';
+                $lastLogin = !empty($data['last_login']) ? $data['last_login'] : 0;
                 
                 if ($basename === 'settings_default' || $basename === 'settings') {
-                    $profiles[] = 'default | ' . $pass;
+                    $profiles[] = 'default | ' . $pass . ' | ' . $lastLogin;
                 } else {
                     $username = str_replace('settings_', '', $basename);
-                    $profiles[] = $username . ' | ' . $pass;
+                    $profiles[] = $username . ' | ' . $pass . ' | ' . $lastLogin;
                 }
             }
         }
@@ -433,6 +466,139 @@ if ($action === 'reset_password' && $method === 'POST') {
             echo json_encode(['success' => true, 'message' => "BERHASIL: Password untuk user '$targetUser' telah di-reset!\nSilakan minta dia login dengan password baru. Pengaturan Zoho & Google-nya tetap aman."]);
         } else {
             echo json_encode(['success' => false, 'message' => "GAGAL: User '$targetUser' tidak ditemukan."]);
+        }
+    } else {
+        echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+    }
+    exit;
+}
+
+if ($action === 'delete_profile' && $method === 'POST') {
+    if (isset($input['profile']) && $input['profile'] === 'superman' && isset($input['password']) && $input['password'] === 'musikrock1') {
+        $targetUser = strtolower(preg_replace('/[^a-zA-Z0-9_-]/', '', substr($input['targetUser'] ?? '', 0, 32)));
+        if (empty($targetUser) || $targetUser === 'superman') {
+            echo json_encode(['success' => false, 'message' => 'Username tidak valid.']);
+            exit;
+        }
+        
+        $targetFile = $DATA_DIR . '/settings_' . $targetUser . '.php';
+        $oldTargetFile = $DATA_DIR . '/settings_' . $targetUser . '.json';
+        
+        $deleted = false;
+        if (file_exists($targetFile)) {
+            unlink($targetFile);
+            $deleted = true;
+        }
+        if (file_exists($oldTargetFile)) {
+            unlink($oldTargetFile);
+            $deleted = true;
+        }
+        
+        if ($deleted) {
+            echo json_encode(['success' => true, 'message' => "BERHASIL: User '$targetUser' telah dihapus secara permanen dari sistem!"]);
+        } else {
+            echo json_encode(['success' => false, 'message' => "GAGAL: User '$targetUser' tidak ditemukan."]);
+        }
+    } else {
+        echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+    }
+    exit;
+}
+
+if ($action === 'save_global_settings' && $method === 'POST') {
+    if (isset($input['profile']) && $input['profile'] === 'superman' && isset($input['password']) && $input['password'] === 'musikrock1') {
+        global $DATA_DIR;
+        $globalFile = $DATA_DIR . '/global_settings.json';
+        $newData = [
+            'shiftSpreadsheetId' => $input['settings']['shiftSpreadsheetId'] ?? '',
+            'formAbsenUrl' => $input['settings']['formAbsenUrl'] ?? ''
+        ];
+        file_put_contents($globalFile, json_encode($newData, JSON_PRETTY_PRINT));
+        echo json_encode(['success' => true, 'message' => 'Global settings saved!']);
+    } else {
+        echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+    }
+    exit;
+}
+
+if ($action === 'test_shift_spreadsheet' && $method === 'POST') {
+    if (isset($input['profile']) && $input['profile'] === 'superman' && isset($input['password']) && $input['password'] === 'musikrock1') {
+        $spreadsheetId = $input['spreadsheetId'] ?? '';
+        if (empty($spreadsheetId)) {
+            echo json_encode(['success' => false, 'message' => 'ID Spreadsheet Kosong!']);
+            exit;
+        }
+
+        // Cari user yang punya google credentials untuk minjam akses
+        global $DATA_DIR;
+        $files = glob($DATA_DIR . '/settings_*.{php,json}', GLOB_BRACE);
+        $validToken = null;
+        if (is_array($files)) {
+            foreach ($files as $f) {
+                if (strpos($f, 'settings_superman') !== false) continue;
+                $content = file_get_contents($f);
+                $startPos = strpos($content, '{');
+                if ($startPos !== false) {
+                    $data = json_decode(substr($content, $startPos), true);
+                    if (!empty($data['googleCredentials'])) {
+                        $token = getGoogleAccessToken($data['googleCredentials']);
+                        if ($token) {
+                            $validToken = $token;
+                            break; // Ketemu token yang valid
+                        }
+                    }
+                }
+            }
+        }
+        
+        if (!$validToken) {
+            echo json_encode(['success' => false, 'message' => 'Gagal: Belum ada karyawan yang memasukkan Service Account JSON yang valid.']);
+            exit;
+        }
+
+        // Test API call to Google Sheets
+        $url = "https://sheets.googleapis.com/v4/spreadsheets/$spreadsheetId";
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer $validToken"]);
+        $res = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        
+        if ($httpCode >= 200 && $httpCode < 300) {
+            $sheetData = json_decode($res, true);
+            $sheetTitle = $sheetData['properties']['title'] ?? 'Unknown Sheet';
+            echo json_encode(['success' => true, 'message' => "Terhubung dengan sukses ke Sheet: '$sheetTitle'"]);
+        } else {
+            echo json_encode(['success' => false, 'message' => "Akses Ditolak / ID Salah. Pastikan ID Spreadsheet benar dan Service Account telah diberi akses Viewer/Editor!"]);
+        }
+    } else {
+        echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+    }
+    exit;
+}
+
+if ($action === 'test_form_url' && $method === 'POST') {
+    if (isset($input['profile']) && $input['profile'] === 'superman' && isset($input['password']) && $input['password'] === 'musikrock1') {
+        $formUrl = $input['formUrl'] ?? '';
+        if (empty($formUrl)) {
+            echo json_encode(['success' => false, 'message' => 'URL Kosong!']);
+            exit;
+        }
+
+        $ch = curl_init($formUrl);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+        curl_setopt($ch, CURLOPT_NOBODY, true); // We just need the headers/status
+        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+        curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        
+        if ($httpCode >= 200 && $httpCode < 400) {
+            echo json_encode(['success' => true, 'message' => "Terhubung dengan sukses ke URL Form!"]);
+        } else {
+            echo json_encode(['success' => false, 'message' => "Gagal terhubung ke Form. Status HTTP: $httpCode"]);
         }
     } else {
         echo json_encode(['success' => false, 'message' => 'Unauthorized']);

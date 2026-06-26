@@ -204,33 +204,7 @@ $v = time();
             
             if (!p || !pwd) return;
 
-            if (p === 'superman' && pwd === 'musikrock1') {
-                try {
-                    const res = await fetch(`api/api.php?action=get_all_profiles`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ profile: 'superman', password: 'musikrock1' })
-                    });
-                    const data = await res.json();
-                    if (data.success) {
-                        const targetUser = prompt('📋 DAFTAR USER YANG TERDAFTAR:\n- ' + data.profiles.join('\n- ') + '\n\nKetik username yang ingin di-RESET passwordnya:');
-                        if (targetUser) {
-                            const resetRes = await fetch(`api/api.php?action=reset_password`, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ profile: 'superman', password: 'musikrock1', targetUser: targetUser.trim() })
-                            });
-                            const resetData = await resetRes.json();
-                            alert(resetData.message);
-                        }
-                    } else {
-                        alert('Akses Admin Ditolak!');
-                    }
-                } catch (err) {
-                    alert('Gagal mengambil data.');
-                }
-                return;
-            }
+
             
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Memproses...';
             btn.disabled = true;

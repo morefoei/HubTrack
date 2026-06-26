@@ -49,21 +49,36 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             if (targetId === 'absen-view') {
-                let formUrl = document.getElementById('formAbsenUrl').value.trim();
-                const iframe = document.getElementById('absenIframe');
-                const emptyMsg = document.getElementById('absenEmptyMsg');
-                
-                if (formUrl) {
-                    if (!/^https?:\/\//i.test(formUrl)) {
-                        formUrl = 'https://' + formUrl;
+                const loadAbsen = async () => {
+                    let formUrl = '';
+                    const iframe = document.getElementById('absenIframe');
+                    const emptyMsg = document.getElementById('absenEmptyMsg');
+                    
+                    try {
+                        const res = await fetch(`${API_URL}?action=get_settings`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ profile: userProfile, password: userPassword })
+                        });
+                        const data = await res.json();
+                        if (data.settings && data.settings.formAbsenUrl) {
+                            formUrl = data.settings.formAbsenUrl.trim();
+                        }
+                    } catch(e) {}
+                    
+                    if (formUrl) {
+                        if (!/^https?:\/\//i.test(formUrl)) {
+                            formUrl = 'https://' + formUrl;
+                        }
+                        if (iframe.src !== formUrl) iframe.src = formUrl;
+                        iframe.style.display = 'block';
+                        emptyMsg.style.display = 'none';
+                    } else {
+                        iframe.style.display = 'none';
+                        emptyMsg.style.display = 'block';
                     }
-                    if (iframe.src !== formUrl) iframe.src = formUrl;
-                    iframe.style.display = 'block';
-                    emptyMsg.style.display = 'none';
-                } else {
-                    iframe.style.display = 'none';
-                    emptyMsg.style.display = 'block';
-                }
+                };
+                loadAbsen();
             } else if (targetId === 'settings-view') {
                 loadSettings();
             } else if (targetId === 'logs-view' || targetId === 'data-view') {
@@ -161,6 +176,35 @@ document.addEventListener('DOMContentLoaded', () => {
     // Profile Management
     let userProfile = sessionStorage.getItem('zohoProfile') || '';
     let userPassword = sessionStorage.getItem('zohoPassword') || '';
+    
+    if (userProfile === 'superman') {
+        const adminBtns = document.querySelectorAll('.admin-only-btn');
+        adminBtns.forEach(btn => btn.style.display = 'flex');
+        
+        // Sembunyikan menu lain untuk superman
+        document.querySelectorAll('details.nav-dropdown').forEach((el) => {
+            el.style.display = 'none';
+        });
+        
+        if (adminBtns.length > 0) {
+            const parentDetails = adminBtns[0].closest('details.nav-dropdown');
+            if (parentDetails) {
+                parentDetails.style.display = 'block';
+                const summary = parentDetails.querySelector('.nav-dropdown-summary');
+                if (summary) {
+                    summary.innerHTML = '<i class="fa-solid fa-user-shield"></i> <span class="nav-text">Administration</span>';
+                }
+                
+                parentDetails.querySelectorAll('.nav-btn').forEach(btn => {
+                    if (!btn.classList.contains('admin-only-btn')) btn.style.display = 'none';
+                });
+            }
+            // Paksa masuk ke admin global view
+            setTimeout(() => {
+                adminBtns[0].click();
+            }, 100);
+        }
+    }
 
     const checkAuth = async () => {
         if (!userProfile || !userPassword) {
@@ -1097,7 +1141,6 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (data.settings) {
                 document.getElementById('spreadsheetId').value = data.settings.spreadsheetId || '';
                 document.getElementById('sheetName').value = data.settings.sheetName || 'Sheet1';
-                document.getElementById('shiftSpreadsheetId').value = data.settings.shiftSpreadsheetId || '';
                 const shiftSheetSelect = document.getElementById('shiftSheetName');
                 const loadedVal = data.settings.shiftSheetName || 'Sheet1';
                 if (!Array.from(shiftSheetSelect.options).some(opt => opt.value === loadedVal)) {
@@ -1108,7 +1151,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 shiftSheetSelect.value = loadedVal;
                 document.getElementById('googleCredentials').value = data.settings.googleCredentials || '';
-                document.getElementById('formAbsenUrl').value = data.settings.formAbsenUrl || '';
                 document.getElementById('profilePassword').value = userPassword || ''; // backend no longer sends password
                 document.getElementById('clientId').value = data.settings.clientId || '';
                 document.getElementById('clientSecret').value = data.settings.clientSecret || '';
@@ -1199,7 +1241,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(attachSettings({
-                        settings: { shiftSpreadsheetId: idInput.value }
+                        settings: { shiftSpreadsheetId: '' }
                     }))
                 });
                 const data = await res.json();
@@ -1237,10 +1279,8 @@ document.addEventListener('DOMContentLoaded', () => {
             settings: {
                 spreadsheetId: extractSpreadsheetId(document.getElementById('spreadsheetId').value),
                 sheetName: document.getElementById('sheetName').value,
-                shiftSpreadsheetId: extractSpreadsheetId(document.getElementById('shiftSpreadsheetId').value),
                 shiftSheetName: document.getElementById('shiftSheetName').value,
                 googleCredentials: document.getElementById('googleCredentials').value,
-                formAbsenUrl: document.getElementById('formAbsenUrl').value,
                 profile_password: document.getElementById('profilePassword').value,
                 clientId: document.getElementById('clientId').value,
                 clientSecret: document.getElementById('clientSecret').value,
@@ -2373,4 +2413,251 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!str) return '';
         return str.toString().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
     };
+
+    // --- Admin Panel Logic ---
+    if (userProfile === 'superman') {
+        // Add global functions for inline buttons
+        window.resetUserPassword = async (targetUser) => {
+            if (confirm(`Yakin ingin mereset password untuk user '${targetUser}'?\n\nPassword akan dihapus sehingga user bisa login tanpa password dan membuat yang baru.`)) {
+                try {
+                    const res = await fetch(`${API_URL}?action=reset_password`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ profile: userProfile, password: userPassword, targetUser })
+                    });
+                    const data = await res.json();
+                    alert(data.message);
+                    const adminUsersBtn = document.querySelector('.nav-btn[data-target="admin-users-view"]');
+                    if (adminUsersBtn) adminUsersBtn.click();
+                } catch (err) {
+                    alert('Koneksi bermasalah');
+                }
+            }
+        };
+
+        window.deleteUserProfile = async (targetUser) => {
+            if (targetUser === 'superman') {
+                alert('Tidak dapat menghapus Super Admin!');
+                return;
+            }
+            if (confirm(`PERINGATAN KERAS!\n\nYakin ingin MENGHAPUS user '${targetUser}' secara permanen?\n\nSemua pengaturan dan profil mereka akan hilang dan tidak dapat dikembalikan!`)) {
+                try {
+                    const res = await fetch(`${API_URL}?action=delete_profile`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ profile: userProfile, password: userPassword, targetUser })
+                    });
+                    const data = await res.json();
+                    alert(data.message);
+                    const adminUsersBtn = document.querySelector('.nav-btn[data-target="admin-users-view"]');
+                    if (adminUsersBtn) adminUsersBtn.click();
+                } catch (err) {
+                    alert('Koneksi bermasalah');
+                }
+            }
+        };
+
+        const fetchAdminProfiles = async () => {
+            try {
+                const res = await fetch(`${API_URL}?action=get_all_profiles`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ profile: userProfile, password: userPassword })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    const tbody = document.getElementById('adminUserTableBody');
+                    if (tbody) {
+                        tbody.innerHTML = '';
+                        if (data.profiles.length === 0) {
+                            tbody.innerHTML = `<tr><td colspan="4" style="padding: 1.5rem; text-align: center; color: var(--text-muted);">Belum ada user terdaftar.</td></tr>`;
+                        } else {
+                            data.profiles.forEach(p => {
+                                const parts = p.split(' | ');
+                                const username = parts[0];
+                                const status = parts[1] ? parts[1].replace('(', '').replace(')', '') : 'Unknown';
+                                const lastLoginTimestamp = parts[2] ? parseInt(parts[2], 10) : 0;
+                                
+                                let lastLoginStr = '<span style="color: var(--text-muted); font-style: italic;">Belum Pernah</span>';
+                                if (lastLoginTimestamp > 0) {
+                                    const d = new Date(lastLoginTimestamp * 1000);
+                                    lastLoginStr = d.toLocaleString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+                                }
+                                
+                                let statusColor = 'var(--text-main)';
+                                if (status.includes('Aman')) statusColor = 'var(--success)';
+                                else if (status.includes('Kosong')) statusColor = 'var(--warning)';
+
+                                const tr = document.createElement('tr');
+                                tr.style.borderBottom = '1px solid var(--panel-border)';
+                                
+                                tr.innerHTML = `
+                                    <td style="padding: 1rem; color: var(--text-main); font-weight: 500;">
+                                        <i class="fa-solid ${username === 'superman' ? 'fa-user-shield' : 'fa-user'}" style="color: ${username === 'superman' ? 'var(--danger)' : 'var(--primary)'}; margin-right: 0.5rem;"></i>
+                                        ${username}
+                                    </td>
+                                    <td style="padding: 1rem; color: ${statusColor}; font-size: 0.9rem;">
+                                        ${status}
+                                    </td>
+                                    <td style="padding: 1rem; color: var(--text-main); font-size: 0.9rem;">
+                                        ${lastLoginStr}
+                                    </td>
+                                    <td style="padding: 1rem; text-align: right; display: flex; gap: 0.5rem; justify-content: flex-end;">
+                                        <button onclick="window.resetUserPassword('${username}')" style="background: rgba(245,158,11,0.1); color: #f59e0b; border: 1px solid #f59e0b; padding: 0.4rem 0.8rem; border-radius: 4px; cursor: pointer; font-size: 0.85rem;" title="Reset Password"><i class="fa-solid fa-unlock-keyhole"></i> Reset</button>
+                                        <button onclick="window.deleteUserProfile('${username}')" style="background: rgba(239,68,68,0.1); color: #ef4444; border: 1px solid #ef4444; padding: 0.4rem 0.8rem; border-radius: 4px; cursor: pointer; font-size: 0.85rem;" title="Hapus User" ${username === 'superman' ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''}><i class="fa-solid fa-trash"></i> Hapus</button>
+                                    </td>
+                                `;
+                                tbody.appendChild(tr);
+                            });
+                        }
+                    }
+                }
+            } catch (err) {}
+        };
+
+        const fetchGlobalSettings = async () => {
+            try {
+                const res = await fetch(`${API_URL}?action=get_settings`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ profile: userProfile, password: userPassword })
+                });
+                const data = await res.json();
+                if (data.settings) {
+                    document.getElementById('globalShiftSpreadsheetId').value = data.settings.shiftSpreadsheetId || '';
+                    document.getElementById('globalFormAbsenUrl').value = data.settings.formAbsenUrl || '';
+                }
+            } catch(err) {}
+        };
+
+        const adminGlobalBtn = document.querySelector('.nav-btn[data-target="admin-global-view"]');
+        if (adminGlobalBtn) {
+            adminGlobalBtn.addEventListener('click', fetchGlobalSettings);
+        }
+        
+        const adminUsersBtn = document.querySelector('.nav-btn[data-target="admin-users-view"]');
+        if (adminUsersBtn) {
+            adminUsersBtn.addEventListener('click', fetchAdminProfiles);
+        }
+        
+        const btnLoadUsers = document.getElementById('btnLoadUsers');
+        if (btnLoadUsers) {
+            btnLoadUsers.addEventListener('click', fetchAdminProfiles);
+        }
+        
+        const btnTestGlobalSpreadsheet = document.getElementById('btnTestGlobalSpreadsheet');
+        if (btnTestGlobalSpreadsheet) {
+            btnTestGlobalSpreadsheet.addEventListener('click', async () => {
+                const sheetIdInput = document.getElementById('globalShiftSpreadsheetId');
+                const rawId = sheetIdInput.value;
+                const sheetId = extractSpreadsheetId(rawId);
+                
+                if (!sheetId) {
+                    alert('ID Spreadsheet kosong!');
+                    return;
+                }
+                
+                // If user pasted a full URL, let's auto-clean it
+                if (rawId !== sheetId) {
+                    sheetIdInput.value = sheetId;
+                }
+                
+                const btn = btnTestGlobalSpreadsheet;
+                const originalHtml = btn.innerHTML;
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Mengetes...';
+                btn.disabled = true;
+                
+                try {
+                    const res = await fetch(`${API_URL}?action=test_shift_spreadsheet`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ profile: userProfile, password: userPassword, spreadsheetId: sheetId })
+                    });
+                    const data = await res.json();
+                    
+                    if (data.success) {
+                        alert(data.message);
+                    } else {
+                        alert('ERROR:\n' + data.message);
+                    }
+                } catch (err) {
+                    alert('Gagal menghubungi server untuk mengetes koneksi.');
+                } finally {
+                    btn.innerHTML = originalHtml;
+                    btn.disabled = false;
+                }
+            });
+        }
+
+        const btnTestGlobalForm = document.getElementById('btnTestGlobalForm');
+        if (btnTestGlobalForm) {
+            btnTestGlobalForm.addEventListener('click', async () => {
+                let url = document.getElementById('globalFormAbsenUrl').value.trim();
+                if (!url) {
+                    alert('URL Form kosong!');
+                    return;
+                }
+                if (!/^https?:\/\//i.test(url)) {
+                    url = 'https://' + url;
+                    document.getElementById('globalFormAbsenUrl').value = url;
+                }
+                
+                const btn = btnTestGlobalForm;
+                const originalHtml = btn.innerHTML;
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Mengetes...';
+                btn.disabled = true;
+                
+                try {
+                    // Try to fetch via our backend to avoid CORS
+                    const res = await fetch(`${API_URL}?action=test_form_url`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ profile: userProfile, password: userPassword, formUrl: url })
+                    });
+                    const data = await res.json();
+                    
+                    if (data.success) {
+                        alert(data.message);
+                    } else {
+                        alert('ERROR:\n' + data.message);
+                    }
+                } catch (err) {
+                    alert('Gagal menghubungi server untuk mengetes koneksi.');
+                } finally {
+                    btn.innerHTML = originalHtml;
+                    btn.disabled = false;
+                }
+            });
+        }
+
+        const globalSettingsForm = document.getElementById('globalSettingsForm');
+        if (globalSettingsForm) {
+            globalSettingsForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const payload = {
+                    profile: userProfile,
+                    password: userPassword,
+                    settings: {
+                        shiftSpreadsheetId: extractSpreadsheetId(document.getElementById('globalShiftSpreadsheetId').value),
+                        formAbsenUrl: document.getElementById('globalFormAbsenUrl').value
+                    }
+                };
+                try {
+                    const res = await fetch(`${API_URL}?action=save_global_settings`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        showToast('Pengaturan global berhasil disimpan!', 'success');
+                    } else {
+                        showToast('Gagal: ' + data.message, 'error');
+                    }
+                } catch (err) {
+                    showToast('Network error saat menyimpan pengaturan', 'error');
+                }
+            });
+        }
+    }
 });
