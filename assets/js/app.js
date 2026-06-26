@@ -2328,18 +2328,22 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             let matchesFilter = true;
-            if (filterVal !== 'all') {
-                if (filterVal === 'open') {
-                    matchesFilter = !statusLower.includes('complete') && !statusLower.includes('closed') && !statusLower.includes('backlog');
-                } else if (filterVal === 'backlog') {
-                    matchesFilter = statusLower.includes('backlog');
-                } else if (filterVal === 'complete') {
-                    matchesFilter = statusLower.includes('complete') || statusLower.includes('closed');
+            
+            // Jika ada teks pencarian, hiraukan dropdown filter agar task complete bisa tetap muncul jika dicari
+            if (searchVal) {
+                if (!nameLower.includes(searchVal)) {
+                    matchesFilter = false;
                 }
-            }
-
-            if (searchVal && !nameLower.includes(searchVal)) {
-                matchesFilter = false;
+            } else {
+                if (filterVal !== 'all') {
+                    if (filterVal === 'open') {
+                        matchesFilter = !statusLower.includes('complete') && !statusLower.includes('closed') && !statusLower.includes('backlog');
+                    } else if (filterVal === 'backlog') {
+                        matchesFilter = statusLower.includes('backlog');
+                    } else if (filterVal === 'complete') {
+                        matchesFilter = statusLower.includes('complete') || statusLower.includes('closed');
+                    }
+                }
             }
 
             if (!matchesFilter && !hasVisibleChild) {
@@ -2377,7 +2381,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         if (!finalHtml) {
-            finalHtml = '<p style="color: var(--text-muted); text-align: center;">Tidak ada task yang sesuai dengan filter.</p>';
+            finalHtml = '<p style="color: var(--text-muted); text-align: center; margin-top: 2rem;">Tidak ada task di project ini yang sesuai dengan filter.<br><br><span style="font-size: 0.85rem;">Jika task sudah Complete/Closed, silakan gunakan kotak pencarian atau ubah filter untuk menampilkannya.</span></p>';
         }
 
         taskManagerContainer.innerHTML = finalHtml;

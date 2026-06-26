@@ -1237,34 +1237,87 @@ if ($action === 'get_project_tasks' && $method === 'POST') {
         exit;
     }
     
-    // Get Tasks
-    $taskRes = localApiCall('/projects/' . $pid . '/tasks/');
+    // Get All Tasks with Pagination
     $allTasks = [];
-    if (isset($taskRes['tasks'])) {
+    $subtaskUrls = [];
+    $index = 0;
+    $range = 100;
+    
+    while (true) {
+        $taskRes = localApiCall('/projects/' . $pid . '/tasks/?range=' . $range . '&index=' . $index);
+        
+        if (!isset($taskRes['tasks']) || count($taskRes['tasks']) === 0) {
+            break;
+        }
+
         foreach ($taskRes['tasks'] as $t) {
+            $statusName = is_array($t['status']) ? $t['status']['name'] : $t['status'];
             $allTasks[] = [
                 'id' => $t['id_string'],
                 'name' => $t['name'],
                 'parent' => null,
-                'status' => is_array($t['status']) ? $t['status']['name'] : $t['status'],
+                'status' => $statusName,
                 'status_id' => is_array($t['status']) ? ($t['status']['id'] ?? '') : ''
             ];
             
-            // Fetch subtasks
-            $subRes = localApiCall('/projects/' . $pid . '/tasks/' . $t['id_string'] . '/subtasks/');
-            if (isset($subRes['tasks'])) {
-                foreach ($subRes['tasks'] as $st) {
-                    $allTasks[] = [
-                        'id' => $st['id_string'],
-                        'name' => $st['name'],
-                        'parent' => $t['id_string'],
-                        'status' => is_array($st['status']) ? $st['status']['name'] : $st['status'],
-                        'status_id' => is_array($st['status']) ? ($st['status']['id'] ?? '') : ''
-                    ];
-                }
+            // Optimasi: Jangan ambil subtask jika parent-nya sudah Complete/Closed (mencegah PHP timeout)
+            $statusLower = strtolower($statusName);
+            if (strpos($statusLower, 'complete') === false && strpos($statusLower, 'closed') === false) {
+                $subUrl = rtrim($apiUrl, '/') . '/restapi/portal/' . $portal . '/projects/' . $pid . '/tasks/' . $t['id_string'] . '/subtasks/';
+                $subtaskUrls[$t['id_string']] = $subUrl;
             }
         }
+        
+        $index += $range;
     }
+
+        // Jalankan CURL secara paralel (Multi-Threading)
+        $chunks = array_chunk($subtaskUrls, 10, true);
+        foreach ($chunks as $chunk) {
+            $mh = curl_multi_init();
+            $chArray = [];
+
+            foreach ($chunk as $parentId => $url) {
+                $ch = curl_init();
+                curl_setopt($ch, CURLOPT_URL, $url);
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($ch, CURLOPT_HTTPHEADER, ['Authorization: Bearer ' . $accessToken]);
+                curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+                curl_multi_add_handle($mh, $ch);
+                $chArray[$parentId] = $ch;
+            }
+
+            $running = null;
+            do {
+                curl_multi_exec($mh, $running);
+                if ($running) {
+                    curl_multi_select($mh);
+                }
+            } while ($running > 0);
+
+            foreach ($chArray as $parentId => $ch) {
+                $res = curl_multi_getcontent($ch);
+                $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                curl_multi_remove_handle($mh, $ch);
+                curl_close($ch);
+
+                if ($httpCode == 200 && $res) {
+                    $subRes = json_decode($res, true);
+                    if (isset($subRes['tasks'])) {
+                        foreach ($subRes['tasks'] as $st) {
+                            $allTasks[] = [
+                                'id' => $st['id_string'],
+                                'name' => $st['name'],
+                                'parent' => $parentId,
+                                'status' => is_array($st['status']) ? $st['status']['name'] : $st['status'],
+                                'status_id' => is_array($st['status']) ? ($st['status']['id'] ?? '') : ''
+                            ];
+                        }
+                    }
+                }
+            }
+            curl_multi_close($mh);
+        }
     
     echo json_encode(['success' => true, 'tasks' => $allTasks, 'projectId' => $pid]);
     exit;

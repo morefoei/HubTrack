@@ -18,9 +18,8 @@
                     <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; justify-content: flex-end;">
                         <input type="text" id="taskSearchInput" placeholder="Cari task..." style="background: var(--input-bg); color: var(--text-main); border: 1px solid var(--panel-border); padding: 0.4rem 0.8rem; border-radius: 4px; font-size: 0.85rem; width: auto; min-width: 180px;">
                         <select id="taskStatusFilter" style="background: var(--input-bg); color: var(--text-main); border: 1px solid var(--panel-border); padding: 0.4rem; border-radius: 4px; font-size: 0.85rem; width: auto;">
-                            <option value="all">Semua Status</option>
+                            <option value="backlog" selected>Backlog Only</option>
                             <option value="open">Open / In Progress</option>
-                            <option value="backlog">Backlog</option>
                             <option value="complete">Complete / Closed</option>
                         </select>
                         <button id="btnCreateRootTask" style="padding: 0.4rem 0.8rem; font-size: 0.85rem; white-space: nowrap; width: auto;"><i class="fa-solid fa-plus"></i> New Main Task</button>
