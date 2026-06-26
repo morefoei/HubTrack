@@ -61,9 +61,10 @@
                     <button class="nav-btn" data-target="guide-view" title="Dokumentasi"><i class="fa-solid fa-book"></i> <span class="nav-text">Dokumentasi</span></button>
                     <button class="nav-btn admin-only-btn" data-target="admin-global-view" title="Global Config" style="display: none;"><i class="fa-solid fa-globe"></i> <span class="nav-text">Global Config</span></button>
                     <button class="nav-btn admin-only-btn" data-target="admin-users-view" title="Users Manager" style="display: none;"><i class="fa-solid fa-users-gear"></i> <span class="nav-text">Users Manager</span></button>
-                    <button class="nav-btn" data-target="about-view" title="About"><i class="fa-solid fa-circle-info"></i> <span class="nav-text">About</span></button>
                 </div>
             </details>
+            
+            <button class="nav-btn" data-target="about-view" title="About" style="width: 100%; text-align: left; padding: 0.6rem 0.8rem; font-size: 0.95rem; font-weight: 600; gap: 0.5rem;"><i class="fa-solid fa-circle-info"></i> <span class="nav-text">About</span></button>
         </nav>
         
         <div class="desktop-only" style="margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--panel-border); display: flex; justify-content: center; width: 100%;">
