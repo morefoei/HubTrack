@@ -438,9 +438,34 @@ document.addEventListener('DOMContentLoaded', () => {
         tbody.innerHTML = '';
         
         const statusFilter = document.getElementById('filterLogStatus') ? document.getElementById('filterLogStatus').value : 'all';
+        const monthFilter = document.getElementById('filterLogMonth') ? document.getElementById('filterLogMonth').value : 'all';
+        
         let filteredLogs = [...logs]; // make a shallow copy to sort safely
         if (statusFilter !== 'all') {
             filteredLogs = filteredLogs.filter(l => l.status === statusFilter);
+        }
+        
+        if (monthFilter !== 'all') {
+            filteredLogs = filteredLogs.filter(l => {
+                if (!l.startDate) return false;
+                
+                // parseDate logic similar to edit logic to ensure robust month extraction
+                let str = l.startDate;
+                let m = null;
+                if(str.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                    m = str.split('-')[1];
+                } else {
+                    const parts = str.split(/[-/]/);
+                    if(parts.length === 3) {
+                        if(parts[0].length === 4) {
+                            m = parts[1].padStart(2, '0');
+                        } else {
+                            m = parts[0].padStart(2, '0');
+                        }
+                    }
+                }
+                return m === monthFilter;
+            });
         }
 
         filteredLogs.sort((a, b) => {
@@ -1321,6 +1346,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const filterLogStatus = document.getElementById('filterLogStatus');
     if (filterLogStatus) {
         filterLogStatus.addEventListener('change', () => {
+            currentPage = 1;
+            document.getElementById('selectAllLogs').checked = false;
+            renderLogs();
+        });
+    }
+
+    const filterLogMonth = document.getElementById('filterLogMonth');
+    if (filterLogMonth) {
+        filterLogMonth.addEventListener('change', () => {
             currentPage = 1;
             document.getElementById('selectAllLogs').checked = false;
             renderLogs();
