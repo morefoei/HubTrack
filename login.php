@@ -13,15 +13,6 @@ $v = time();
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <meta name="theme-color" content="#0f172a">
     <style>
-        body {
-            background: var(--bg-color);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: row;
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-        }
         .login-container {
             flex: 1;
             display: flex;
@@ -69,6 +60,7 @@ $v = time();
                     <span class="logo"><i class="fa-solid fa-rocket" style="-webkit-text-fill-color: initial; color: #f43f5e;"></i> <span class="nav-text">TrackHub</span></span>
                 </div>
             </div>
+            <button id="mobileMenuBtn" style="display: none; background: transparent; border: none; color: var(--text-main); font-size: 1.5rem; cursor: pointer; padding: 0.5rem; position: absolute; right: 1rem; top: 1rem;"><i class="fa-solid fa-bars"></i></button>
         </div>
         <nav id="mainNav">
             <button class="nav-btn" onclick="switchView('docs-view', this)" title="Dokumentasi"><i class="fa-solid fa-book-open"></i> <span class="nav-text">Dokumentasi</span></button>
@@ -81,7 +73,7 @@ $v = time();
         </div>
     </header>
 
-    <main style="flex: 1; display: flex; flex-direction: column; padding: 0; overflow: hidden;">
+    <main>
         <div class="top-nav-right">
             <button class="nav-btn active" onclick="switchView('login-view', this)" style="background: var(--primary); color: white; border: none; padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 0.5rem;"><i class="fa-solid fa-right-to-bracket"></i> Login</button>
         </div>
@@ -189,6 +181,15 @@ $v = time();
     </main>
 
     <script>
+        // Handle Mobile Menu
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const mainNav = document.getElementById('mainNav');
+        if (mobileMenuBtn && mainNav) {
+            mobileMenuBtn.addEventListener('click', () => {
+                mainNav.classList.toggle('show');
+            });
+        }
+
         // Clean up login.php from URL for a cleaner look
         if (window.location.pathname.endsWith('login.php')) {
             const cleanUrl = window.location.pathname.replace(/login\.php$/, 'login') + window.location.search;
