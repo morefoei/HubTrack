@@ -1724,7 +1724,7 @@ if ($action === 'get_project_tasks' && $method === 'POST') {
                 }
             }
         }
-    
+
     echo json_encode(['success' => true, 'tasks' => $allTasks, 'projectId' => $pid]);
     exit;
 }

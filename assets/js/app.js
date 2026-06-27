@@ -1303,9 +1303,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await res.json();
             if (data.success) {
                 showToast('Settings saved securely on server', 'success');
-                // Update active session password if they changed it
-                userPassword = document.getElementById('profilePassword').value;
-                localStorage.setItem('zohoPassword', userPassword);
+                // Update active session password if they changed it (only for superman)
+                const passFieldVal = document.getElementById('profilePassword').value;
+                if (passFieldVal) {
+                    userPassword = passFieldVal;
+                    sessionStorage.setItem('zohoPassword', userPassword);
+                }
             } else {
                 showToast('Failed to save settings', 'error');
             }
