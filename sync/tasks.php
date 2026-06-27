@@ -13,7 +13,7 @@
                     </div>
                 </div>
                 <hr style="border-color: var(--panel-border); margin: 1.5rem 0;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
                     <h3>Task Hierarchy</h3>
                     <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; justify-content: flex-end;">
                         <input type="text" id="taskSearchInput" placeholder="Cari task..." style="background: var(--input-bg); color: var(--text-main); border: 1px solid var(--panel-border); padding: 0.4rem 0.8rem; border-radius: 4px; font-size: 0.85rem; width: auto; min-width: 180px;">

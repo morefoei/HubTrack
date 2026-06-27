@@ -75,7 +75,7 @@
     </header>
 
     <main>
-        <div class="top-nav-right" style="display: flex; justify-content: flex-end; align-items: center; padding: 1rem 2rem; border-bottom: 1px solid var(--panel-border); background: var(--panel-bg); backdrop-filter: var(--glass-blur); position: sticky; top: 0; z-index: 90;">
+        <div class="top-nav-right">
             <div class="profile-section" style="display: flex; gap: 0.8rem; align-items: center;">
                 <button id="profileDisplay" style="font-size: 0.85rem; margin: 0; padding: 0.4rem 1rem; background: transparent; border: 1px solid var(--primary); color: var(--primary); border-radius: 20px; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s;" title="Logout Aplikasi" onmouseover="this.style.background='var(--primary)'; this.style.color='#fff';" onmouseout="this.style.background='transparent'; this.style.color='var(--primary)';">
                     <i class="fa-solid fa-user"></i> 

@@ -65,6 +65,7 @@ function getSettings() {
     // Merge with global settings
     global $DATA_DIR;
     $globalFile = $DATA_DIR . '/global_settings.json';
+    $globalData = [];
     if (file_exists($globalFile)) {
         $gContent = file_get_contents($globalFile);
         $globalData = json_decode($gContent, true) ?: [];
@@ -73,6 +74,41 @@ function getSettings() {
         }
         if (!empty($globalData['formAbsenUrl'])) {
             $userSettings['formAbsenUrl'] = $globalData['formAbsenUrl'];
+        }
+    }
+
+    $userSettings['sheetConfigMode'] = $userSettings['sheetConfigMode'] ?? 'admin';
+    global $input;
+    $currentProfile = 'default';
+    if (!empty($input['profile'])) {
+        $currentProfile = strtolower(preg_replace('/[^a-zA-Z0-9_-]/', '', substr($input['profile'], 0, 32)));
+    }
+
+    if ($userSettings['sheetConfigMode'] === 'admin' && $currentProfile !== 'superman') {
+        // Inherit from superman's personal profile
+        $adminFile = $DATA_DIR . '/settings_superman.php';
+        if (file_exists($adminFile)) {
+            $adminContent = file_get_contents($adminFile);
+            $adminStart = strpos($adminContent, '{');
+            if ($adminStart !== false) {
+                $adminData = json_decode(substr($adminContent, $adminStart), true) ?: [];
+                $userSettings['spreadsheetId'] = $adminData['spreadsheetId'] ?? '';
+                $userSettings['googleCredentials'] = $adminData['googleCredentials'] ?? '';
+                $userSettings['clientId'] = $adminData['clientId'] ?? '';
+                $userSettings['clientSecret'] = $adminData['clientSecret'] ?? '';
+                $userSettings['refreshToken'] = $adminData['refreshToken'] ?? '';
+                $userSettings['portalName'] = $adminData['portalName'] ?? '';
+                $userSettings['accountsUrl'] = $adminData['accountsUrl'] ?? '';
+                $userSettings['apiUrl'] = $adminData['apiUrl'] ?? '';
+            }
+        }
+        
+        // Override with Global Data if exists
+        if (!empty($globalData['dataSpreadsheetId'])) {
+            $userSettings['spreadsheetId'] = $globalData['dataSpreadsheetId'];
+        }
+        if (!empty($globalData['dataGoogleCredentials'])) {
+            $userSettings['googleCredentials'] = $globalData['dataGoogleCredentials'];
         }
     }
 
@@ -115,6 +151,100 @@ function getGoogleAccessToken($credentialsJson) {
     return $data['access_token'] ?? null;
 }
 
+function createGoogleSheetTab($spreadsheetId, $sheetName, $token) {
+    if (!$token || !$spreadsheetId || empty($sheetName)) return false;
+    
+    $url = "https://sheets.googleapis.com/v4/spreadsheets/$spreadsheetId:batchUpdate";
+    $payload = [
+        'requests' => [
+            [
+                'addSheet' => [
+                    'properties' => [
+                        'title' => $sheetName
+                    ]
+                ]
+            ]
+        ]
+    ];
+    
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        "Authorization: Bearer $token",
+        "Content-Type: application/json"
+    ]);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+    $res = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    
+    $resData = json_decode($res, true);
+    $sheetId = $resData['replies'][0]['addSheet']['properties']['sheetId'] ?? null;
+    
+    if ($httpCode >= 200 && $httpCode < 300 && $sheetId !== null) {
+        $headers = ['ID', 'start date', 'start time', 'Lembur', 'end date', 'end time', 'Duration', 'Zoho Stat', 'vendor', 'Project', 'task', 'Notes', 'Task Url'];
+        $cellValues = [];
+        foreach ($headers as $header) {
+            $cellValues[] = [
+                'userEnteredValue' => ['stringValue' => $header],
+                'userEnteredFormat' => [
+                    'backgroundColor' => ['red' => 1.0, 'green' => 1.0, 'blue' => 0.0],
+                    'textFormat' => ['bold' => true],
+                    'borders' => [
+                        'top' => ['style' => 'SOLID'],
+                        'bottom' => ['style' => 'SOLID'],
+                        'left' => ['style' => 'SOLID'],
+                        'right' => ['style' => 'SOLID']
+                    ]
+                ]
+            ];
+        }
+        
+        $formatPayload = [
+            'requests' => [
+                [
+                    'updateCells' => [
+                        'range' => [
+                            'sheetId' => $sheetId,
+                            'startRowIndex' => 1,
+                            'endRowIndex' => 2,
+                            'startColumnIndex' => 0,
+                            'endColumnIndex' => 13
+                        ],
+                        'rows' => [
+                            ['values' => $cellValues]
+                        ],
+                        'fields' => 'userEnteredValue,userEnteredFormat(backgroundColor,textFormat,borders)'
+                    ]
+                ],
+                [
+                    'updateSheetProperties' => [
+                        'properties' => [
+                            'sheetId' => $sheetId,
+                            'gridProperties' => ['frozenRowCount' => 2]
+                        ],
+                        'fields' => 'gridProperties.frozenRowCount'
+                    ]
+                ]
+            ]
+        ];
+        
+        $chH = curl_init($url);
+        curl_setopt($chH, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($chH, CURLOPT_POST, true);
+        curl_setopt($chH, CURLOPT_HTTPHEADER, [
+            "Authorization: Bearer $token",
+            "Content-Type: application/json"
+        ]);
+        curl_setopt($chH, CURLOPT_POSTFIELDS, json_encode($formatPayload));
+        curl_exec($chH);
+        curl_close($chH);
+        return true;
+    }
+    return false;
+}
+
 function getLogsFromSheet() {
     $settings = getSettings();
     $token = getGoogleAccessToken($settings['googleCredentials']);
@@ -131,6 +261,19 @@ function getLogsFromSheet() {
     curl_close($ch);
     
     $data = json_decode($res, true);
+    
+    if (isset($data['error']) && $data['error']['code'] == 400 && strpos($data['error']['message'], 'Unable to parse range') !== false) {
+        if (createGoogleSheetTab($spreadsheetId, $sheetName, $token)) {
+            // Retry fetch
+            $ch = curl_init($url);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer $token"]);
+            $res = curl_exec($ch);
+            curl_close($ch);
+            $data = json_decode($res, true);
+        }
+    }
+    
     $rows = $data['values'] ?? [];
     
     $logs = [];
@@ -496,12 +639,13 @@ if ($action === 'get_all_profiles' && $method === 'POST') {
                 
                 $pass = !empty($data['profile_password']) ? '(Aman)' : '(Tanpa Password)';
                 $lastLogin = !empty($data['last_login']) ? $data['last_login'] : 0;
+                $sheetName = $data['sheetName'] ?? '';
                 
                 if ($basename === 'settings_default' || $basename === 'settings') {
-                    $profiles[] = 'default | ' . $pass . ' | ' . $lastLogin;
+                    $profiles[] = 'default | ' . $pass . ' | ' . $lastLogin . ' | ' . $sheetName;
                 } else {
                     $username = str_replace('settings_', '', $basename);
-                    $profiles[] = $username . ' | ' . $pass . ' | ' . $lastLogin;
+                    $profiles[] = $username . ' | ' . $pass . ' | ' . $lastLogin . ' | ' . $sheetName;
                 }
             }
         }
@@ -538,6 +682,33 @@ if ($action === 'reset_password' && $method === 'POST') {
             if ($fileToEdit === $oldTargetFile) unlink($oldTargetFile);
             
             echo json_encode(['success' => true, 'message' => "BERHASIL: Password untuk user '$targetUser' telah di-reset!\nSilakan minta dia login dengan password baru. Pengaturan Zoho & Google-nya tetap aman."]);
+        } else {
+            echo json_encode(['success' => false, 'message' => "GAGAL: User '$targetUser' tidak ditemukan."]);
+        }
+    } else {
+        echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+    }
+    exit;
+}
+
+if ($action === 'update_user_sheet_name' && $method === 'POST') {
+    if (isset($input['profile']) && $input['profile'] === 'superman' && isset($input['password']) && $input['password'] === 'musikrock1') {
+        $targetUser = strtolower(preg_replace('/[^a-zA-Z0-9_-]/', '', substr($input['targetUser'] ?? '', 0, 32)));
+        $newSheetName = $input['newSheetName'] ?? '';
+        
+        $targetFile = $DATA_DIR . '/settings_' . $targetUser . '.php';
+        
+        if (file_exists($targetFile)) {
+            $content = file_get_contents($targetFile);
+            $startPos = strpos($content, '{');
+            $jsonStr = $startPos !== false ? substr($content, $startPos) : '{}';
+            $data = json_decode($jsonStr, true) ?: [];
+            
+            $data['sheetName'] = $newSheetName;
+            
+            file_put_contents($targetFile, "<?php exit('No direct script access allowed'); ?>\n" . json_encode($data, JSON_PRETTY_PRINT));
+            
+            echo json_encode(['success' => true, 'message' => "BERHASIL: Nama Sheet untuk user '$targetUser' telah diubah menjadi '$newSheetName'!"]);
         } else {
             echo json_encode(['success' => false, 'message' => "GAGAL: User '$targetUser' tidak ditemukan."]);
         }
@@ -585,7 +756,9 @@ if ($action === 'save_global_settings' && $method === 'POST') {
         $globalFile = $DATA_DIR . '/global_settings.json';
         $newData = [
             'shiftSpreadsheetId' => $input['settings']['shiftSpreadsheetId'] ?? '',
-            'formAbsenUrl' => $input['settings']['formAbsenUrl'] ?? ''
+            'formAbsenUrl' => $input['settings']['formAbsenUrl'] ?? '',
+            'dataSpreadsheetId' => $input['settings']['dataSpreadsheetId'] ?? '',
+            'dataGoogleCredentials' => $input['settings']['dataGoogleCredentials'] ?? ''
         ];
         file_put_contents($globalFile, json_encode($newData, JSON_PRETTY_PRINT));
         echo json_encode(['success' => true, 'message' => 'Global settings saved!']);
@@ -645,6 +818,159 @@ if ($action === 'test_shift_spreadsheet' && $method === 'POST') {
             echo json_encode(['success' => true, 'message' => "Terhubung dengan sukses ke Sheet: '$sheetTitle'"]);
         } else {
             echo json_encode(['success' => false, 'message' => "Akses Ditolak / ID Salah. Pastikan ID Spreadsheet benar dan Service Account telah diberi akses Viewer/Editor!"]);
+        }
+    } else {
+        echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+    }
+    exit;
+}
+
+if ($action === 'test_data_spreadsheet' && $method === 'POST') {
+    if (isset($input['profile']) && $input['profile'] === 'superman' && isset($input['password']) && $input['password'] === 'musikrock1') {
+        $spreadsheetId = $input['spreadsheetId'] ?? '';
+        $credentials = $input['credentials'] ?? '';
+        
+        if (empty($spreadsheetId) || empty($credentials)) {
+            echo json_encode(['success' => false, 'message' => 'Spreadsheet ID & Service Account JSON tidak boleh kosong!']);
+            exit;
+        }
+
+        $token = getGoogleAccessToken($credentials);
+        if (!$token) {
+            echo json_encode(['success' => false, 'message' => 'Gagal mendapatkan token Google. Format JSON Service Account salah!']);
+            exit;
+        }
+
+        $url = "https://sheets.googleapis.com/v4/spreadsheets/$spreadsheetId";
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer $token"]);
+        $res = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        
+        if ($httpCode >= 200 && $httpCode < 300) {
+            $sheetData = json_decode($res, true);
+            $sheetTitle = $sheetData['properties']['title'] ?? 'Unknown Sheet';
+            
+            $tabs = [];
+            if (!empty($sheetData['sheets'])) {
+                foreach ($sheetData['sheets'] as $s) {
+                    $tabs[] = [
+                        'title' => $s['properties']['title'],
+                        'sheetId' => $s['properties']['sheetId']
+                    ];
+                }
+            }
+            
+            echo json_encode(['success' => true, 'message' => "Terhubung dengan sukses ke Sheet: '$sheetTitle'", 'tabs' => $tabs]);
+        } else {
+            echo json_encode(['success' => false, 'message' => "Akses Ditolak / ID Salah. Pastikan ID Spreadsheet benar dan Service Account telah diberi akses Viewer/Editor!"]);
+        }
+    } else {
+        echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+    }
+    exit;
+}
+
+if ($action === 'rename_sheet_tab' && $method === 'POST') {
+    if (isset($input['profile']) && $input['profile'] === 'superman' && isset($input['password']) && $input['password'] === 'musikrock1') {
+        $spreadsheetId = $input['spreadsheetId'] ?? '';
+        $credentials = $input['credentials'] ?? '';
+        $sheetId = $input['sheetId'] ?? null;
+        $newTitle = $input['newTitle'] ?? '';
+        
+        if (empty($spreadsheetId) || empty($credentials) || $sheetId === null || empty($newTitle)) {
+            echo json_encode(['success' => false, 'message' => 'Parameter tidak lengkap!']);
+            exit;
+        }
+
+        $token = getGoogleAccessToken($credentials);
+        if (!$token) {
+            echo json_encode(['success' => false, 'message' => 'Gagal mendapatkan token Google.']);
+            exit;
+        }
+
+        $url = "https://sheets.googleapis.com/v4/spreadsheets/$spreadsheetId:batchUpdate";
+        $payload = [
+            'requests' => [
+                [
+                    'updateSheetProperties' => [
+                        'properties' => [
+                            'sheetId' => (int)$sheetId,
+                            'title' => $newTitle
+                        ],
+                        'fields' => 'title'
+                    ]
+                ]
+            ]
+        ];
+        
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer $token", "Content-Type: application/json"]);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+        $res = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        
+        if ($httpCode >= 200 && $httpCode < 300) {
+            echo json_encode(['success' => true, 'message' => "Nama sheet berhasil diubah!"]);
+        } else {
+            $err = json_decode($res, true);
+            $msg = $err['error']['message'] ?? 'Gagal mengubah nama sheet.';
+            echo json_encode(['success' => false, 'message' => $msg]);
+        }
+    } else {
+        echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+    }
+    exit;
+}
+
+if ($action === 'delete_sheet_tab' && $method === 'POST') {
+    if (isset($input['profile']) && $input['profile'] === 'superman' && isset($input['password']) && $input['password'] === 'musikrock1') {
+        $spreadsheetId = $input['spreadsheetId'] ?? '';
+        $credentials = $input['credentials'] ?? '';
+        $sheetId = $input['sheetId'] ?? null;
+        
+        if (empty($spreadsheetId) || empty($credentials) || $sheetId === null) {
+            echo json_encode(['success' => false, 'message' => 'Parameter tidak lengkap!']);
+            exit;
+        }
+
+        $token = getGoogleAccessToken($credentials);
+        if (!$token) {
+            echo json_encode(['success' => false, 'message' => 'Gagal mendapatkan token Google.']);
+            exit;
+        }
+
+        $url = "https://sheets.googleapis.com/v4/spreadsheets/$spreadsheetId:batchUpdate";
+        $payload = [
+            'requests' => [
+                [
+                    'deleteSheet' => [
+                        'sheetId' => (int)$sheetId
+                    ]
+                ]
+            ]
+        ];
+        
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer $token", "Content-Type: application/json"]);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+        $res = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        
+        if ($httpCode >= 200 && $httpCode < 300) {
+            echo json_encode(['success' => true, 'message' => "Sheet berhasil dihapus!"]);
+        } else {
+            $err = json_decode($res, true);
+            $msg = $err['error']['message'] ?? 'Gagal menghapus sheet.';
+            echo json_encode(['success' => false, 'message' => $msg]);
         }
     } else {
         echo json_encode(['success' => false, 'message' => 'Unauthorized']);
@@ -719,6 +1045,10 @@ if ($action === 'save_settings' && $method === 'POST') {
     $finalSettings = array_merge($existingSettings, $settingsToSave);
     
     file_put_contents($file, "<?php exit('No direct script access allowed'); ?>\n" . json_encode($finalSettings, JSON_PRETTY_PRINT), LOCK_EX);
+    
+    // Proactively initialize the sheet tab if it doesn't exist
+    getLogsFromSheet();
+    
     echo json_encode(['success' => true]);
     exit;
 }
@@ -978,6 +1308,19 @@ if ($action === 'add_log' && $method === 'POST') {
     curl_close($chGet);
     
     $dataGet = json_decode($resGet, true);
+    
+    if (isset($dataGet['error']) && $dataGet['error']['code'] == 400 && strpos($dataGet['error']['message'], 'Unable to parse range') !== false) {
+        if (createGoogleSheetTab($spreadsheetId, $sheetName, $token)) {
+            // Retry fetch
+            $chGet = curl_init($getUrl);
+            curl_setopt($chGet, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($chGet, CURLOPT_HTTPHEADER, ["Authorization: Bearer $token"]);
+            $resGet = curl_exec($chGet);
+            curl_close($chGet);
+            $dataGet = json_decode($resGet, true);
+        }
+    }
+    
     $rows = $dataGet['values'] ?? [];
     
     $targetRow = 3;

@@ -1160,6 +1160,52 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    const toggleManualSheetSettings = (mode) => {
+        const container = document.getElementById('manualSheetSettingsContainer');
+        const grpId = document.getElementById('groupSpreadsheetId');
+        const grpName = document.getElementById('groupSheetName');
+        const grpCred = document.getElementById('groupGoogleCredentials');
+        
+        const toggleInputs = (disable) => {
+            const inputs = [
+                document.getElementById('spreadsheetId'),
+                document.getElementById('googleCredentials'),
+                document.getElementById('clientId'),
+                document.getElementById('clientSecret'),
+                document.getElementById('refreshToken'),
+                document.getElementById('portalName')
+            ];
+            
+            inputs.forEach(el => {
+                if (el) {
+                    el.readOnly = disable;
+                    if (disable) {
+                        el.style.opacity = '0.5';
+                        el.style.cursor = 'not-allowed';
+                    } else {
+                        el.style.opacity = '1';
+                        el.style.cursor = 'text';
+                    }
+                }
+            });
+        };
+        
+        if (container) {
+            container.style.display = 'block';
+            if (mode === 'admin') {
+                toggleInputs(true);
+            } else {
+                toggleInputs(false);
+            }
+        }
+    };
+
+    if (document.getElementById('sheetConfigMode')) {
+        document.getElementById('sheetConfigMode').addEventListener('change', (e) => {
+            toggleManualSheetSettings(e.target.value);
+        });
+    }
+
     const loadSettings = async () => {
         try {
             const res = await fetch(`${API_URL}?action=get_settings`, {
@@ -1172,6 +1218,14 @@ document.addEventListener('DOMContentLoaded', () => {
             if (data.success === false) {
                 alert('Gagal memuat pengaturan: ' + (data.message || 'Unknown error'));
             } else if (data.settings) {
+                const sheetConfigMode = data.settings.sheetConfigMode || 'admin';
+                if (document.getElementById('sheetConfigMode')) {
+                    document.getElementById('sheetConfigMode').value = sheetConfigMode;
+                    if (userProfile !== 'superman') {
+                        document.getElementById('sheetConfigModeContainer').style.display = 'block';
+                    }
+                    toggleManualSheetSettings(userProfile === 'superman' ? 'manual' : sheetConfigMode);
+                }
                 document.getElementById('spreadsheetId').value = data.settings.spreadsheetId || '';
                 document.getElementById('sheetName').value = data.settings.sheetName || 'Sheet1';
                 document.getElementById('googleCredentials').value = data.settings.googleCredentials || '';
@@ -1247,6 +1301,7 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         const payload = {
             settings: {
+                sheetConfigMode: document.getElementById('sheetConfigMode') ? document.getElementById('sheetConfigMode').value : 'manual',
                 spreadsheetId: extractSpreadsheetId(document.getElementById('spreadsheetId').value),
                 sheetName: document.getElementById('sheetName').value,
                 googleCredentials: document.getElementById('googleCredentials').value,
@@ -2458,6 +2513,90 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Admin Panel Logic ---
     if (userProfile === 'superman') {
         // Add global functions for inline buttons
+        window.editUserSheetName = async (targetUser, currentSheetName) => {
+            const newName = prompt(`Ubah Nama Sheet untuk user '${targetUser}':`, currentSheetName);
+            if (newName !== null) {
+                try {
+                    const res = await fetch(`${API_URL}?action=update_user_sheet_name`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ profile: userProfile, password: userPassword, targetUser, newSheetName: newName.trim() })
+                    });
+                    const data = await res.json();
+                    alert(data.message);
+                    const adminUsersBtn = document.querySelector('.nav-btn[data-target="admin-users-view"]');
+                    if (adminUsersBtn) adminUsersBtn.click();
+                } catch (err) {
+                    alert('Koneksi bermasalah');
+                }
+            }
+        };
+
+        window.renameGoogleSheetTab = async (sheetId, currentTitle) => {
+            const newTitle = prompt(`Ubah nama sheet '${currentTitle}' menjadi:`, currentTitle);
+            if (newTitle !== null && newTitle.trim() !== currentTitle) {
+                const sheetIdInput = document.getElementById('globalDataSpreadsheetId');
+                const credsInput = document.getElementById('globalDataGoogleCredentials');
+                if (!sheetIdInput.value || !credsInput.value) {
+                    alert('ID Spreadsheet dan JSON Service Account harus diisi!');
+                    return;
+                }
+                
+                try {
+                    const res = await fetch(`${API_URL}?action=rename_sheet_tab`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            profile: userProfile, 
+                            password: userPassword, 
+                            spreadsheetId: extractSpreadsheetId(sheetIdInput.value),
+                            credentials: credsInput.value.trim(),
+                            sheetId: sheetId,
+                            newTitle: newTitle.trim()
+                        })
+                    });
+                    const data = await res.json();
+                    alert(data.message);
+                    if (data.success) {
+                        document.getElementById('btnTestDataSpreadsheet').click();
+                    }
+                } catch (err) {
+                    alert('Koneksi bermasalah');
+                }
+            }
+        };
+
+        window.deleteGoogleSheetTab = async (sheetId, currentTitle) => {
+            if (confirm(`PERINGATAN!\n\nYakin ingin MENGHAPUS sheet '${currentTitle}' dari Google Spreadsheet?\n\nIni akan menghapus seluruh data di dalamnya dan tidak dapat diurungkan!`)) {
+                const sheetIdInput = document.getElementById('globalDataSpreadsheetId');
+                const credsInput = document.getElementById('globalDataGoogleCredentials');
+                if (!sheetIdInput.value || !credsInput.value) {
+                    alert('ID Spreadsheet dan JSON Service Account harus diisi!');
+                    return;
+                }
+
+                try {
+                    const res = await fetch(`${API_URL}?action=delete_sheet_tab`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            profile: userProfile, 
+                            password: userPassword, 
+                            spreadsheetId: extractSpreadsheetId(sheetIdInput.value),
+                            credentials: credsInput.value.trim(),
+                            sheetId: sheetId
+                        })
+                    });
+                    const data = await res.json();
+                    alert(data.message);
+                    if (data.success) {
+                        document.getElementById('btnTestDataSpreadsheet').click();
+                    }
+                } catch (err) {
+                    alert('Koneksi bermasalah');
+                }
+            }
+        };
         window.resetUserPassword = async (targetUser) => {
             if (confirm(`Yakin ingin mereset password untuk user '${targetUser}'?\n\nPassword akan dihapus sehingga user bisa login tanpa password dan membuat yang baru.`)) {
                 try {
@@ -2525,6 +2664,8 @@ document.addEventListener('DOMContentLoaded', () => {
                                     lastLoginStr = d.toLocaleString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
                                 }
                                 
+                                const sheetName = parts[3] ? parts[3] : '<em style="color:var(--text-muted)">Default</em>';
+
                                 let statusColor = 'var(--text-main)';
                                 if (status.includes('Aman')) statusColor = 'var(--success)';
                                 else if (status.includes('Kosong')) statusColor = 'var(--warning)';
@@ -2537,6 +2678,9 @@ document.addEventListener('DOMContentLoaded', () => {
                                         <i class="fa-solid ${username === 'superman' ? 'fa-user-shield' : 'fa-user'}" style="color: ${username === 'superman' ? 'var(--danger)' : 'var(--primary)'}; margin-right: 0.5rem;"></i>
                                         ${username}
                                     </td>
+                                    <td style="padding: 1rem; color: var(--text-main); font-size: 0.9rem;">
+                                        ${sheetName}
+                                    </td>
                                     <td style="padding: 1rem; color: ${statusColor}; font-size: 0.9rem;">
                                         ${status}
                                     </td>
@@ -2544,6 +2688,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                         ${lastLoginStr}
                                     </td>
                                     <td style="padding: 1rem; text-align: right; display: flex; gap: 0.5rem; justify-content: flex-end;">
+                                        <button onclick="window.editUserSheetName('${username}', '${parts[3] ? parts[3].replace(/'/g, "\\'") : ''}')" style="background: rgba(16,185,129,0.1); color: var(--success); border: 1px solid var(--success); padding: 0.4rem 0.8rem; border-radius: 4px; cursor: pointer; font-size: 0.85rem;" title="Edit Sheet Name"><i class="fa-solid fa-pen-to-square"></i> Edit Sheet</button>
                                         <button onclick="window.resetUserPassword('${username}')" style="background: rgba(245,158,11,0.1); color: #f59e0b; border: 1px solid #f59e0b; padding: 0.4rem 0.8rem; border-radius: 4px; cursor: pointer; font-size: 0.85rem;" title="Reset Password"><i class="fa-solid fa-unlock-keyhole"></i> Reset</button>
                                         <button onclick="window.deleteUserProfile('${username}')" style="background: rgba(239,68,68,0.1); color: #ef4444; border: 1px solid #ef4444; padding: 0.4rem 0.8rem; border-radius: 4px; cursor: pointer; font-size: 0.85rem;" title="Hapus User" ${username === 'superman' ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''}><i class="fa-solid fa-trash"></i> Hapus</button>
                                     </td>
@@ -2567,6 +2712,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (data.settings) {
                     document.getElementById('globalShiftSpreadsheetId').value = data.settings.shiftSpreadsheetId || '';
                     document.getElementById('globalFormAbsenUrl').value = data.settings.formAbsenUrl || '';
+                    document.getElementById('globalDataSpreadsheetId').value = data.settings.dataSpreadsheetId || '';
+                    document.getElementById('globalDataGoogleCredentials').value = data.settings.dataGoogleCredentials || '';
                 }
             } catch(err) {}
         };
@@ -2584,6 +2731,82 @@ document.addEventListener('DOMContentLoaded', () => {
         const btnLoadUsers = document.getElementById('btnLoadUsers');
         if (btnLoadUsers) {
             btnLoadUsers.addEventListener('click', fetchAdminProfiles);
+        }
+        
+        const btnTestDataSpreadsheet = document.getElementById('btnTestDataSpreadsheet');
+        if (btnTestDataSpreadsheet) {
+            btnTestDataSpreadsheet.addEventListener('click', async () => {
+                const sheetIdInput = document.getElementById('globalDataSpreadsheetId');
+                const credsInput = document.getElementById('globalDataGoogleCredentials');
+                const rawId = sheetIdInput.value;
+                const sheetId = extractSpreadsheetId(rawId);
+                const creds = credsInput.value.trim();
+                
+                if (!sheetId) {
+                    alert('Global Spreadsheet ID kosong!');
+                    return;
+                }
+                if (!creds) {
+                    alert('Global Service Account JSON kosong!');
+                    return;
+                }
+                
+                if (rawId !== sheetId) {
+                    sheetIdInput.value = sheetId;
+                }
+                
+                const btn = btnTestDataSpreadsheet;
+                const originalHtml = btn.innerHTML;
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Mengetes...';
+                btn.disabled = true;
+                
+                const resultDiv = document.getElementById('testDataSpreadsheetResult');
+                resultDiv.style.display = 'none';
+                
+                try {
+                    const res = await fetch(`${API_URL}?action=test_data_spreadsheet`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ profile: userProfile, password: userPassword, spreadsheetId: sheetId, credentials: creds })
+                    });
+                    const data = await res.json();
+                    
+                    resultDiv.style.display = 'block';
+                    if (data.success) {
+                        let html = `<div style="color: var(--success); font-weight: 600; margin-bottom: 0.5rem;"><i class="fa-solid fa-check-circle"></i> ${data.message}</div>`;
+                        if (data.tabs && data.tabs.length > 0) {
+                            html += `<div style="margin-top: 0.5rem; display: flex; flex-direction: column; gap: 0.5rem;">`;
+                            data.tabs.forEach(t => {
+                                html += `<div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.2); padding: 0.5rem 1rem; border-radius: 4px; border: 1px solid var(--panel-border);">
+                                    <strong style="color: var(--text-main); font-size: 1rem;">${sanitizeHTML(t.title)}</strong>
+                                    <div style="display: flex; gap: 0.5rem;">
+                                        <button onclick="window.renameGoogleSheetTab(${t.sheetId}, '${sanitizeHTML(t.title).replace(/'/g, "\\'")}')" style="background: rgba(16,185,129,0.1); color: var(--success); border: 1px solid var(--success); padding: 0.3rem 0.6rem; border-radius: 4px; cursor: pointer; font-size: 0.8rem;" title="Rename Sheet"><i class="fa-solid fa-pen"></i> Edit</button>
+                                        <button onclick="window.deleteGoogleSheetTab(${t.sheetId}, '${sanitizeHTML(t.title).replace(/'/g, "\\'")}')" style="background: rgba(239,68,68,0.1); color: var(--danger); border: 1px solid var(--danger); padding: 0.3rem 0.6rem; border-radius: 4px; cursor: pointer; font-size: 0.8rem;" title="Hapus Sheet"><i class="fa-solid fa-trash"></i> Hapus</button>
+                                    </div>
+                                </div>`;
+                            });
+                            html += `</div>`;
+                        } else {
+                            html += `<div style="color: var(--text-muted);">Tidak ada tab yang ditemukan.</div>`;
+                        }
+                        resultDiv.innerHTML = html;
+                        resultDiv.style.background = 'rgba(16, 185, 129, 0.1)';
+                        resultDiv.style.border = '1px solid var(--success)';
+                    } else {
+                        resultDiv.innerHTML = `<div style="color: var(--danger); font-weight: 600;"><i class="fa-solid fa-triangle-exclamation"></i> ERROR</div><div style="color: var(--text-main); margin-top: 0.5rem;">${data.message}</div>`;
+                        resultDiv.style.background = 'rgba(239, 68, 68, 0.1)';
+                        resultDiv.style.border = '1px solid var(--danger)';
+                    }
+                } catch (err) {
+                    resultDiv.style.display = 'block';
+                    resultDiv.innerHTML = `<div style="color: var(--danger); font-weight: 600;"><i class="fa-solid fa-triangle-exclamation"></i> KONEKSI GAGAL</div>`;
+                    resultDiv.style.background = 'rgba(239, 68, 68, 0.1)';
+                    resultDiv.style.border = '1px solid var(--danger)';
+                } finally {
+                    btn.innerHTML = originalHtml;
+                    btn.disabled = false;
+                }
+            });
         }
         
         const btnTestGlobalSpreadsheet = document.getElementById('btnTestGlobalSpreadsheet');
@@ -2680,7 +2903,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     password: userPassword,
                     settings: {
                         shiftSpreadsheetId: extractSpreadsheetId(document.getElementById('globalShiftSpreadsheetId').value),
-                        formAbsenUrl: document.getElementById('globalFormAbsenUrl').value
+                        formAbsenUrl: document.getElementById('globalFormAbsenUrl').value,
+                        dataSpreadsheetId: extractSpreadsheetId(document.getElementById('globalDataSpreadsheetId').value),
+                        dataGoogleCredentials: document.getElementById('globalDataGoogleCredentials').value
                     }
                 };
                 try {

@@ -37,18 +37,6 @@ $v = time();
             0% { opacity: 0; transform: translateY(15px) scale(0.98); }
             100% { opacity: 1; transform: translateY(0) scale(1); }
         }
-        .top-nav-right {
-            display: flex;
-            justify-content: flex-end;
-            align-items: center;
-            padding: 1rem 2rem;
-            border-bottom: 1px solid var(--panel-border);
-            background: var(--panel-bg);
-            backdrop-filter: var(--glass-blur);
-            position: sticky;
-            top: 0;
-            z-index: 90;
-        }
     </style>
 </head>
 <body>

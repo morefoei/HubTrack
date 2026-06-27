@@ -5,7 +5,7 @@
         </div>
         <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">Buat pesan rekap jadwal kehadiran otomatis untuk meminta approval atasan.</p>
 
-        <div class="tabs" style="display: flex; gap: 1rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border);">
+        <div class="tabs" style="display: flex; gap: 1rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); flex-wrap: wrap;">
             <button class="tab-btn active" data-tab="wa-reguler" style="background: none; border: none; color: var(--text-main); padding: 0.5rem 1rem; border-bottom: 2px solid var(--primary); cursor: pointer; font-weight: 600;">Reguler / Dedicated</button>
             <button class="tab-btn" data-tab="wa-shift" style="background: none; border: none; color: var(--text-muted); padding: 0.5rem 1rem; border-bottom: 2px solid transparent; cursor: pointer; font-weight: 600;">Shift / Manual</button>
         </div>
@@ -58,9 +58,9 @@
                     </select>
                 </div>
                 <div id="waShiftScheduleInfo" style="margin-bottom: 1rem; padding: 1rem; background: rgba(59,130,246,0.1); border-left: 4px solid #3b82f6; border-radius: 4px; display: none;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.5rem;">
                         <strong style="color: #60a5fa;"><i class="fa-regular fa-calendar-check"></i> Jadwal Shift Ditemukan:</strong>
-                        <select id="waShiftMonthFilter" style="background: var(--input-bg); color: var(--text-main); border: 1px solid var(--border); padding: 0.3rem; border-radius: 4px; font-size: 0.8rem; display: none;">
+                        <select id="waShiftMonthFilter" style="background: var(--input-bg); color: var(--text-main); border: 1px solid var(--border); padding: 0.3rem; border-radius: 4px; font-size: 0.8rem; display: none; width: auto;">
                             <option value="all">Semua Bulan</option>
                             <option value="0">Januari</option>
                             <option value="1">Februari</option>

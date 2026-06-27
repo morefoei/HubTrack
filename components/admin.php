@@ -8,6 +8,26 @@
 
             <h3 style="color: var(--primary); border-bottom: 1px solid var(--panel-border); padding-bottom: 0.5rem; margin-bottom: 1rem;">Pengaturan Global</h3>
             <form id="globalSettingsForm">
+                <div class="form-group" style="background: rgba(59, 130, 246, 0.05); padding: 1rem; border-left: 4px solid #3b82f6; border-radius: 4px; margin-bottom: 1.5rem;">
+                    <h4 style="color: #60a5fa; margin-top: 0; margin-bottom: 1rem;"><i class="fa-solid fa-table-list"></i> Pusat Data Log (Zoho Spreadsheet)</h4>
+                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">Pengaturan di bawah ini akan digunakan oleh semua user yang memilih "Ikuti Pengaturan Admin (Otomatis)" di halaman Settings mereka.</p>
+                    
+                    <div class="form-group">
+                        <label>Global Spreadsheet ID</label>
+                        <input type="text" id="globalDataSpreadsheetId" class="form-control" placeholder="ID from Google Sheet URL">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Global Service Account JSON</label>
+                        <textarea id="globalDataGoogleCredentials" class="form-control" rows="4" placeholder="Paste the content of google-credentials.json"></textarea>
+                        
+                        <div style="margin-top: 1rem;">
+                            <button type="button" id="btnTestDataSpreadsheet" style="background: rgba(16, 185, 129, 0.1); color: var(--success); border: 1px solid var(--success); padding: 0.8rem 1rem; border-radius: 6px; cursor: pointer; white-space: nowrap;"><i class="fa-solid fa-plug-circle-check"></i> Test Koneksi Google Sheet</button>
+                            <div id="testDataSpreadsheetResult" style="margin-top: 1rem; display: none; padding: 1rem; border-radius: 6px; font-size: 0.9rem;"></div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="form-group">
                     <label>Shift Schedule Spreadsheet ID</label>
                     <div style="display: flex; gap: 0.5rem; align-items: center;">
@@ -48,6 +68,7 @@
                     <thead>
                         <tr style="background: rgba(255,255,255,0.05); border-bottom: 1px solid var(--panel-border);">
                             <th style="padding: 1rem; color: var(--text-muted); font-weight: 600;">Username</th>
+                            <th style="padding: 1rem; color: var(--text-muted); font-weight: 600;">Nama Sheet</th>
                             <th style="padding: 1rem; color: var(--text-muted); font-weight: 600;">Status Password</th>
                             <th style="padding: 1rem; color: var(--text-muted); font-weight: 600;">Terakhir Login</th>
                             <th style="padding: 1rem; color: var(--text-muted); font-weight: 600; text-align: right;">Aksi</th>
@@ -55,7 +76,7 @@
                     </thead>
                     <tbody id="adminUserTableBody">
                         <tr>
-                            <td colspan="4" style="padding: 1.5rem; text-align: center; color: var(--text-muted);">
+                            <td colspan="5" style="padding: 1.5rem; text-align: center; color: var(--text-muted);">
                                 Klik "Muat Ulang Daftar" untuk melihat pengguna.
                             </td>
                         </tr>

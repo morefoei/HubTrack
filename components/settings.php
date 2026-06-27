@@ -5,20 +5,28 @@
                     <button id="saveSettingsBtn"><i class="fa-solid fa-floppy-disk"></i> Save Settings</button>
                 </div>
                 <form id="settingsForm">
-                    <div class="form-group">
-                        <label>Google Spreadsheet ID</label>
-                        <input type="text" id="spreadsheetId" placeholder="ID from your Google Sheet URL (e.g. 1RsoGFQok2dk3MP...)">
+                    <div class="form-group" id="sheetConfigModeContainer" style="display: none;">
+                        <label>Konfigurasi Google Sheet</label>
+                        <select id="sheetConfigMode">
+                            <option value="admin">Ikuti Pengaturan Admin (Otomatis)</option>
+                            <option value="manual">Manual / Advanced Settings (Atur Sendiri)</option>
+                        </select>
                     </div>
-                    <div class="form-group">
-                        <label>Google Sheet Tab Name</label>
-                        <input type="text" id="sheetName" placeholder="e.g. Sheet1 or tasklist" value="Sheet1">
-                    </div>
-
-
-                    <div class="form-group">
-                        <label>Google Service Account JSON</label>
-                        <textarea id="googleCredentials" rows="4" placeholder="Paste the content of your google-credentials.json here"></textarea>
-                        <small style="color: var(--text-muted);">This is stored securely on your local server.</small>
+                    
+                    <div id="manualSheetSettingsContainer">
+                        <div class="form-group" id="groupSpreadsheetId">
+                            <label>Google Spreadsheet ID</label>
+                            <input type="text" id="spreadsheetId" placeholder="ID from your Google Sheet URL (e.g. 1RsoGFQok2dk3MP...)">
+                        </div>
+                        <div class="form-group" id="groupSheetName">
+                            <label>Google Sheet Tab Name</label>
+                            <input type="text" id="sheetName" placeholder="e.g. Sheet1 or tasklist" value="Sheet1">
+                        </div>
+                        <div class="form-group" id="groupGoogleCredentials">
+                            <label>Google Service Account JSON</label>
+                            <textarea id="googleCredentials" rows="4" placeholder="Paste the content of your google-credentials.json here"></textarea>
+                            <small style="color: var(--text-muted);">This is stored securely on your local server.</small>
+                        </div>
                     </div>
 
                     <div class="form-group" style="display: none;">
