@@ -1530,7 +1530,7 @@ if ($action === 'get_zoho_projects' && $method === 'POST') {
     
     $tokenData = json_decode($tokenResponse, true);
     if (empty($tokenData['access_token'])) {
-        echo json_encode(['success' => false, 'message' => 'Failed to refresh Zoho token']);
+        echo json_encode(['success' => false, 'message' => 'Failed to refresh Zoho token: ' . $tokenResponse]);
         exit;
     }
     $accessToken = $tokenData['access_token'];
@@ -1589,7 +1589,7 @@ if ($action === 'get_project_tasks' && $method === 'POST') {
     
     $tokenData = json_decode($tokenResponse, true);
     if (empty($tokenData['access_token'])) {
-        echo json_encode(['success' => false, 'message' => 'Failed to refresh Zoho token']);
+        echo json_encode(['success' => false, 'message' => 'Failed to refresh Zoho token: ' . $tokenResponse]);
         exit;
     }
     $accessToken = $tokenData['access_token'];
@@ -1692,7 +1692,7 @@ if ($action === 'get_subtasks' && $method === 'POST') {
     
     $tokenData = json_decode($tokenResponse, true);
     if (empty($tokenData['access_token'])) {
-        echo json_encode(['success' => false, 'message' => 'Failed to refresh Zoho token']);
+        echo json_encode(['success' => false, 'message' => 'Failed to refresh Zoho token: ' . $tokenResponse]);
         exit;
     }
     $accessToken = $tokenData['access_token'];

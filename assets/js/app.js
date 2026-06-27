@@ -1150,10 +1150,11 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (!data.success && data.message.includes('Settings missing')) {
                 // Ignore if settings are not filled yet
             } else {
-                showToast('Gagal memuat list project: ' + (data.message || 'Unknown error'), 'warning');
+                alert('Gagal memuat list project: ' + (data.message || 'Unknown error'));
             }
         } catch (err) {
             console.error('Error loading projects', err);
+            alert('Koneksi ke server gagal saat memuat project: ' + err.message);
         } finally {
             const btn = document.getElementById('refreshProjectsBtn');
             if (btn) btn.innerHTML = '<i class="fa-solid fa-rotate"></i> Load Projects';
@@ -2419,7 +2420,7 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 if (filterVal !== 'all') {
                     if (filterVal === 'open') {
-                        matchesFilter = !statusLower.includes('complete') && !statusLower.includes('closed') && !statusLower.includes('backlog');
+                        matchesFilter = !statusLower.includes('complete') && !statusLower.includes('closed') && !statusLower.includes('backlog') && !statusLower.includes('cancel');
                     } else if (filterVal === 'backlog') {
                         matchesFilter = statusLower.includes('backlog');
                     } else if (filterVal === 'complete') {
@@ -2433,18 +2434,18 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             let html = `
-                <div style="margin-left: ${depth * 20}px; border-left: ${depth > 0 ? '1px dashed var(--panel-border)' : 'none'}; padding-left: ${depth > 0 ? '15px' : '0'}; margin-bottom: 0.5rem; position: relative;">
-                    ${depth > 0 ? '<div style="position: absolute; left: 0; top: 12px; width: 10px; border-top: 1px dashed var(--panel-border);"></div>' : ''}
-                    <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.3); padding: 0.6rem 1rem; border-radius: 6px; border: 1px solid var(--panel-border);">
-                        <div style="display: flex; align-items: center; gap: 0.5rem;">
-                            <i class="fa-solid ${node.children.length > 0 ? 'fa-folder-open' : 'fa-list-check'}" style="color: ${depth === 0 ? 'var(--primary)' : 'var(--text-muted)'};"></i>
-                            <span style="font-weight: ${depth === 0 ? '600' : '400'};">${sanitizeHTML(node.name)}</span>
+                <div style="margin-left: ${depth * 20}px; border-left: ${depth > 0 ? '1px dashed var(--panel-border)' : 'none'}; padding-left: ${depth > 0 ? '15px' : '0'}; margin-bottom: 0.6rem; position: relative;">
+                    ${depth > 0 ? '<div style="position: absolute; left: 0; top: 18px; width: 10px; border-top: 1px dashed var(--panel-border);"></div>' : ''}
+                    <div class="task-row">
+                        <div class="task-row-content">
+                            <i class="task-row-icon fa-solid ${node.children.length > 0 ? 'fa-folder-open' : 'fa-list-check'}" style="color: ${depth === 0 ? 'var(--primary)' : 'var(--text-muted)'};"></i>
+                            <span class="task-row-title" style="font-weight: ${depth === 0 ? '600' : '400'};">${sanitizeHTML(node.name)}</span>
                             ${buildStatusSelect(node)}
                         </div>
-                        <div>
-                            <button class="use-task-btn" data-path="${sanitizeHTML(nodePath)}" style="background: var(--primary); color: white; border: none; padding: 0.2rem 0.6rem; font-size: 0.75rem; border-radius: 4px; cursor: pointer; margin-right: 0.5rem;"><i class="fa-solid fa-pen"></i> Log</button>
-                            ${depth === 0 ? `<button class="fetch-subtasks-btn" data-id="${node.id}" data-path="${sanitizeHTML(nodePath)}" style="background: transparent; border: 1px solid #10b981; color: #10b981; padding: 0.2rem 0.6rem; font-size: 0.75rem; border-radius: 4px; cursor: pointer; margin-right: 0.5rem;"><i class="fa-solid fa-download"></i> Subtasks</button>` : ''}
-                            <button class="add-subtask-btn" data-id="${node.id}" data-path="${sanitizeHTML(nodePath)}" style="background: transparent; border: 1px solid var(--primary); color: var(--primary); padding: 0.2rem 0.6rem; font-size: 0.75rem; border-radius: 4px; cursor: pointer;"><i class="fa-solid fa-plus"></i> New Sub</button>
+                        <div class="task-actions">
+                            <button class="task-btn task-btn-primary use-task-btn" data-path="${sanitizeHTML(nodePath)}"><i class="fa-solid fa-pen"></i> Log</button>
+                            ${depth === 0 ? `<button class="task-btn task-btn-success fetch-subtasks-btn" data-id="${node.id}" data-path="${sanitizeHTML(nodePath)}"><i class="fa-solid fa-plus"></i> Subtasks</button>` : ''}
+                            <button class="task-btn task-btn-outline add-subtask-btn" data-id="${node.id}" data-path="${sanitizeHTML(nodePath)}"><i class="fa-solid fa-plus"></i> New Sub</button>
                         </div>
                     </div>
                     <div class="lazy-subtasks-container" id="subtasks-container-${node.id}" style="margin-top: 0.5rem;">
@@ -2452,7 +2453,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (childrenHtml) {
                 html += childrenHtml;
             }
-            html += '</div></div>';            html += '</div>';
+            html += '</div></div>';
             return { isVisible: true, html };
         }
 
@@ -2514,7 +2515,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         icon.className = 'fa-solid fa-minus';
                     } else {
                         container.style.display = 'none';
-                        icon.className = 'fa-solid fa-download';
+                        icon.className = 'fa-solid fa-plus';
                     }
                     return;
                 }
@@ -2557,7 +2558,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 } catch (err) {
                     showToast('Gagal memuat subtask: ' + err.message, 'error');
-                    icon.className = 'fa-solid fa-download';
+                    icon.className = 'fa-solid fa-plus';
                 }
             });
         });
