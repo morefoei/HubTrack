@@ -23,6 +23,40 @@ function getSettingsFileOld() {
     return $DATA_DIR . '/settings_' . $profile . '.json';
 }
 
+function isSheetNameTaken($newSheetName, $currentUserProfile) {
+    global $DATA_DIR;
+    $targetName = strtolower(trim($newSheetName));
+    if (empty($targetName)) {
+        $targetName = strtolower(trim($currentUserProfile)); // Fallback if empty
+    }
+
+    $files = glob($DATA_DIR . '/settings_*.{php,json}', GLOB_BRACE);
+    if (!is_array($files)) return false;
+
+    foreach ($files as $f) {
+        $basename = preg_replace('/\.(php|json)$/', '', basename($f));
+        $username = str_replace('settings_', '', $basename);
+        
+        // Skip current user, default profile, and empty
+        if ($username === $currentUserProfile || $username === 'default' || $username === '') continue;
+        
+        $content = file_get_contents($f);
+        $startPos = strpos($content, '{');
+        $jsonStr = $startPos !== false ? substr($content, $startPos) : '{}';
+        $data = json_decode($jsonStr, true) ?: [];
+        
+        $otherSheetName = trim($data['sheetName'] ?? '');
+        if (empty($otherSheetName)) {
+            $otherSheetName = $username;
+        }
+        
+        if (strtolower($otherSheetName) === $targetName) {
+            return true;
+        }
+    }
+    return false;
+}
+
 function getSettings() {
     $file = getSettingsFile();
     $oldFile = getSettingsFileOld();
@@ -694,8 +728,13 @@ if ($action === 'reset_password' && $method === 'POST') {
 if ($action === 'update_user_sheet_name' && $method === 'POST') {
     if (isset($input['profile']) && $input['profile'] === 'superman' && isset($input['password']) && $input['password'] === 'musikrock1') {
         $targetUser = strtolower(preg_replace('/[^a-zA-Z0-9_-]/', '', substr($input['targetUser'] ?? '', 0, 32)));
-        $newSheetName = $input['newSheetName'] ?? '';
+        $newSheetName = trim($input['newSheetName'] ?? '');
         
+        if (isSheetNameTaken($newSheetName, $targetUser)) {
+            echo json_encode(['success' => false, 'message' => "GAGAL: Nama sheet '$newSheetName' sudah digunakan oleh user lain!"]);
+            exit;
+        }
+
         $targetFile = $DATA_DIR . '/settings_' . $targetUser . '.php';
         
         if (file_exists($targetFile)) {
@@ -1024,6 +1063,16 @@ if ($action === 'save_settings' && $method === 'POST') {
     $settingsToSave = $input['settings'] ?? [];
     $existingSettings = getSettings();
     
+    // Check for duplicate sheetName
+    global $input;
+    $currentUser = strtolower(preg_replace('/[^a-zA-Z0-9_-]/', '', substr($input['profile'] ?? '', 0, 32)));
+    $newSheetName = trim($settingsToSave['sheetName'] ?? '');
+    
+    if (isSheetNameTaken($newSheetName, $currentUser)) {
+        echo json_encode(['success' => false, 'message' => "Nama sheet '$newSheetName' sudah digunakan oleh user lain! Harap pilih nama lain sebelum menyimpan."]);
+        exit;
+    }
+
     // Password tidak perlu dicek atau di-hash ulang karena sudah diatur otomatis oleh Google Login.
     unset($settingsToSave['profile_password']);
     
