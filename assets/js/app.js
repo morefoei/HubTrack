@@ -2267,7 +2267,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(attachSettings({ projectName }))
                 });
-                const data = await res.json();
+                const resClone = res.clone();
+                let data;
+                try {
+                    data = await res.json();
+                } catch (jsonErr) {
+                    const text = await resClone.text();
+                    console.error("JSON Parse Error. Server returned:", text);
+                    throw new Error("Server tidak mengembalikan JSON yang valid. Silakan cek console (F12) untuk melihat error PHP.");
+                }
                 
                 if (data.success) {
                     currentTasks = data.tasks;
@@ -2278,7 +2286,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     taskManagerContainer.innerHTML = `<p style="color: var(--danger); text-align: center;">Error: ${data.message}</p>`;
                 }
             } catch (err) {
-                taskManagerContainer.innerHTML = '<p style="color: var(--danger); text-align: center;">Koneksi gagal</p>';
+                console.error("Fetch tasks error:", err);
+                taskManagerContainer.innerHTML = `<p style="color: var(--danger); text-align: center;">Koneksi gagal: ${err.message}</p>`;
             }
             
             btnFetchTasks.disabled = false;

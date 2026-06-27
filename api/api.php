@@ -1659,53 +1659,70 @@ if ($action === 'get_project_tasks' && $method === 'POST') {
         $index += $range;
     }
 
-        // Jalankan CURL secara paralel (Multi-Threading)
-        $chunks = array_chunk($subtaskUrls, 10, true);
-        foreach ($chunks as $chunk) {
-            $mh = curl_multi_init();
-            $chArray = [];
+        // Jalankan CURL secara paralel jika didukung, atau sequential jika tidak
+        if (function_exists('curl_multi_init')) {
+            $chunks = array_chunk($subtaskUrls, 10, true);
+            foreach ($chunks as $chunk) {
+                $mh = curl_multi_init();
+                $chArray = [];
 
-            foreach ($chunk as $parentId => $url) {
-                $ch = curl_init();
-                curl_setopt($ch, CURLOPT_URL, $url);
-                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-                curl_setopt($ch, CURLOPT_HTTPHEADER, ['Authorization: Bearer ' . $accessToken]);
-                curl_setopt($ch, CURLOPT_TIMEOUT, 15);
-                curl_multi_add_handle($mh, $ch);
-                $chArray[$parentId] = $ch;
-            }
-
-            $running = null;
-            do {
-                curl_multi_exec($mh, $running);
-                if ($running) {
-                    curl_multi_select($mh);
+                foreach ($chunk as $parentId => $url) {
+                    $ch = curl_init();
+                    curl_setopt($ch, CURLOPT_URL, $url);
+                    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Authorization: Bearer ' . $accessToken]);
+                    curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+                    curl_multi_add_handle($mh, $ch);
+                    $chArray[$parentId] = $ch;
                 }
-            } while ($running > 0);
 
-            foreach ($chArray as $parentId => $ch) {
-                $res = curl_multi_getcontent($ch);
-                $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-                curl_multi_remove_handle($mh, $ch);
-                curl_close($ch);
+                $running = null;
+                do {
+                    curl_multi_exec($mh, $running);
+                    curl_multi_select($mh);
+                } while ($running > 0);
 
-                if ($httpCode == 200 && $res) {
-                    $subRes = json_decode($res, true);
-                    if (isset($subRes['tasks'])) {
-                        foreach ($subRes['tasks'] as $st) {
-                            $stStatusRaw = $st['status'] ?? '';
-                            $allTasks[] = [
-                                'id' => $st['id_string'],
-                                'name' => $st['name'] ?? 'Unknown Task',
-                                'parent' => $parentId,
-                                'status' => is_array($stStatusRaw) ? ($stStatusRaw['name'] ?? '') : $stStatusRaw,
-                                'status_id' => is_array($stStatusRaw) ? ($stStatusRaw['id'] ?? '') : ''
-                            ];
+                foreach ($chArray as $parentId => $ch) {
+                    $res = curl_multi_getcontent($ch);
+                    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                    curl_multi_remove_handle($mh, $ch);
+                    curl_close($ch);
+
+                    if ($httpCode === 200 && $res) {
+                        $subData = json_decode($res, true);
+                        if (isset($subData['tasks']) && is_array($subData['tasks'])) {
+                            foreach ($subData['tasks'] as $sub) {
+                                $subStatusRaw = $sub['status'] ?? '';
+                                $allTasks[] = [
+                                    'id' => $sub['id_string'],
+                                    'name' => $sub['name'] ?? 'Unknown Subtask',
+                                    'parent' => (string)$parentId,
+                                    'status' => is_array($subStatusRaw) ? ($subStatusRaw['name'] ?? '') : $subStatusRaw,
+                                    'status_id' => is_array($subStatusRaw) ? ($subStatusRaw['id'] ?? '') : ''
+                                ];
+                            }
                         }
                     }
                 }
+                curl_multi_close($mh);
             }
-            curl_multi_close($mh);
+        } else {
+            // Fallback: Sequential CURL jika server hosting mematikan fitur curl_multi_init
+            foreach ($subtaskUrls as $parentId => $url) {
+                $subData = localApiCall(str_replace(rtrim($apiUrl, '/'), '', $url));
+                if (isset($subData['tasks']) && is_array($subData['tasks'])) {
+                    foreach ($subData['tasks'] as $sub) {
+                        $subStatusRaw = $sub['status'] ?? '';
+                        $allTasks[] = [
+                            'id' => $sub['id_string'],
+                            'name' => $sub['name'] ?? 'Unknown Subtask',
+                            'parent' => (string)$parentId,
+                            'status' => is_array($subStatusRaw) ? ($subStatusRaw['name'] ?? '') : $subStatusRaw,
+                            'status_id' => is_array($subStatusRaw) ? ($subStatusRaw['id'] ?? '') : ''
+                        ];
+                    }
+                }
+            }
         }
     
     echo json_encode(['success' => true, 'tasks' => $allTasks, 'projectId' => $pid]);
