@@ -1166,36 +1166,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const grpName = document.getElementById('groupSheetName');
         const grpCred = document.getElementById('groupGoogleCredentials');
         
-        const toggleInputs = (disable) => {
-            const inputs = [
-                document.getElementById('spreadsheetId'),
-                document.getElementById('googleCredentials'),
-                document.getElementById('clientId'),
-                document.getElementById('clientSecret'),
-                document.getElementById('refreshToken'),
-                document.getElementById('portalName')
-            ];
-            
-            inputs.forEach(el => {
-                if (el) {
-                    el.readOnly = disable;
-                    if (disable) {
-                        el.style.opacity = '0.5';
-                        el.style.cursor = 'not-allowed';
-                    } else {
-                        el.style.opacity = '1';
-                        el.style.cursor = 'text';
-                    }
-                }
-            });
-        };
-        
         if (container) {
             container.style.display = 'block';
+            
             if (mode === 'admin') {
-                toggleInputs(true);
+                if (grpId) grpId.style.display = 'none';
+                if (grpCred) grpCred.style.display = 'none';
             } else {
-                toggleInputs(false);
+                if (grpId) grpId.style.display = 'block';
+                if (grpCred) grpCred.style.display = 'block';
             }
         }
     };
@@ -2220,10 +2199,21 @@ document.addEventListener('DOMContentLoaded', () => {
     // Task Manager Logic
     const btnFetchTasks = document.getElementById('btnFetchTasks');
     const taskManagerProject = document.getElementById('taskManagerProject');
+    const clearProjectSearch = document.getElementById('clearProjectSearch');
     const taskManagerContainer = document.getElementById('taskManagerContainer');
     const btnCreateRootTask = document.getElementById('btnCreateRootTask');
     let currentTasks = [];
     let currentProjectId = null;
+    
+    if (taskManagerProject && clearProjectSearch) {
+        taskManagerProject.addEventListener('input', () => {
+            clearProjectSearch.style.display = taskManagerProject.value.length > 0 ? 'block' : 'none';
+        });
+        clearProjectSearch.addEventListener('click', () => {
+            taskManagerProject.value = '';
+            clearProjectSearch.style.display = 'none';
+        });
+    }
     
     const taskStatusFilter = document.getElementById('taskStatusFilter');
     if (taskStatusFilter) {
@@ -2235,10 +2225,26 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const taskSearchInput = document.getElementById('taskSearchInput');
+    const clearTaskSearch = document.getElementById('clearTaskSearch');
     if (taskSearchInput) {
         taskSearchInput.addEventListener('input', () => {
+            if (clearTaskSearch) {
+                clearTaskSearch.style.display = taskSearchInput.value.length > 0 ? 'block' : 'none';
+            }
             if (currentTasks.length > 0) {
                 renderTaskManager();
+            }
+        });
+    }
+
+    if (clearTaskSearch) {
+        clearTaskSearch.addEventListener('click', () => {
+            if (taskSearchInput) {
+                taskSearchInput.value = '';
+                clearTaskSearch.style.display = 'none';
+                if (currentTasks.length > 0) {
+                    renderTaskManager();
+                }
             }
         });
     }

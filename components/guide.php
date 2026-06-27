@@ -34,12 +34,11 @@
 
                         <h3 style="color: var(--primary); border-bottom: 1px solid var(--panel-border); padding-bottom: 0.5rem;">Bagian 3: Melengkapi Tab Settings di Aplikasi</h3>
                         <ul style="margin-left: 1.5rem; margin-bottom: 1.5rem;">
-                            <li><strong>Google Spreadsheet ID:</strong> Salin ID panjang dari URL file Google Sheets Anda (terletak di antara <code>/d/</code> dan <code>/edit</code>).</li>
-                            <li><strong>Google Sheet Tab Name:</strong> Nama Sheet di bagian bawah layar (misal: <code>Sheet1</code> atau <code>tasklist</code>).</li>
+                            <li><strong>Konfigurasi Google Sheet:</strong> Jika Admin Anda sudah mengatur konfigurasi pusat, cukup pilih <em>"Ikuti Pengaturan Admin (Otomatis)"</em>. Jika tidak, pilih <em>"Manual"</em> dan isi <strong>Google Spreadsheet ID</strong> serta <strong>Google Service Account JSON</strong> Anda.</li>
+                            <li><strong>Google Sheet Tab Name:</strong> Nama Sheet tempat Anda akan menyimpan data (misal: <code>Sheet1</code> atau <code>tasklist</code>). <em>*Sistem akan otomatis membuat sheet baru jika nama tersebut belum ada.</em></li>
                             <li><strong>Zoho Portal Name:</strong> ID organisasi Zoho Anda (contoh: <code>847721722</code>).</li>
                             <li><strong>URL Google Form Absensi (Opsional):</strong> Masukkan link Form absen HR/HCA di sini agar Anda bisa absen langsung di aplikasi.</li>
-                            <li><strong>Profile Password (Wajib):</strong> Buat kata sandi agar tidak ada orang lain yang bisa membajak atau melihat Token/Pengaturan rahasia Anda.</li>
-                            <li>Setelah semua terisi, klik tombol <strong>Save Settings</strong>.</li>
+                            <li>Setelah semua terisi (termasuk Token Zoho), klik tombol <strong>Save Settings</strong>.</li>
                         </ul>
 
                         <h3 style="color: var(--primary); border-bottom: 1px solid var(--panel-border); padding-bottom: 0.5rem;">Bagian 4: Cara Penggunaan & Fitur Canggih</h3>
@@ -82,12 +81,12 @@
                         <h3 style="color: var(--primary); border-bottom: 1px solid var(--panel-border); padding-bottom: 0.5rem;">Bagian 5: Sinkronisasi ke Zoho</h3>
                         <p>Pastikan semua data di Data Logs berstatus `final`. Buka tab Sync Manager, lalu klik <strong>Start Sync</strong>. Bot akan mengirim semuanya ke Zoho secara otomatis!</p>
 
-                        <h3 style="color: var(--primary); border-bottom: 1px solid var(--panel-border); padding-bottom: 0.5rem;">Bagian 6: Lupa Password & Keamanan Profil</h3>
-                        <p style="margin-bottom: 1rem;">Aplikasi ini mendukung sistem banyak profil (multi-user) yang diproteksi kata sandi secara independen. Jika Anda mengalami kendala saat masuk:</p>
+                        <h3 style="color: var(--primary); border-bottom: 1px solid var(--panel-border); padding-bottom: 0.5rem;">Bagian 6: Keamanan Akses (SSO)</h3>
+                        <p style="margin-bottom: 1rem;">Aplikasi ini menggunakan sistem <strong>Google Single Sign-On (SSO)</strong> yang terintegrasi secara ketat.</p>
                         <ul style="margin-left: 1.5rem; margin-bottom: 1.5rem;">
-                            <li>Jika Anda <strong>lupa password</strong> profil, Anda tidak akan bisa mengakses <em>dashboard</em> maupun mengubah pengaturan sinkronisasi Anda.</li>
-                            <li>Demi alasan keamanan dan privasi data masing-masing anggota tim, tidak ada tombol pemulihan password secara mandiri di halaman depan.</li>
-                            <li><strong>Solusi:</strong> Silakan hubungi <strong>Admin</strong> atau koordinator sistem Anda untuk meminta <em>Reset Password</em>. Setelah di-reset oleh Admin, Anda dapat kembali masuk dan mengatur password baru.</li>
+                            <li>Hanya email dengan domain resmi perusahaan (<strong>@itgroupinc.asia</strong>) yang dizinkan untuk login.</li>
+                            <li>Karena menggunakan Google SSO, Anda <strong>tidak perlu</strong> mengingat atau membuat *password* khusus untuk aplikasi ini.</li>
+                            <li>Jika ada anggota tim yang *resign* atau emailnya dinonaktifkan oleh Admin IT, aksesnya ke aplikasi ini juga akan otomatis terputus.</li>
                         </ul>
 
                         <h3 style="color: var(--primary); border-bottom: 1px solid var(--panel-border); padding-bottom: 0.5rem;">6. Troubleshooting Error</h3>
@@ -128,12 +127,11 @@
 
                         <h3 style="color: var(--primary); border-bottom: 1px solid var(--panel-border); padding-bottom: 0.5rem;">Part 3: Completing App Settings</h3>
                         <ul style="margin-left: 1.5rem; margin-bottom: 1.5rem;">
-                            <li><strong>Google Spreadsheet ID:</strong> Copy the long ID from your Google Sheets URL (located between <code>/d/</code> and <code>/edit</code>).</li>
-                            <li><strong>Google Sheet Tab Name:</strong> The name of the sheet tab at the bottom (e.g., <code>Sheet1</code> or <code>tasklist</code>).</li>
+                            <li><strong>Google Sheet Config:</strong> If your Admin has set up central config, just select <em>"Admin (Automatic)"</em>. Otherwise, select <em>"Manual"</em> and fill in your <strong>Spreadsheet ID</strong> and <strong>Service Account JSON</strong>.</li>
+                            <li><strong>Google Sheet Tab Name:</strong> The name of the sheet tab for your data (e.g., <code>Sheet1</code> or <code>tasklist</code>). <em>*System will auto-create it if it doesn't exist.</em></li>
                             <li><strong>Zoho Portal Name:</strong> Your Zoho organization ID (e.g., <code>847721722</code>).</li>
                             <li><strong>Google Form Attendance URL (Optional):</strong> Enter the HR/HCA Google Form link here to show it in the Attendance tab.</li>
-                            <li><strong>Profile Password (Required):</strong> Set a password to protect your account and tokens from other users on this server.</li>
-                            <li>Click <strong>Save Settings</strong> once everything is filled out.</li>
+                            <li>Click <strong>Save Settings</strong> once everything (including Zoho tokens) is filled out.</li>
                         </ul>
 
                         <h3 style="color: var(--primary); border-bottom: 1px solid var(--panel-border); padding-bottom: 0.5rem;">Part 4: Usage & Features</h3>
@@ -174,12 +172,12 @@
                             <li><strong>Sync Manager:</strong> Ensure all logs in Data Logs are marked as `final`. Open the Sync Manager tab and click <strong>Start Sync</strong> to push everything to Zoho automatically!</li>
                         </ol>
 
-                        <h3 style="color: var(--primary); border-bottom: 1px solid var(--panel-border); padding-bottom: 0.5rem;">Part 5: Forgot Password & Security</h3>
-                        <p style="margin-bottom: 1rem;">This app supports a multi-user (multi-tenant) system protected by independent passwords. If you have trouble logging in:</p>
+                        <h3 style="color: var(--primary); border-bottom: 1px solid var(--panel-border); padding-bottom: 0.5rem;">Part 5: Access Security (SSO)</h3>
+                        <p style="margin-bottom: 1rem;">This app uses a strictly integrated <strong>Google Single Sign-On (SSO)</strong> system.</p>
                         <ul style="margin-left: 1.5rem; margin-bottom: 1.5rem;">
-                            <li>If you <strong>forget your profile password</strong>, you won't be able to access the dashboard or sync settings.</li>
-                            <li>For privacy and security reasons, there is no automated self-recovery button on the front page.</li>
-                            <li><strong>Solution:</strong> Please contact your <strong>Admin</strong> or system coordinator to request a <em>Password Reset</em>. Afterwards, you can log in and set a new password.</li>
+                            <li>Only official company emails (<strong>@itgroupinc.asia</strong>) are allowed to log in.</li>
+                            <li>Because it uses Google SSO, you <strong>do not need</strong> to remember or create a specific password for this application.</li>
+                            <li>If a team member resigns or their email is disabled by IT, their access to this app will be automatically revoked.</li>
                         </ul>
 
                         <h3 style="color: var(--primary); border-bottom: 1px solid var(--panel-border); padding-bottom: 0.5rem;">6. Troubleshooting</h3>

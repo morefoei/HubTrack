@@ -128,12 +128,6 @@ function getSettings() {
                 $adminData = json_decode(substr($adminContent, $adminStart), true) ?: [];
                 $userSettings['spreadsheetId'] = $adminData['spreadsheetId'] ?? '';
                 $userSettings['googleCredentials'] = $adminData['googleCredentials'] ?? '';
-                $userSettings['clientId'] = $adminData['clientId'] ?? '';
-                $userSettings['clientSecret'] = $adminData['clientSecret'] ?? '';
-                $userSettings['refreshToken'] = $adminData['refreshToken'] ?? '';
-                $userSettings['portalName'] = $adminData['portalName'] ?? '';
-                $userSettings['accountsUrl'] = $adminData['accountsUrl'] ?? '';
-                $userSettings['apiUrl'] = $adminData['apiUrl'] ?? '';
             }
         }
         
@@ -1571,6 +1565,7 @@ if ($action === 'get_zoho_projects' && $method === 'POST') {
 }
 
 if ($action === 'get_project_tasks' && $method === 'POST') {
+    set_time_limit(0);
     $settings = getSettings();
     $projectName = $input['projectName'] ?? '';
     if (!$projectName) {
@@ -1643,13 +1638,14 @@ if ($action === 'get_project_tasks' && $method === 'POST') {
         }
 
         foreach ($taskRes['tasks'] as $t) {
-            $statusName = is_array($t['status']) ? $t['status']['name'] : $t['status'];
+            $statusRaw = $t['status'] ?? '';
+            $statusName = is_array($statusRaw) ? ($statusRaw['name'] ?? '') : $statusRaw;
             $allTasks[] = [
                 'id' => $t['id_string'],
-                'name' => $t['name'],
+                'name' => $t['name'] ?? 'Unknown Task',
                 'parent' => null,
                 'status' => $statusName,
-                'status_id' => is_array($t['status']) ? ($t['status']['id'] ?? '') : ''
+                'status_id' => is_array($statusRaw) ? ($statusRaw['id'] ?? '') : ''
             ];
             
             // Optimasi: Jangan ambil subtask jika parent-nya sudah Complete/Closed (mencegah PHP timeout)
@@ -1697,12 +1693,13 @@ if ($action === 'get_project_tasks' && $method === 'POST') {
                     $subRes = json_decode($res, true);
                     if (isset($subRes['tasks'])) {
                         foreach ($subRes['tasks'] as $st) {
+                            $stStatusRaw = $st['status'] ?? '';
                             $allTasks[] = [
                                 'id' => $st['id_string'],
-                                'name' => $st['name'],
+                                'name' => $st['name'] ?? 'Unknown Task',
                                 'parent' => $parentId,
-                                'status' => is_array($st['status']) ? $st['status']['name'] : $st['status'],
-                                'status_id' => is_array($st['status']) ? ($st['status']['id'] ?? '') : ''
+                                'status' => is_array($stStatusRaw) ? ($stStatusRaw['name'] ?? '') : $stStatusRaw,
+                                'status_id' => is_array($stStatusRaw) ? ($stStatusRaw['id'] ?? '') : ''
                             ];
                         }
                     }

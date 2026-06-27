@@ -14,8 +14,8 @@ TrackHub memecahkan masalah ini dengan skema **Input Satu Pintu (Single Source o
 
 ## Fitur Utama
 
-1. **Sistem Multi-Profile Terisolasi (Multi-Tenant)**
-   Setiap pengguna dapat masuk menggunakan username profil masing-masing. Semua token autentikasi (Google & Zoho) milik pengguna tersebut akan dienkripsi dan disimpan secara terpisah di backend (tanpa database SQL, melainkan menggunakan sistem file PHP tersandi).
+1. **Sistem Multi-Profile Terisolasi (Multi-Tenant) dengan Admin Control**
+   Setiap pengguna dapat masuk menggunakan username profil masing-masing. Fitur "Ikuti Pengaturan Admin (Otomatis)" memungkinkan karyawan mewarisi konfigurasi Google Sheet utama secara terpusat, sambil tetap mempertahankan pengaturan Zoho API yang spesifik untuk tiap individu. TrackHub juga memastikan keamanan data antarpengguna dengan mencegah penggunaan nama tab (*sheet*) Google yang sama secara bersamaan.
 
 2. **Daily-Track & Fast-Track (Bulk Insert)**
    - **Daily-Track**: Mengisi jam kerja untuk satu hari spesifik secara interaktif.

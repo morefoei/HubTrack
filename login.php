@@ -155,10 +155,9 @@ $v = time();
 
                     <h3 style="color: var(--primary); border-bottom: 1px solid var(--panel-border); padding-bottom: 0.5rem;">Bagian 3: Melengkapi Tab Settings</h3>
                     <ul style="margin-left: 1.5rem; margin-bottom: 1.5rem;">
-                        <li><strong>Google Spreadsheet ID:</strong> Salin ID panjang dari URL file Google Sheets Anda (terletak di antara <code>/d/</code> dan <code>/edit</code>).</li>
-                        <li><strong>Google Sheet Tab Name:</strong> Nama Sheet (misal: <code>Sheet1</code>).</li>
+                        <li><strong>Konfigurasi Google Sheet:</strong> Pilih <em>"Ikuti Pengaturan Admin (Otomatis)"</em> jika Admin Anda sudah mengatur konfigurasi pusat. Jika tidak, pilih <em>"Manual"</em> dan isi Google Spreadsheet ID & JSON Anda.</li>
+                        <li><strong>Google Sheet Tab Name:</strong> Nama Sheet tempat Anda menyimpan data (misal: <code>Sheet1</code>). <em>*Otomatis dibuat jika belum ada.</em></li>
                         <li><strong>Zoho Portal Name:</strong> ID organisasi Zoho Anda (contoh: <code>847721722</code>).</li>
-                        <li><strong>Profile Password (Wajib):</strong> Buat kata sandi untuk melindungi Token Anda.</li>
                     </ul>
                 </div>
             </div>

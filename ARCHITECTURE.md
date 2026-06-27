@@ -13,14 +13,21 @@ TrackHub menggunakan sistem otentikasi berbasis *Profile Name* dan *Password*.
   - Jika profil belum ada di folder `api/data/`, sistem akan **otomatis membuatkan file baru** bernama `settings_[username].json` (password dienkripsi menggunakan `password_hash`).
   - Jika profil sudah ada, sistem memverifikasi password. Jika benar, sesi disimpan sementara dan UI utama (semua fitur) akan terbuka.
 - **Logout Manual**: Pengguna dapat mematikan sesi kapan saja menggunakan tombol Logout di profil sudut kanan atas, yang akan menghapus `sessionStorage` dan mereload halaman kembali ke Dokumentasi.
-- **Super Admin**: Terdapat *backdoor* dengan username `superman`. Jika login menggunakan ini, admin dapat melihat seluruh profil yang terdaftar dan melakukan reset password.
+- **Super Admin (Admin Panel)**: Terdapat *backdoor* dengan username `superman`. Admin memiliki akses ke **Dashboard Admin** khusus untuk:
+  - Melihat dan mengelola (Rename/Delete) seluruh tab Google Sheet milik semua *user*.
+  - Menetapkan konfigurasi Google Sheet utama (Spreadsheet ID & Service Account JSON) yang bisa diwariskan ke pengguna lain.
+- **Isolasi Konfigurasi & Pewarisan (Inheritance)**: 
+  - Jika pengguna memilih "Ikuti Pengaturan Admin (Otomatis)", mereka secara transparan menggunakan Spreadsheet ID dan Kredensial JSON milik `superman`, sehingga UI pengguna menjadi sangat bersih.
+  - Untuk konfigurasi **Zoho API**, sistem sepenuhnya *individual*. Setiap pengguna **wajib** mengisi dan men-generate *Refresh Token* Zoho mereka sendiri terlepas dari mode yang dipilih.
+  - Sistem memiliki proteksi *cross-user* (mencegah *user* berbeda menggunakan nama tab *sheet* yang sama).
 
 ## 2. Pengambilan Data Tugas (Load dari Google Sheets)
 Setelah pengguna masuk ke dalam aplikasi, mereka perlu menarik tugas-tugas yang telah mereka buat di Google Sheets.
-- **Set Up Token & Auto-Generate**: Di menu **Settings**, pengguna memasukkan Kredensial Google Service Account (JSON). Untuk Zoho, pengguna dapat menggunakan fitur **Auto-Generate Refresh Token** di dalam aplikasi dengan memasukkan *Authorization Code* untuk mendapatkan token secara otomatis tanpa bantuan alat eksternal (Postman/Terminal). Semua kredensial ini kemudian disimpan secara aman di `settings_[username].json`.
+- **Set Up Token & Auto-Generate**: Di menu **Settings**, pengguna memasukkan Kredensial Google Service Account (JSON). Untuk Zoho, pengguna dapat menggunakan fitur **Auto-Generate Refresh Token** di dalam aplikasi dengan memasukkan *Authorization Code* untuk mendapatkan token secara otomatis tanpa bantuan alat eksternal (Postman/Terminal). Semua kredensial Zoho bersifat individual dan disimpan aman di `settings_[username].json`.
 - **Load Projects (Sync Manager)**: Saat menekan tombol *Load Projects*, aplikasi akan meminta `api.php` untuk membaca Google Sheet tab yang ditentukan.
 - **Parsing Data**: Script PHP menggunakan *Google Client Library* untuk mengunduh seluruh baris yang berisi data log (Tanggal, Project, Task, Vendor, dll).
-- **Pengiriman ke UI**: Data dikirimkan ke *frontend* (Browser) dalam bentuk JSON. `app.js` kemudian menyeleksi mana baris yang merupakan Project (berdasarkan spasi atau delimiter) dan memunculkannya pada form *Daily-Track* / *Fast-Track*.
+- **Zoho Task Manager**: Dashboard interaktif yang mengambil seluruh hierarki *Task* & *Subtask* langsung dari server Zoho secara paralel (*Multi-Threading CURL* di PHP), memungkinkan pencarian, filter status, dan pembuatan *Root Task* baru secara mandiri dari UI TrackHub.
+- **Pengiriman ke UI**: Data log dikirimkan ke *frontend* (Browser) dalam bentuk JSON. `app.js` kemudian menyeleksi mana baris yang merupakan Project (berdasarkan spasi atau delimiter) dan memunculkannya pada form *Daily-Track* / *Fast-Track*.
 
 ## 3. Fitur Input Waktu (Frontend)
 - **Daily-Track**: Input jam harian (Single Entry). 
