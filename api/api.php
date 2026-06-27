@@ -1648,84 +1648,85 @@ if ($action === 'get_project_tasks' && $method === 'POST') {
                 'status_id' => is_array($statusRaw) ? ($statusRaw['id'] ?? '') : ''
             ];
             
-            // Optimasi: Jangan ambil subtask jika parent-nya sudah Complete/Closed (mencegah PHP timeout)
+            // LAZY LOADING OPTIMIZATION: Subtasks are no longer fetched automatically here to prevent server timeout/500 errors.
+            // They will be fetched separately via get_subtasks API action when requested by the frontend.
+            /* 
             $statusLower = strtolower($statusName);
             if (strpos($statusLower, 'complete') === false && strpos($statusLower, 'closed') === false) {
-                $subUrl = rtrim($apiUrl, '/') . '/restapi/portal/' . $portal . '/projects/' . $pid . '/tasks/' . $t['id_string'] . '/subtasks/';
-                $subtaskUrls[$t['id_string']] = $subUrl;
+                // frontend handles this now
             }
+            */
         }
         
         $index += $range;
     }
 
-        // Jalankan CURL secara paralel jika didukung, atau sequential jika tidak
-        if (function_exists('curl_multi_init')) {
-            $chunks = array_chunk($subtaskUrls, 10, true);
-            foreach ($chunks as $chunk) {
-                $mh = curl_multi_init();
-                $chArray = [];
-
-                foreach ($chunk as $parentId => $url) {
-                    $ch = curl_init();
-                    curl_setopt($ch, CURLOPT_URL, $url);
-                    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-                    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Authorization: Bearer ' . $accessToken]);
-                    curl_setopt($ch, CURLOPT_TIMEOUT, 15);
-                    curl_multi_add_handle($mh, $ch);
-                    $chArray[$parentId] = $ch;
-                }
-
-                $running = null;
-                do {
-                    curl_multi_exec($mh, $running);
-                    curl_multi_select($mh);
-                } while ($running > 0);
-
-                foreach ($chArray as $parentId => $ch) {
-                    $res = curl_multi_getcontent($ch);
-                    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-                    curl_multi_remove_handle($mh, $ch);
-                    curl_close($ch);
-
-                    if ($httpCode === 200 && $res) {
-                        $subData = json_decode($res, true);
-                        if (isset($subData['tasks']) && is_array($subData['tasks'])) {
-                            foreach ($subData['tasks'] as $sub) {
-                                $subStatusRaw = $sub['status'] ?? '';
-                                $allTasks[] = [
-                                    'id' => $sub['id_string'],
-                                    'name' => $sub['name'] ?? 'Unknown Subtask',
-                                    'parent' => (string)$parentId,
-                                    'status' => is_array($subStatusRaw) ? ($subStatusRaw['name'] ?? '') : $subStatusRaw,
-                                    'status_id' => is_array($subStatusRaw) ? ($subStatusRaw['id'] ?? '') : ''
-                                ];
-                            }
-                        }
-                    }
-                }
-                curl_multi_close($mh);
-            }
-        } else {
-            // Fallback: Sequential CURL jika server hosting mematikan fitur curl_multi_init
-            foreach ($subtaskUrls as $parentId => $url) {
-                $subData = localApiCall(str_replace(rtrim($apiUrl, '/'), '', $url));
-                if (isset($subData['tasks']) && is_array($subData['tasks'])) {
-                    foreach ($subData['tasks'] as $sub) {
-                        $subStatusRaw = $sub['status'] ?? '';
-                        $allTasks[] = [
-                            'id' => $sub['id_string'],
-                            'name' => $sub['name'] ?? 'Unknown Subtask',
-                            'parent' => (string)$parentId,
-                            'status' => is_array($subStatusRaw) ? ($subStatusRaw['name'] ?? '') : $subStatusRaw,
-                            'status_id' => is_array($subStatusRaw) ? ($subStatusRaw['id'] ?? '') : ''
-                        ];
-                    }
-                }
-            }
-        }
 
     echo json_encode(['success' => true, 'tasks' => $allTasks, 'projectId' => $pid]);
+    exit;
+}
+
+if ($action === 'get_subtasks' && $method === 'POST') {
+    $settings = getSettings();
+    $pid = $input['projectId'] ?? '';
+    $taskId = $input['taskId'] ?? '';
+    
+    if (!$pid || !$taskId) {
+        echo json_encode(['success' => false, 'message' => 'Missing project or task ID']);
+        exit;
+    }
+    
+    // Auth
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $settings['accountsUrl'] . '/oauth/v2/token');
+    curl_setopt($ch, CURLOPT_POST, 1);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query([
+        'grant_type' => 'refresh_token',
+        'client_id' => $settings['clientId'],
+        'client_secret' => $settings['clientSecret'],
+        'refresh_token' => $settings['refreshToken']
+    ]));
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    $tokenResponse = curl_exec($ch);
+    curl_close($ch);
+    
+    $tokenData = json_decode($tokenResponse, true);
+    if (empty($tokenData['access_token'])) {
+        echo json_encode(['success' => false, 'message' => 'Failed to refresh Zoho token']);
+        exit;
+    }
+    $accessToken = $tokenData['access_token'];
+    $portal = $settings['portalName'];
+    $apiUrl = $settings['apiUrl'];
+
+    function localSubtaskApiCall($endpoint) {
+        global $apiUrl, $portal, $accessToken;
+        $url = rtrim($apiUrl, '/') . '/restapi/portal/' . $portal . $endpoint;
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Authorization: Bearer ' . $accessToken]);
+        $res = curl_exec($ch);
+        curl_close($ch);
+        return json_decode($res, true);
+    }
+    
+    $subtasks = [];
+    $subData = localSubtaskApiCall('/projects/' . $pid . '/tasks/' . $taskId . '/subtasks/');
+    
+    if (isset($subData['tasks']) && is_array($subData['tasks'])) {
+        foreach ($subData['tasks'] as $sub) {
+            $subStatusRaw = $sub['status'] ?? '';
+            $subtasks[] = [
+                'id' => $sub['id_string'],
+                'name' => $sub['name'] ?? 'Unknown Subtask',
+                'parent' => (string)$taskId,
+                'status' => is_array($subStatusRaw) ? ($subStatusRaw['name'] ?? '') : $subStatusRaw,
+                'status_id' => is_array($subStatusRaw) ? ($subStatusRaw['id'] ?? '') : ''
+            ];
+        }
+    }
+    
+    echo json_encode(['success' => true, 'subtasks' => $subtasks]);
     exit;
 }
 

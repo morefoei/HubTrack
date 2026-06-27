@@ -2443,14 +2443,16 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                         <div>
                             <button class="use-task-btn" data-path="${sanitizeHTML(nodePath)}" style="background: var(--primary); color: white; border: none; padding: 0.2rem 0.6rem; font-size: 0.75rem; border-radius: 4px; cursor: pointer; margin-right: 0.5rem;"><i class="fa-solid fa-pen"></i> Log</button>
-                            <button class="add-subtask-btn" data-id="${node.id}" data-path="${sanitizeHTML(nodePath)}" style="background: transparent; border: 1px solid var(--primary); color: var(--primary); padding: 0.2rem 0.6rem; font-size: 0.75rem; border-radius: 4px; cursor: pointer;"><i class="fa-solid fa-plus"></i> Subtask</button>
+                            ${depth === 0 ? `<button class="fetch-subtasks-btn" data-id="${node.id}" data-path="${sanitizeHTML(nodePath)}" style="background: transparent; border: 1px solid #10b981; color: #10b981; padding: 0.2rem 0.6rem; font-size: 0.75rem; border-radius: 4px; cursor: pointer; margin-right: 0.5rem;"><i class="fa-solid fa-download"></i> Subtasks</button>` : ''}
+                            <button class="add-subtask-btn" data-id="${node.id}" data-path="${sanitizeHTML(nodePath)}" style="background: transparent; border: 1px solid var(--primary); color: var(--primary); padding: 0.2rem 0.6rem; font-size: 0.75rem; border-radius: 4px; cursor: pointer;"><i class="fa-solid fa-plus"></i> New Sub</button>
                         </div>
                     </div>
+                    <div class="lazy-subtasks-container" id="subtasks-container-${node.id}" style="margin-top: 0.5rem;">
             `;
             if (childrenHtml) {
-                html += '<div style="margin-top: 0.5rem;">' + childrenHtml + '</div>';
+                html += childrenHtml;
             }
-            html += '</div>';
+            html += '</div></div>';            html += '</div>';
             return { isVisible: true, html };
         }
 
@@ -2497,31 +2499,135 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
-        taskManagerContainer.querySelectorAll('.status-select').forEach(sel => {
-            sel.addEventListener('change', async (e) => {
+        // Lazy Loading Subtasks Feature
+        taskManagerContainer.querySelectorAll('.fetch-subtasks-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
                 const taskId = e.currentTarget.getAttribute('data-id');
-                const statusId = e.currentTarget.value;
-                showToast('Mengubah status task...', 'info');
+                const taskPath = e.currentTarget.getAttribute('data-path');
+                const container = document.getElementById(`subtasks-container-${taskId}`);
+                const icon = e.currentTarget.querySelector('i');
                 
+                if (container.getAttribute('data-loaded') === 'true') {
+                    // Toggle visibility if already loaded
+                    if (container.style.display === 'none') {
+                        container.style.display = 'block';
+                        icon.className = 'fa-solid fa-minus';
+                    } else {
+                        container.style.display = 'none';
+                        icon.className = 'fa-solid fa-download';
+                    }
+                    return;
+                }
+                
+                // Fetch from API
+                icon.className = 'fa-solid fa-spinner fa-spin';
                 try {
-                    const res = await fetch(`${API_URL}?action=update_project_task_status`, {
+                    const res = await fetch(`${API_URL}?action=get_subtasks`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(attachSettings({ projectId: currentProjectId, taskId, statusId }))
+                        body: JSON.stringify(attachSettings({ projectId: currentProjectId, taskId }))
                     });
+                    
                     const data = await res.json();
-                    if (data.success) {
-                        showToast('Status berhasil diubah!', 'success');
-                        btnFetchTasks.click(); // Reload tasks to see changes
+                    if (!data.success) throw new Error(data.message);
+                    
+                    if (data.subtasks && data.subtasks.length > 0) {
+                        // Append to currentTasks array so other functions can use it if needed
+                        currentTasks.push(...data.subtasks);
+                        
+                        let subHtml = '';
+                        data.subtasks.forEach(sub => {
+                            // Quick manual build for depth=1 subtasks to avoid full tree re-render
+                            sub.children = [];
+                            const subResult = buildHtml(sub, 1, taskPath);
+                            if (subResult.isVisible) subHtml += subResult.html;
+                        });
+                        
+                        container.innerHTML = subHtml;
+                        
+                        // Re-attach events for the newly injected buttons inside the container
+                        attachTaskEvents(container);
+                        
+                        container.setAttribute('data-loaded', 'true');
+                        icon.className = 'fa-solid fa-minus';
                     } else {
-                        alert('Gagal mengubah status. Pesan: ' + (data.message || 'Unknown error'));
+                        container.innerHTML = '<div style="margin-left:20px; font-size:0.8rem; color:var(--text-muted);">Tidak ada subtask.</div>';
+                        container.setAttribute('data-loaded', 'true');
+                        icon.className = 'fa-solid fa-minus';
                     }
                 } catch (err) {
-                    showToast('Koneksi gagal saat mengubah status', 'error');
+                    showToast('Gagal memuat subtask: ' + err.message, 'error');
+                    icon.className = 'fa-solid fa-download';
                 }
             });
         });
-    }
+
+        // Attach events to dynamic elements
+        const attachTaskEvents = (rootElement) => {
+            rootElement.querySelectorAll('.add-subtask-btn').forEach(btn => {
+                // remove old listeners if any by cloning (simple way)
+                const newBtn = btn.cloneNode(true);
+                btn.parentNode.replaceChild(newBtn, btn);
+                newBtn.addEventListener('click', (e) => {
+                    const parentId = e.currentTarget.getAttribute('data-id');
+                    const parentPath = e.currentTarget.getAttribute('data-path');
+                    const taskName = prompt('Nama Subtask Baru:');
+                    if (taskName) {
+                        createZohoTask(taskName, parentId, parentPath);
+                    }
+                });
+            });
+            
+            rootElement.querySelectorAll('.use-task-btn').forEach(btn => {
+                const newBtn = btn.cloneNode(true);
+                btn.parentNode.replaceChild(newBtn, btn);
+                newBtn.addEventListener('click', (e) => {
+                    const path = e.currentTarget.getAttribute('data-path');
+                    const parts = path.split(' > ');
+                    document.querySelector('.singleProjectName').value = taskManagerProject.value;
+                    document.querySelector('.singleTaskName').value = parts[0]?.trim() || '';
+                    
+                    const singleSub = document.querySelector('.singleSubTaskName');
+                    if (singleSub) {
+                        singleSub.value = parts.slice(1).join(' > ').trim();
+                    }
+                    
+                    const dailyTrackBtn = document.querySelector('button[data-target="logs-view"]');
+                    if (dailyTrackBtn) dailyTrackBtn.click();
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                });
+            });
+            
+            rootElement.querySelectorAll('.status-select').forEach(sel => {
+                const newSel = sel.cloneNode(true);
+                sel.parentNode.replaceChild(newSel, sel);
+                newSel.addEventListener('change', async (e) => {
+                    const taskId = e.currentTarget.getAttribute('data-id');
+                    const statusId = e.currentTarget.value;
+                    showToast('Mengubah status task...', 'info');
+                    try {
+                        const res = await fetch(`${API_URL}?action=update_project_task_status`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(attachSettings({ projectId: currentProjectId, taskId, statusId }))
+                        });
+                        const data = await res.json();
+                        if (data.success) {
+                            showToast('Status berhasil diubah!', 'success');
+                            btnFetchTasks.click();
+                        } else {
+                            alert('Gagal mengubah status. Pesan: ' + (data.message || 'Unknown error'));
+                        }
+                    } catch (err) {
+                        showToast('Koneksi gagal saat mengubah status', 'error');
+                    }
+                });
+            });
+        };
+
+        // Attach events to initial load
+        attachTaskEvents(taskManagerContainer);
+    };
 
     const sanitizeHTML = (str) => {
         if (!str) return '';
