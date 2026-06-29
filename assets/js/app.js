@@ -970,6 +970,25 @@ document.addEventListener('DOMContentLoaded', () => {
         if (firstRow) attachDynamicRowListeners(firstRow);
     }
 
+    const btnAddSpecificNote = document.getElementById('btnAddSpecificNote');
+    const dynamicSpecificNotesContainer = document.getElementById('dynamicSpecificNotesContainer');
+    if (btnAddSpecificNote && dynamicSpecificNotesContainer) {
+        btnAddSpecificNote.addEventListener('click', () => {
+            const row = document.createElement('div');
+            row.className = 'form-row specific-note-row';
+            row.style.cssText = 'display: flex; gap: 0.5rem; align-items: center;';
+            row.innerHTML = `
+                <input type="date" class="specificNoteDate" style="flex: 0 0 130px; font-size: 0.85rem; padding: 0.4rem; height: 35px;" required>
+                <input type="text" class="specificNoteText" placeholder="Catatan tambahan di tanggal ini..." style="flex: 1; font-size: 0.85rem; padding: 0.4rem; height: 35px;" required>
+                <button type="button" class="btn-remove-specific-note" style="background: transparent; color: var(--danger); border: none; cursor: pointer; padding: 0 0.5rem;"><i class="fa-solid fa-trash"></i></button>
+            `;
+            row.querySelector('.btn-remove-specific-note').addEventListener('click', () => {
+                row.remove();
+            });
+            dynamicSpecificNotesContainer.appendChild(row);
+        });
+    }
+
     // Bulk Log Form Submission
     document.getElementById('bulkLogForm').addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -977,6 +996,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const startDateStr = document.getElementById('bulkStartDate').value;
         const endDateStr = document.getElementById('bulkEndDate').value;
         const excludeWeekends = document.getElementById('bulkExcludeWeekends').checked;
+        const excludeDatesInput = document.getElementById('bulkExcludeDates');
+        const excludeDatesStr = excludeDatesInput ? excludeDatesInput.value : '';
+        const excludeDatesArr = excludeDatesStr.split(',').map(d => d.trim()).filter(d => d);
         const startTime = document.getElementById('bulkStartTime').value;
         const endTime = document.getElementById('bulkEndTime').value;
         const duration = document.getElementById('bulkDuration').value;
@@ -984,6 +1006,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const notes = document.getElementById('bulkNotes').value;
         const submitBtn = document.getElementById('submitBulkBtn');
         const progressDiv = document.getElementById('bulkProgress');
+
+        const specificNotesMap = {};
+        document.querySelectorAll('.specific-note-row').forEach(row => {
+            const dateVal = row.querySelector('.specificNoteDate').value;
+            const textVal = row.querySelector('.specificNoteText').value;
+            if (dateVal && textVal) {
+                specificNotesMap[dateVal] = specificNotesMap[dateVal] ? specificNotesMap[dateVal] + '\n- ' + textVal : '- ' + textVal;
+            }
+        });
 
         const taskCombinations = [];
         const rows = document.querySelectorAll('.project-task-row');
@@ -1025,7 +1056,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 const yyyy = current.getFullYear();
                 const mm = String(current.getMonth() + 1).padStart(2, '0');
                 const dd = String(current.getDate()).padStart(2, '0');
-                datesToProcess.push(`${yyyy}-${mm}-${dd}`);
+                const currentDateStr = `${yyyy}-${mm}-${dd}`;
+                
+                if (!excludeDatesArr.includes(currentDateStr)) {
+                    datesToProcess.push(currentDateStr);
+                }
             }
             // Add 1 day
             current.setDate(current.getDate() + 1);
@@ -1048,6 +1083,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         for (let i = 0; i < datesToProcess.length; i++) {
             const dateStr = datesToProcess[i];
+            
+            let finalNotes = notes;
+            if (specificNotesMap[dateStr]) {
+                finalNotes = finalNotes ? finalNotes + '\n' + specificNotesMap[dateStr] : specificNotesMap[dateStr];
+            }
+
             for (let j = 0; j < taskCombinations.length; j++) {
                 processed++;
                 const combo = taskCombinations[j];
@@ -1065,7 +1106,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     vendor: combo.vendor,
                     project: combo.project,
                     task: combo.task,
-                    notes: notes
+                    notes: finalNotes
                 };
 
                 try {
@@ -1114,12 +1155,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('bulkNotes').value = '';
                 document.getElementById('bulkStartDate').value = '';
                 document.getElementById('bulkEndDate').value = '';
+                if (document.getElementById('bulkExcludeDates')) document.getElementById('bulkExcludeDates').value = '';
+                const specificContainer = document.getElementById('dynamicSpecificNotesContainer');
+                if (specificContainer) specificContainer.innerHTML = '';
                 showToast('Fast-Track berhasil, form dibersihkan', 'success');
             } else {
                 // Cukup clear notes dan tanggal, pertahankan sisanya
                 document.getElementById('bulkNotes').value = '';
                 document.getElementById('bulkStartDate').value = '';
                 document.getElementById('bulkEndDate').value = '';
+                if (document.getElementById('bulkExcludeDates')) document.getElementById('bulkExcludeDates').value = '';
                 showToast('Fast-Track berhasil, nilai form dipertahankan', 'info');
             }
             fetchLogs();

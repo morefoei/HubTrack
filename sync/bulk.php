@@ -13,11 +13,12 @@
                             <label>End Date (Sampai Tanggal)</label>
                             <input type="date" id="bulkEndDate" required>
                         </div>
-                        <div class="form-group" style="display: flex; align-items: flex-end; padding-bottom: 0.5rem;">
+                        <div class="form-group" style="display: flex; flex-direction: column; justify-content: flex-end; padding-bottom: 0.5rem; gap: 0.5rem;">
                             <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: var(--text-main);">
                                 <input type="checkbox" id="bulkExcludeWeekends" checked style="width: auto;">
                                 Lewati Sabtu & Minggu (Exclude Weekends)
                             </label>
+                            <input type="text" id="bulkExcludeDates" placeholder="Exclude Tgl Cuti (Cth: 2024-06-15, 2024-06-17)" style="font-size: 0.85rem; padding: 0.4rem; border: 1px solid var(--panel-border); background: var(--bg-main); color: var(--text-main); border-radius: 4px;">
                         </div>
                     </div>
                     <div class="form-row">
@@ -67,8 +68,13 @@
                         </div>
                     </div>
                     <div class="form-group">
-                        <label>Notes / Remarks</label>
+                        <label>Notes / Remarks Umum</label>
                         <textarea id="bulkNotes" rows="2" required></textarea>
+                    </div>
+                    <div class="form-group" style="margin-top: 1rem;">
+                        <label>Catatan Khusus per Tanggal <button type="button" id="btnAddSpecificNote" style="padding: 2px 6px; font-size: 0.7rem; margin-left: 5px; background: rgba(59,130,246,0.2); color: #93c5fd; border: none; border-radius: 4px; cursor: pointer;" title="Tambah catatan khusus untuk tanggal tertentu">+ Tambah</button></label>
+                        <div id="dynamicSpecificNotesContainer" style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.5rem;">
+                        </div>
                     </div>
                     <div style="display: flex; gap: 1rem;">
                         <button type="submit" id="submitBulkBtn"><i class="fa-solid fa-layer-group"></i> <span>Generate Fast-Track</span></button>
