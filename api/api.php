@@ -1950,10 +1950,10 @@ if ($action === 'sync' && $method === 'POST') {
         $pName = strtolower($log['project']);
         $tName = $log['task'];
         
-        logMsg("Processing row {$log['rowIndex']}: [{$log['project']}] -> [{$log['task']}]", 'info');
+        logMsg("Processing row {$log['rowIndex']} (Date: {$log['startDate']}): [{$log['project']}] -> [{$log['task']}]", 'info');
 
         if (!isset($projectCache[$pName])) {
-            logMsg("Project '{$log['project']}' not found in Zoho. Skipping.", 'error');
+            logMsg("[{$log['startDate']}] Project '{$log['project']}' not found in Zoho. Skipping.", 'error');
             $syncSuccess = false;
             updateRowInSheet($log['rowIndex'], $log, 'pending', '');
             continue;
@@ -2025,9 +2025,9 @@ if ($action === 'sync' && $method === 'POST') {
             if (isset($taskCache[$pid][$chainNameLower])) {
                 $tid = $taskCache[$pid][$chainNameLower];
                 $parentId = $tid;
-                logMsg("Found existing task in chain: {$chainName}", 'success');
+                logMsg("[{$log['startDate']}] Found existing task in chain: {$chainName}", 'success');
             } else {
-                logMsg("Task '{$chainName}' not found. Creating...", 'warning');
+                logMsg("[{$log['startDate']}] Task '{$chainName}' not found. Creating...", 'warning');
                 
                 $createPayload = ['name' => $chainName];
                 $createUrl = '/projects/' . $pid . '/tasks/';
@@ -2042,9 +2042,9 @@ if ($action === 'sync' && $method === 'POST') {
                     $tid = $createRes['data']['tasks'][0]['id_string'];
                     $taskCache[$pid][$chainNameLower] = $tid;
                     $parentId = $tid; // This new task becomes the parent for the next one in chain
-                    logMsg("Task '{$chainName}' created successfully.", 'success');
+                    logMsg("[{$log['startDate']}] Task '{$chainName}' created successfully.", 'success');
                 } else {
-                    logMsg("Failed to create task '{$chainName}': " . json_encode($createRes), 'error');
+                    logMsg("[{$log['startDate']}] Failed to create task '{$chainName}': " . json_encode($createRes), 'error');
                     $tid = null;
                     break;
                 }
@@ -2116,13 +2116,13 @@ if ($action === 'sync' && $method === 'POST') {
         $logRes = apiCall('/projects/' . $pid . '/tasks/' . $tid . '/logs/', 'POST', $logPayload);
         
         if ($logRes['code'] == 201 || $logRes['code'] == 200) {
-            logMsg("Time logged successfully ($hoursStr).", 'success');
+            logMsg("[{$log['startDate']}] Time logged successfully ($hoursStr).", 'success');
             // Format URL baru sesuai dengan struktur portal Zoho Projects
             $taskUrl = "https://projects.zoho.com/portal/{$portal}#zp/projects/{$pid}/tasks/task-detail/{$tid}";
             logMsg("Link URL: " . $taskUrl, 'info'); // Tampilkan URL di console
             updateRowInSheet($log['rowIndex'], $log, 'done', $taskUrl);
         } else {
-            logMsg("Failed to log time: " . json_encode($logRes['data']), 'error');
+            logMsg("[{$log['startDate']}] Failed to log time: " . json_encode($logRes['data']), 'error');
             $syncSuccess = false;
             updateRowInSheet($log['rowIndex'], $log, 'pending', '');
         }
