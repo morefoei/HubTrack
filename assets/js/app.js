@@ -988,6 +988,23 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    const btnAddIncludeDate = document.getElementById('btnAddIncludeDate');
+    const dynamicIncludeDatesContainer = document.getElementById('dynamicIncludeDatesContainer');
+    if (btnAddIncludeDate && dynamicIncludeDatesContainer) {
+        btnAddIncludeDate.addEventListener('click', () => {
+            const row = document.createElement('div');
+            row.style.cssText = 'display: flex; gap: 0.5rem; align-items: center;';
+            row.innerHTML = `
+                <input type="date" class="includeDateInput" style="flex: 1; font-size: 0.85rem; padding: 0.4rem; height: 35px;" required>
+                <button type="button" class="btn-remove-include-date" style="background: transparent; color: var(--danger); border: none; cursor: pointer; padding: 0 0.5rem;"><i class="fa-solid fa-xmark"></i></button>
+            `;
+            row.querySelector('.btn-remove-include-date').addEventListener('click', () => {
+                row.remove();
+            });
+            dynamicIncludeDatesContainer.appendChild(row);
+        });
+    }
+
     const btnAddSpecificNote = document.getElementById('btnAddSpecificNote');
     const dynamicSpecificNotesContainer = document.getElementById('dynamicSpecificNotesContainer');
     if (btnAddSpecificNote && dynamicSpecificNotesContainer) {
@@ -1021,6 +1038,12 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.excludeDateInput').forEach(input => {
             if (input.value) excludeDatesArr.push(input.value);
         });
+        
+        const includeDatesArr = [];
+        document.querySelectorAll('.includeDateInput').forEach(input => {
+            if (input.value) includeDatesArr.push(input.value);
+        });
+        
         const startTime = document.getElementById('bulkStartTime').value;
         const endTime = document.getElementById('bulkEndTime').value;
         const duration = document.getElementById('bulkDuration').value;
@@ -1093,17 +1116,21 @@ document.addEventListener('DOMContentLoaded', () => {
             const dayOfWeek = current.getDay(); // 0 = Sunday, 6 = Saturday
             const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
             
-            if (!excludeWeekends || !isWeekend) {
-                // Format YYYY-MM-DD
-                const yyyy = current.getFullYear();
-                const mm = String(current.getMonth() + 1).padStart(2, '0');
-                const dd = String(current.getDate()).padStart(2, '0');
-                const currentDateStr = `${yyyy}-${mm}-${dd}`;
-                
+            // Format YYYY-MM-DD
+            const yyyy = current.getFullYear();
+            const mm = String(current.getMonth() + 1).padStart(2, '0');
+            const dd = String(current.getDate()).padStart(2, '0');
+            const currentDateStr = `${yyyy}-${mm}-${dd}`;
+            
+            if (includeDatesArr.includes(currentDateStr)) {
+                // If forcefully included, bypass all exclusions
+                datesToProcess.push(currentDateStr);
+            } else if (!excludeWeekends || !isWeekend) {
                 if (!excludeDatesArr.includes(currentDateStr)) {
                     datesToProcess.push(currentDateStr);
                 }
             }
+            
             // Add 1 day
             current.setDate(current.getDate() + 1);
         }
