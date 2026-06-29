@@ -518,7 +518,7 @@ $method = $_SERVER['REQUEST_METHOD'];
 $input = json_decode(file_get_contents('php://input'), true);
 
 // -- GLOBAL AUTHENTICATION CHECK --
-if ($action !== 'manual_login' && $action !== 'google_login' && $action !== 'get_all_profiles' && $action !== 'reset_password' && $action !== 'delete_profile' && $action !== 'test_shift_spreadsheet' && $action !== 'test_form_url' && !empty($action)) {
+if ($action !== 'manual_login' && $action !== 'google_login' && $action !== 'get_all_profiles' && $action !== 'reset_password' && $action !== 'delete_profile' && $action !== 'test_shift_spreadsheet' && $action !== 'test_form_url' && $action !== 'get_indonesian_holidays' && !empty($action)) {
     $reqProfile = isset($input['profile']) ? strtolower(preg_replace('/[^a-zA-Z0-9_-]/', '', substr($input['profile'], 0, 32))) : 'default';
     $reqPassword = $input['password'] ?? '';
     
