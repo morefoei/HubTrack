@@ -18,7 +18,13 @@
                                 <input type="checkbox" id="bulkExcludeWeekends" checked style="width: auto;">
                                 Lewati Sabtu & Minggu (Exclude Weekends)
                             </label>
-                            <input type="text" id="bulkExcludeDates" placeholder="Exclude Tgl Cuti (Cth: 2024-06-15, 2024-06-17)" style="font-size: 0.85rem; padding: 0.4rem; border: 1px solid var(--panel-border); background: var(--bg-main); color: var(--text-main); border-radius: 4px;">
+                            <div style="display: flex; flex-direction: column; gap: 0.3rem;">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <label style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">Exclude Tanggal Cuti</label>
+                                    <button type="button" id="btnAddExcludeDate" style="padding: 2px 6px; font-size: 0.7rem; background: rgba(244,63,94,0.2); color: #fda4af; border: none; border-radius: 4px; cursor: pointer;" title="Tambah tanggal cuti/libur yang akan dilewati">+ Tambah</button>
+                                </div>
+                                <div id="dynamicExcludeDatesContainer" style="display: flex; flex-direction: column; gap: 0.3rem;"></div>
+                            </div>
                         </div>
                     </div>
                     <div class="form-row">

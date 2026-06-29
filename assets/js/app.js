@@ -970,6 +970,24 @@ document.addEventListener('DOMContentLoaded', () => {
         if (firstRow) attachDynamicRowListeners(firstRow);
     }
 
+    const btnAddExcludeDate = document.getElementById('btnAddExcludeDate');
+    const dynamicExcludeDatesContainer = document.getElementById('dynamicExcludeDatesContainer');
+    if (btnAddExcludeDate && dynamicExcludeDatesContainer) {
+        btnAddExcludeDate.addEventListener('click', () => {
+            const row = document.createElement('div');
+            row.className = 'exclude-date-row';
+            row.style.cssText = 'display: flex; gap: 0.5rem; align-items: center;';
+            row.innerHTML = `
+                <input type="date" class="excludeDateInput" style="flex: 1; font-size: 0.85rem; padding: 0.4rem; height: 35px;" required>
+                <button type="button" class="btn-remove-exclude-date" style="background: transparent; color: var(--danger); border: none; cursor: pointer; padding: 0 0.5rem;"><i class="fa-solid fa-xmark"></i></button>
+            `;
+            row.querySelector('.btn-remove-exclude-date').addEventListener('click', () => {
+                row.remove();
+            });
+            dynamicExcludeDatesContainer.appendChild(row);
+        });
+    }
+
     const btnAddSpecificNote = document.getElementById('btnAddSpecificNote');
     const dynamicSpecificNotesContainer = document.getElementById('dynamicSpecificNotesContainer');
     if (btnAddSpecificNote && dynamicSpecificNotesContainer) {
@@ -996,9 +1014,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const startDateStr = document.getElementById('bulkStartDate').value;
         const endDateStr = document.getElementById('bulkEndDate').value;
         const excludeWeekends = document.getElementById('bulkExcludeWeekends').checked;
-        const excludeDatesInput = document.getElementById('bulkExcludeDates');
-        const excludeDatesStr = excludeDatesInput ? excludeDatesInput.value : '';
-        const excludeDatesArr = excludeDatesStr.split(',').map(d => d.trim()).filter(d => d);
+        const excludeDatesArr = [];
+        document.querySelectorAll('.excludeDateInput').forEach(input => {
+            if (input.value) excludeDatesArr.push(input.value);
+        });
         const startTime = document.getElementById('bulkStartTime').value;
         const endTime = document.getElementById('bulkEndTime').value;
         const duration = document.getElementById('bulkDuration').value;
@@ -1155,7 +1174,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('bulkNotes').value = '';
                 document.getElementById('bulkStartDate').value = '';
                 document.getElementById('bulkEndDate').value = '';
-                if (document.getElementById('bulkExcludeDates')) document.getElementById('bulkExcludeDates').value = '';
+                const excludeContainer = document.getElementById('dynamicExcludeDatesContainer');
+                if (excludeContainer) excludeContainer.innerHTML = '';
                 const specificContainer = document.getElementById('dynamicSpecificNotesContainer');
                 if (specificContainer) specificContainer.innerHTML = '';
                 showToast('Fast-Track berhasil, form dibersihkan', 'success');
@@ -1164,7 +1184,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('bulkNotes').value = '';
                 document.getElementById('bulkStartDate').value = '';
                 document.getElementById('bulkEndDate').value = '';
-                if (document.getElementById('bulkExcludeDates')) document.getElementById('bulkExcludeDates').value = '';
+                const excludeContainer2 = document.getElementById('dynamicExcludeDatesContainer');
+                if (excludeContainer2) excludeContainer2.innerHTML = '';
                 showToast('Fast-Track berhasil, nilai form dipertahankan', 'info');
             }
             fetchLogs();
