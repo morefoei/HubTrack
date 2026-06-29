@@ -1014,6 +1014,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const startDateStr = document.getElementById('bulkStartDate').value;
         const endDateStr = document.getElementById('bulkEndDate').value;
         const excludeWeekends = document.getElementById('bulkExcludeWeekends').checked;
+        const excludeHolidaysCheckbox = document.getElementById('bulkExcludeHolidays');
+        const excludeHolidays = excludeHolidaysCheckbox ? excludeHolidaysCheckbox.checked : false;
+        
         const excludeDatesArr = [];
         document.querySelectorAll('.excludeDateInput').forEach(input => {
             if (input.value) excludeDatesArr.push(input.value);
@@ -1061,6 +1064,26 @@ document.addEventListener('DOMContentLoaded', () => {
         if (start > end) {
             showToast('Start Date harus lebih kecil atau sama dengan End Date', 'error');
             return;
+        }
+
+        submitBtn.disabled = true;
+
+        if (excludeHolidays) {
+            progressDiv.innerText = `Mengambil data Libur Nasional...`;
+            try {
+                const res = await fetch(`${API_URL}?action=get_indonesian_holidays`, { method: 'POST' });
+                const data = await res.json();
+                if (data.success && data.holidays) {
+                    data.holidays.forEach(holiday => {
+                        if (!excludeDatesArr.includes(holiday.date)) {
+                            excludeDatesArr.push(holiday.date);
+                        }
+                    });
+                }
+            } catch (err) {
+                console.error("Gagal mengambil libur nasional", err);
+            }
+            progressDiv.innerText = '';
         }
 
         // Kumpulkan semua tanggal

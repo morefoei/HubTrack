@@ -2138,4 +2138,47 @@ if ($action === 'sync' && $method === 'POST') {
     exit;
 }
 
+if ($action === 'get_indonesian_holidays' && $method === 'POST') {
+    $url = "https://calendar.google.com/calendar/ical/id.indonesian%23holiday%40group.v.calendar.google.com/public/basic.ics";
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+    $icsData = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    if ($httpCode !== 200 || empty($icsData)) {
+        echo json_encode(['success' => false, 'message' => 'Gagal mengambil data dari Google Calendar API']);
+        exit;
+    }
+
+    $holidays = [];
+    $lines = explode("\n", $icsData);
+    $currentDate = '';
+    $currentName = '';
+    foreach ($lines as $line) {
+        $line = trim($line);
+        if (strpos($line, 'DTSTART') === 0) {
+            $parts = explode(':', $line);
+            if (count($parts) >= 2) {
+                $rawDate = trim($parts[1]);
+                if (strlen($rawDate) >= 8) {
+                    $currentDate = substr($rawDate, 0, 4) . '-' . substr($rawDate, 4, 2) . '-' . substr($rawDate, 6, 2);
+                }
+            }
+        } elseif (strpos($line, 'SUMMARY:') === 0) {
+            $currentName = substr($line, strlen('SUMMARY:'));
+        } elseif ($line === 'END:VEVENT') {
+            if (!empty($currentDate) && !empty($currentName)) {
+                $holidays[] = ['date' => $currentDate, 'name' => $currentName];
+            }
+            $currentDate = '';
+            $currentName = '';
+        }
+    }
+
+    echo json_encode(['success' => true, 'holidays' => $holidays]);
+    exit;
+}
+
 echo json_encode(['error' => 'Invalid action']);

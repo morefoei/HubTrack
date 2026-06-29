@@ -13,18 +13,25 @@
                             <label>End Date (Sampai Tanggal)</label>
                             <input type="date" id="bulkEndDate" required>
                         </div>
-                        <div class="form-group" style="display: flex; flex-direction: column; justify-content: flex-end; padding-bottom: 0.5rem; gap: 0.5rem;">
-                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: var(--text-main);">
+                    </div>
+                    <div class="form-row" style="background: rgba(0,0,0,0.15); padding: 1rem; border-radius: 8px; margin-bottom: 1rem; align-items: flex-start; border: 1px solid rgba(255,255,255,0.05);">
+                        <div style="flex: 1; display: flex; flex-direction: column; gap: 0.8rem;">
+                            <label style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600; margin: 0;">Opsi Pengecualian (Exclude)</label>
+                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: var(--text-main); font-size: 0.9rem; transition: color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--text-main)'">
                                 <input type="checkbox" id="bulkExcludeWeekends" checked style="width: auto;">
                                 Lewati Sabtu & Minggu (Exclude Weekends)
                             </label>
-                            <div style="display: flex; flex-direction: column; gap: 0.3rem;">
-                                <div style="display: flex; justify-content: space-between; align-items: center;">
-                                    <label style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">Exclude Tanggal Cuti</label>
-                                    <button type="button" id="btnAddExcludeDate" style="padding: 2px 6px; font-size: 0.7rem; background: rgba(244,63,94,0.2); color: #fda4af; border: none; border-radius: 4px; cursor: pointer;" title="Tambah tanggal cuti/libur yang akan dilewati">+ Tambah</button>
-                                </div>
-                                <div id="dynamicExcludeDatesContainer" style="display: flex; flex-direction: column; gap: 0.3rem;"></div>
+                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: var(--text-main); font-size: 0.9rem; transition: color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--text-main)'">
+                                <input type="checkbox" id="bulkExcludeHolidays" checked style="width: auto;">
+                                Lewati Libur Nasional (Auto-Fetch Tanggal Merah)
+                            </label>
+                        </div>
+                        <div style="flex: 1; display: flex; flex-direction: column; gap: 0.5rem; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 1.5rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <label style="font-size: 0.85rem; color: var(--text-muted); margin: 0; font-weight: 600;">Exclude Tanggal Cuti Tambahan</label>
+                                <button type="button" id="btnAddExcludeDate" style="padding: 3px 8px; font-size: 0.75rem; background: rgba(244,63,94,0.15); color: #fda4af; border: 1px solid rgba(244,63,94,0.3); border-radius: 4px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='rgba(244,63,94,0.25)'" onmouseout="this.style.background='rgba(244,63,94,0.15)'">+ Tambah Tanggal</button>
                             </div>
+                            <div id="dynamicExcludeDatesContainer" style="display: flex; flex-direction: column; gap: 0.4rem;"></div>
                         </div>
                     </div>
                     <div class="form-row">
