@@ -32,6 +32,8 @@ Setelah pengguna masuk ke dalam aplikasi, mereka perlu menarik tugas-tugas yang 
 ## 3. Fitur Input Waktu (Frontend)
 - **Daily-Track**: Input jam harian (Single Entry). 
 - **Fast-Track**: Input log massal untuk banyak hari sekaligus (Looping berdasarkan rentang tanggal).
+  - *Smart Exclusion*: Fitur pengecualian dinamis untuk hari Sabtu & Minggu, Libur Nasional (Auto-Fetch via Google Calendar API), dan tanggal cuti manual.
+  - *Force Include*: Fitur Override (Lembur Hari Libur) yang mengabaikan seluruh pengecualian di atas untuk tanggal-tanggal yang secara paksa di-input oleh pengguna.
 - **Data Logs**: Menampilkan tabel berisikan log yang ditarik dari Google Sheets, dengan kemampuan filter status (Pending/Final).
 - **Logika Penyimpanan Lokal**: Saat pengguna mengklik *Submit*, log dikirimkan kembali ke `api.php` dan ditambahkan (Append) ke dalam file Google Sheets (dengan status awal **Pending**).
 

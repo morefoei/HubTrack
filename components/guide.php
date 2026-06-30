@@ -49,8 +49,9 @@
                                 <ul style="margin-top: 0.5rem; margin-bottom: 0.5rem;">
                                     <li>Pilih rentang <strong>Start Date</strong> (Tanggal Mulai) dan <strong>End Date</strong> (Tanggal Selesai). <em>Contoh: Start Date "01-06-2024" dan End Date "30-06-2024".</em></li>
                                     <li>Isi data proyek, task, dan catatan seperti biasa.</li>
-                                    <li>Centang kotak <strong>Lewati Sabtu & Minggu (Exclude Weekends)</strong>. Mesin kalender internal kami akan mendeteksi hari Sabtu & Minggu secara cerdas dan secara otomatis melewati hari tersebut! (Sangat berguna jika Anda tidak bekerja di akhir pekan).</li>
-                                    <li>Klik <strong>Tambah Massal</strong>, sistem akan otomatis melakukan loop pengisian tanggal ke Spreadsheet satu per satu.</li>
+                                    <li><strong>Smart Exclusion:</strong> Centang kotak <strong>Lewati Sabtu & Minggu</strong> atau <strong>Lewati Libur Nasional</strong> agar sistem otomatis melompati hari-hari tersebut. Anda juga bisa memasukkan tanggal cuti manual di kolom <strong>Exclude Tanggal Cuti Tambahan</strong>.</li>
+                                    <li><strong>Force Include:</strong> Jika ada hari libur (Sabtu/Minggu/Merah) di mana Anda tetap masuk bekerja (lembur), masukkan tanggal tersebut ke kolom <strong>Paksa Masuk (Lembur Hari Libur)</strong> agar sistem tetap menghitungnya.</li>
+                                    <li>Klik <strong>Generate Fast-Track</strong>, sistem akan otomatis melakukan pengisian massal ke Spreadsheet Anda.</li>
                                 </ul>
                             </li>
                             <li><strong>Absensi - Presence-Track (Absen Harian):</strong>
@@ -142,7 +143,8 @@
                                 <ul style="margin-top: 0.5rem; margin-bottom: 0.5rem;">
                                     <li>Select your <strong>Start Date</strong> and <strong>End Date</strong>. <em>Example: Start Date "01-06-2024" and End Date "30-06-2024".</em></li>
                                     <li>Fill in the project, task, and notes data as usual.</li>
-                                    <li>Check the <strong>Exclude Weekends</strong> box. Our internal calendar engine will intelligently detect Saturdays & Sundays and automatically skip those days! (Extremely useful if you don't work on weekends).</li>
+                                    <li><strong>Smart Exclusion:</strong> Check the <strong>Exclude Weekends</strong> and/or <strong>Exclude National Holidays</strong> boxes to automatically skip those days. You can also add specific leave days in the <strong>Exclude Specific Dates</strong> field.</li>
+                                    <li><strong>Force Include:</strong> If you work overtime on a weekend or a holiday, add that date to the <strong>Force Include (Holiday Overtime)</strong> field to guarantee it gets logged.</li>
                                     <li>Click <strong>Generate Fast-Track</strong>, and the bot will instantly generate dozens of log rows into your Google Sheets!</li>
                                 </ul>
                             </li>
