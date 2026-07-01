@@ -2181,4 +2181,143 @@ if ($action === 'get_indonesian_holidays' && $method === 'POST') {
     exit;
 }
 
+// --- WA SCHEDULE API ---
+if ($action === 'get_wa_schedules' && $method === 'POST') {
+    $profile = $input['profile'] ?? '';
+    if (empty($profile)) {
+        echo json_encode(['error' => 'Profile required']);
+        exit;
+    }
+    $cleanProfile = strtolower(preg_replace('/[^a-zA-Z0-9_-]/', '', substr($profile, 0, 32)));
+    $scheduleFile = $DATA_DIR . '/wa_schedule_' . $cleanProfile . '.json';
+    
+    $schedules = [];
+    if (file_exists($scheduleFile)) {
+        $content = file_get_contents($scheduleFile);
+        $schedules = json_decode($content, true) ?: [];
+    }
+    
+    echo json_encode(['success' => true, 'data' => $schedules, 'server_time' => date('Y-m-d H:i:s')]);
+    exit;
+}
+
+if ($action === 'save_wa_schedule' && $method === 'POST') {
+    $profile = $input['profile'] ?? '';
+    if (empty($profile)) {
+        echo json_encode(['error' => 'Profile required']);
+        exit;
+    }
+    $cleanProfile = strtolower(preg_replace('/[^a-zA-Z0-9_-]/', '', substr($profile, 0, 32)));
+    $scheduleFile = $DATA_DIR . '/wa_schedule_' . $cleanProfile . '.json';
+    
+    $no_tujuan = trim($input['no_tujuan'] ?? '');
+    $pesan = trim($input['pesan'] ?? '');
+    $jadwal = trim($input['jadwal'] ?? '');
+    
+    if (empty($no_tujuan) || empty($pesan) || empty($jadwal)) {
+        echo json_encode(['error' => 'Data tidak lengkap']);
+        exit;
+    }
+    
+    // Format nomor
+    if ($no_tujuan !== 'GROUP') {
+        // Hapus semua karakter non-angka (spasi, strip, tanda plus, dll)
+        $no_tujuan = preg_replace('/[^0-9]/', '', $no_tujuan);
+        
+        // Sesuaikan prefix agar menjadi 62
+        if (substr($no_tujuan, 0, 1) === '0') {
+            $no_tujuan = '62' . substr($no_tujuan, 1);
+        } elseif (substr($no_tujuan, 0, 2) !== '62') {
+            $no_tujuan = '62' . $no_tujuan;
+        }
+    }
+    
+    $schedules = [];
+    if (file_exists($scheduleFile)) {
+        $schedules = json_decode(file_get_contents($scheduleFile), true) ?: [];
+    }
+    
+    $newSchedule = [
+        'id' => time() . rand(1000, 9999),
+        'no_tujuan' => $no_tujuan,
+        'pesan' => $pesan,
+        'jadwal' => $jadwal,
+        'status' => 'pending',
+        'created_at' => date('Y-m-d H:i:s')
+    ];
+    
+    $schedules[] = $newSchedule;
+    
+    // Sort by jadwal
+    usort($schedules, function($a, $b) {
+        return strtotime($a['jadwal']) - strtotime($b['jadwal']);
+    });
+    
+    file_put_contents($scheduleFile, json_encode($schedules, JSON_PRETTY_PRINT));
+    echo json_encode(['success' => true, 'message' => 'Jadwal WA berhasil disimpan']);
+    exit;
+}
+
+if ($action === 'update_wa_schedule_status' && $method === 'POST') {
+    $profile = $input['profile'] ?? '';
+    $id = $input['id'] ?? '';
+    $status = $input['status'] ?? 'terkirim';
+    
+    if (empty($profile) || empty($id)) {
+        echo json_encode(['error' => 'Profile dan ID required']);
+        exit;
+    }
+    
+    $cleanProfile = strtolower(preg_replace('/[^a-zA-Z0-9_-]/', '', substr($profile, 0, 32)));
+    $scheduleFile = $DATA_DIR . '/wa_schedule_' . $cleanProfile . '.json';
+    
+    if (file_exists($scheduleFile)) {
+        $schedules = json_decode(file_get_contents($scheduleFile), true) ?: [];
+        $updated = false;
+        
+        foreach ($schedules as &$s) {
+            if ($s['id'] == $id) {
+                $s['status'] = $status;
+                $updated = true;
+                break;
+            }
+        }
+        
+        if ($updated) {
+            file_put_contents($scheduleFile, json_encode($schedules, JSON_PRETTY_PRINT));
+            echo json_encode(['success' => true, 'message' => 'Status berhasil diupdate']);
+            exit;
+        }
+    }
+    echo json_encode(['error' => 'Jadwal tidak ditemukan']);
+    exit;
+}
+
+if ($action === 'delete_wa_schedule' && $method === 'POST') {
+    $profile = $input['profile'] ?? '';
+    $id = $input['id'] ?? '';
+    
+    if (empty($profile) || empty($id)) {
+        echo json_encode(['error' => 'Profile dan ID required']);
+        exit;
+    }
+    
+    $cleanProfile = strtolower(preg_replace('/[^a-zA-Z0-9_-]/', '', substr($profile, 0, 32)));
+    $scheduleFile = $DATA_DIR . '/wa_schedule_' . $cleanProfile . '.json';
+    
+    if (file_exists($scheduleFile)) {
+        $schedules = json_decode(file_get_contents($scheduleFile), true) ?: [];
+        $newSchedules = array_filter($schedules, function($s) use ($id) {
+            return $s['id'] != $id;
+        });
+        
+        file_put_contents($scheduleFile, json_encode(array_values($newSchedules), JSON_PRETTY_PRINT));
+        echo json_encode(['success' => true, 'message' => 'Jadwal berhasil dihapus']);
+        exit;
+    }
+    echo json_encode(['error' => 'Jadwal tidak ditemukan']);
+    exit;
+}
+// -----------------------
+
 echo json_encode(['error' => 'Invalid action']);
