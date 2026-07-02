@@ -2432,6 +2432,15 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    let waApprovalsData = [];
+
+    const waSortOrder = document.getElementById('waSortOrder');
+    if (waSortOrder) {
+        waSortOrder.addEventListener('change', () => {
+            renderWaApprovals();
+        });
+    }
+
     async function loadWaApprovals() {
         const tbody = document.getElementById('waApprovalTableBody');
         if (!tbody) return;
@@ -2445,41 +2454,62 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await res.json();
             
             if (data.success && data.data) {
-                tbody.innerHTML = '';
-                if (data.data.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--text-muted);">Belum ada daftar WA Approval tersimpan</td></tr>';
-                    return;
-                }
-                
-                data.data.forEach(item => {
-                    const tr = document.createElement('tr');
-                    
-                    const dt = new Date(item.created_at);
-                    const formattedDate = `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')} ${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}`;
-                    
-                    let url = `https://wa.me/?text=${encodeURIComponent(item.message)}`;
-                    if (item.phone) {
-                        url = `https://wa.me/${item.phone}?text=${encodeURIComponent(item.message)}`;
-                    }
-
-                    tr.innerHTML = `
-                        <td><span style="font-size: 0.85rem; color: var(--text-muted);">${formattedDate}</span></td>
-                        <td>
-                            <strong style="display: block; color: var(--text-main);">${item.title}</strong>
-                            <small style="color: var(--primary);">${item.phone || 'Tanpa Nomor'}</small>
-                        </td>
-                        <td><span class="status-ready" style="font-size: 0.75rem; background: rgba(16,185,129,0.1); color: #10b981; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: bold;">Tersimpan</span></td>
-                        <td>
-                            <a href="${url}" target="_blank" style="background:#25D366; color:#fff; padding:0.4rem 0.8rem; border-radius:4px; text-decoration:none; display:inline-block; font-size:0.8rem; font-weight:bold;"><i class="fa-brands fa-whatsapp"></i> Kirim WA</a>
-                            <button onclick="deleteWaApproval('${item.id}')" style="background:transparent; border:none; color:var(--danger); cursor:pointer; margin-left:10px;" title="Hapus"><i class="fa-solid fa-trash"></i></button>
-                        </td>
-                    `;
-                    tbody.appendChild(tr);
-                });
+                waApprovalsData = data.data;
+                renderWaApprovals();
             }
         } catch (err) {
             console.error('Error loading WA approvals', err);
         }
+    }
+
+    function renderWaApprovals() {
+        const tbody = document.getElementById('waApprovalTableBody');
+        if (!tbody) return;
+        
+        tbody.innerHTML = '';
+        if (waApprovalsData.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--text-muted);">Belum ada daftar WA Approval tersimpan</td></tr>';
+            return;
+        }
+
+        const order = document.getElementById('waSortOrder') ? document.getElementById('waSortOrder').value : 'desc';
+        
+        const sortedData = [...waApprovalsData].sort((a, b) => {
+            const tA = new Date(a.created_at).getTime();
+            const tB = new Date(b.created_at).getTime();
+            return order === 'desc' ? tB - tA : tA - tB;
+        });
+        
+        sortedData.forEach(item => {
+            const tr = document.createElement('tr');
+            
+            const dt = new Date(item.created_at);
+            const formattedDate = `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')} ${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}`;
+            
+            let url = `https://wa.me/?text=${encodeURIComponent(item.message)}`;
+            if (item.phone) {
+                url = `https://wa.me/${item.phone}?text=${encodeURIComponent(item.message)}`;
+            }
+
+            const safeMsg = item.message.replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/\n/g, '\\n');
+            const safeTitle = item.title.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+            const safePhone = (item.phone || '').replace(/'/g, "\\'");
+
+            tr.innerHTML = `
+                <td><span style="font-size: 0.85rem; color: var(--text-muted);">${formattedDate}</span></td>
+                <td>
+                    <strong style="display: block; color: var(--text-main);">${item.title}</strong>
+                    <small style="color: var(--primary);">${item.phone || 'Tanpa Nomor'}</small>
+                </td>
+                <td><span class="status-ready" style="font-size: 0.75rem; background: rgba(16,185,129,0.1); color: #10b981; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: bold;">Tersimpan</span></td>
+                <td>
+                    <a href="${url}" target="_blank" style="background:#25D366; color:#fff; padding:0.4rem 0.8rem; border-radius:4px; text-decoration:none; display:inline-block; font-size:0.8rem; font-weight:bold; margin-bottom: 0.2rem;"><i class="fa-brands fa-whatsapp"></i> Kirim WA</a>
+                    <button onclick="openEditWaModal('${item.id}', '${safeTitle}', '${safePhone}', '${safeMsg}')" style="background:transparent; border:none; color:var(--primary); cursor:pointer; margin-left:5px;" title="Edit"><i class="fa-solid fa-pen"></i></button>
+                    <button onclick="deleteWaApproval('${item.id}')" style="background:transparent; border:none; color:var(--danger); cursor:pointer; margin-left:5px;" title="Hapus"><i class="fa-solid fa-trash"></i></button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
     }
 
     window.deleteWaApproval = async function(id) {
@@ -2501,6 +2531,62 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (err) {
             showToast('Kesalahan jaringan saat menghapus', 'error');
         }
+    }
+
+    window.openEditWaModal = function(id, title, phone, message) {
+        document.getElementById('waEditId').value = id;
+        document.getElementById('waEditTitle').value = title;
+        document.getElementById('waEditPhone').value = phone;
+        document.getElementById('waEditMessage').value = message;
+        document.getElementById('waEditModal').style.display = 'flex';
+    }
+
+    const btnCancelWaEdit = document.getElementById('btnCancelWaEdit');
+    if (btnCancelWaEdit) {
+        btnCancelWaEdit.addEventListener('click', () => {
+            document.getElementById('waEditModal').style.display = 'none';
+        });
+    }
+
+    const btnSaveWaEdit = document.getElementById('btnSaveWaEdit');
+    if (btnSaveWaEdit) {
+        btnSaveWaEdit.addEventListener('click', async () => {
+            const id = document.getElementById('waEditId').value;
+            const title = document.getElementById('waEditTitle').value;
+            const phone = document.getElementById('waEditPhone').value;
+            const message = document.getElementById('waEditMessage').value;
+
+            if (!title || !phone || !message) {
+                showToast('Harap lengkapi semua field', 'warning');
+                return;
+            }
+
+            const originalText = btnSaveWaEdit.innerHTML;
+            btnSaveWaEdit.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...';
+            btnSaveWaEdit.disabled = true;
+
+            try {
+                const res = await fetch(`${API_URL}?action=edit_wa_approval`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(attachSettings({ id, title, phone, message }))
+                });
+                const data = await res.json();
+                
+                if (data.success) {
+                    showToast('Perubahan berhasil disimpan!', 'success');
+                    document.getElementById('waEditModal').style.display = 'none';
+                    loadWaApprovals();
+                } else {
+                    showToast(data.error || 'Gagal menyimpan perubahan', 'error');
+                }
+            } catch (err) {
+                showToast('Kesalahan jaringan saat menyimpan', 'error');
+            }
+            
+            btnSaveWaEdit.innerHTML = originalText;
+            btnSaveWaEdit.disabled = false;
+        });
     }
 
     

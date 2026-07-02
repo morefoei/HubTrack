@@ -2262,6 +2262,44 @@ if ($action === 'delete_wa_approval' && $method === 'POST') {
     echo json_encode(['error' => 'Data tidak ditemukan']);
     exit;
 }
+
+if ($action === 'edit_wa_approval' && $method === 'POST') {
+    $profile = $input['profile'] ?? '';
+    $id = $input['id'] ?? '';
+    $title = trim($input['title'] ?? '');
+    $phone = trim($input['phone'] ?? '');
+    $message = trim($input['message'] ?? '');
+    
+    if (empty($profile) || empty($id) || empty($title) || empty($phone) || empty($message)) {
+        echo json_encode(['error' => 'Data tidak lengkap']);
+        exit;
+    }
+    
+    $cleanProfile = strtolower(preg_replace('/[^a-zA-Z0-9_-]/', '', substr($profile, 0, 32)));
+    $file = $DATA_DIR . '/wa_approvals_' . $cleanProfile . '.json';
+    
+    if (file_exists($file)) {
+        $approvals = json_decode(file_get_contents($file), true) ?: [];
+        $found = false;
+        foreach ($approvals as &$app) {
+            if ($app['id'] == $id) {
+                $app['title'] = $title;
+                $app['phone'] = $phone;
+                $app['message'] = $message;
+                $found = true;
+                break;
+            }
+        }
+        
+        if ($found) {
+            file_put_contents($file, json_encode($approvals, JSON_PRETTY_PRINT));
+            echo json_encode(['success' => true]);
+            exit;
+        }
+    }
+    echo json_encode(['error' => 'Data tidak ditemukan']);
+    exit;
+}
 // -----------------------
 
 echo json_encode(['error' => 'Invalid action']);

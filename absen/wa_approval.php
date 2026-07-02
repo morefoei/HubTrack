@@ -146,7 +146,16 @@
         </div>
         
         <div id="waApprovalListContainer" style="margin-top: 3rem; padding-top: 2rem; border-top: 2px dashed var(--border);">
-            <h3 style="margin-bottom: 1.5rem; color: var(--text-main); display: flex; align-items: center; gap: 0.5rem;"><i class="fa-solid fa-list-check" style="color: var(--primary);"></i> Daftar Pesan Tersimpan</h3>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+                <h3 style="color: var(--text-main); display: flex; align-items: center; gap: 0.5rem; margin: 0;"><i class="fa-solid fa-list-check" style="color: var(--primary);"></i> Daftar Pesan Tersimpan</h3>
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <label for="waSortOrder" style="font-size: 0.9rem; color: var(--text-muted); margin: 0;">Urutkan:</label>
+                    <select id="waSortOrder" style="padding: 0.4rem 0.8rem; border-radius: 4px; border: 1px solid var(--border); background: var(--input-bg); color: var(--text-main); font-size: 0.9rem; cursor: pointer;">
+                        <option value="desc">Terbaru (Descending)</option>
+                        <option value="asc">Terlama (Ascending)</option>
+                    </select>
+                </div>
+            </div>
             <div class="table-responsive">
                 <table class="data-table">
                     <thead>
@@ -163,5 +172,30 @@
                 </table>
             </div>
         </div>
+        </div>
     </div>
 </section>
+
+<!-- Edit Modal WA Approval -->
+<div id="waEditModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; justify-content: center; align-items: center; padding: 1rem;">
+    <div style="background: var(--card-bg); width: 100%; max-width: 600px; border-radius: 8px; padding: 1.5rem; box-shadow: 0 10px 25px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto;">
+        <h3 style="margin-top: 0; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.8rem; color: var(--text-main);"><i class="fa-solid fa-pen-to-square"></i> Edit Pesan Tersimpan</h3>
+        <input type="hidden" id="waEditId">
+        <div class="form-group" style="margin-bottom: 1rem;">
+            <label>Judul</label>
+            <input type="text" id="waEditTitle" style="width: 100%; padding: 0.8rem; border-radius: 4px; border: 1px solid var(--border); background: var(--input-bg); color: var(--text-main);">
+        </div>
+        <div class="form-group" style="margin-bottom: 1rem;">
+            <label>Nomor WA Atasan</label>
+            <input type="text" id="waEditPhone" style="width: 100%; padding: 0.8rem; border-radius: 4px; border: 1px solid var(--border); background: var(--input-bg); color: var(--text-main);">
+        </div>
+        <div class="form-group" style="margin-bottom: 1.5rem;">
+            <label>Pesan</label>
+            <textarea id="waEditMessage" rows="10" style="width: 100%; padding: 0.8rem; border-radius: 4px; border: 1px solid var(--border); background: var(--input-bg); color: var(--text-main); font-family: monospace; resize: vertical;"></textarea>
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 1rem;">
+            <button id="btnCancelWaEdit" style="background: transparent; color: var(--text-main); border: 1px solid var(--border); padding: 0.6rem 1.2rem; border-radius: 4px; cursor: pointer;">Batal</button>
+            <button id="btnSaveWaEdit" style="background: var(--primary); color: #fff; border: none; padding: 0.6rem 1.2rem; border-radius: 4px; cursor: pointer; font-weight: 600;">Simpan Perubahan</button>
+        </div>
+    </div>
+</div>
