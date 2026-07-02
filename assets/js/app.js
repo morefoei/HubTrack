@@ -1889,7 +1889,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 finalLines.push(formatRange(rangeStart, rangeEnd));
             }
             
-            const msg = `selamat Pagi ${bossName}, mohon izin untuk minta approval kehadiran di bulan ${monthName}, berikut jadwal saya masuk:\n\n${finalLines.join('\n')}\n\nTerima Kasih \\uD83D\\uDE4F`;
+            const msg = `selamat Pagi ${bossName}, mohon izin untuk minta approval kehadiran di bulan ${monthName}, berikut jadwal saya masuk:\n\n${finalLines.join('\n')}\n\nTerima Kasih`;
             showWAPreview(msg, bossPhone);
             
             btnSubmit.innerHTML = originalBtnText;
@@ -2344,7 +2344,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         finalLines.push(`${formatShort(startDt)} - ${formatShort(endDt)}`);
                     }
                     
-                    const msg = `selamat Pagi ${bossName}, mohon izin untuk minta approval kehadiran di bulan ${chatMonth}, berikut jadwal saya masuk:\n\n${finalLines.join('\n')}\n\nTerima Kasih \\uD83D\\uDE4F`;
+                    const msg = `selamat Pagi ${bossName}, mohon izin untuk minta approval kehadiran di bulan ${chatMonth}, berikut jadwal saya masuk:\n\n${finalLines.join('\n')}\n\nTerima Kasih`;
                     showWAPreview(msg, bossPhone);
                 } else {
                     showToast('Gagal memuat jadwal: ' + (data.message || 'Error'), 'error');
