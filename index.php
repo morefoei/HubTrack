@@ -62,7 +62,6 @@
                 <div class="dropdown-content">
                     <button class="nav-btn" data-target="absen-view" title="Presence-Track"><i class="fa-solid fa-user-check"></i> <span class="nav-text">Presence-Track</span></button>
                     <button class="nav-btn" data-target="wa-approval-view" title="WA Approval"><i class="fa-brands fa-whatsapp"></i> <span class="nav-text">WA Approval</span></button>
-                    <button class="nav-btn" data-target="wa-schedule-view" title="WA Scheduler"><i class="fa-solid fa-calendar-check"></i> <span class="nav-text">WA Scheduler</span></button>
                 </div>
             </details>
 
@@ -133,8 +132,6 @@
             <!-- About View -->
             <?php include 'components/about.php'; ?>
             
-            <?php include 'components/wa_schedule.php'; ?>
-
             <!-- Admin View -->
             <?php include 'components/admin.php'; ?>
         </div>

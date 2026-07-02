@@ -1739,38 +1739,106 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     let generatedWAMessage = "";
+    let generatedWAPhone = "";
     
-    function showWAPreview(message) {
+    function showWAPreview(message, phone = "") {
         generatedWAMessage = message;
+        generatedWAPhone = "";
+        
+        if (phone) {
+            let cleanPhone = phone.replace(/[^0-9]/g, '');
+            if (cleanPhone.startsWith('0')) {
+                cleanPhone = '62' + cleanPhone.substring(1);
+            }
+            generatedWAPhone = cleanPhone;
+        }
+
         document.getElementById('waPreviewText').innerText = message;
         document.getElementById('waResultContainer').style.display = 'block';
     }
 
     // Reguler WA Form
+    const btnAddCuti = document.getElementById('btnAddCuti');
+    const cutiContainer = document.getElementById('waRegCutiContainer');
+    if (btnAddCuti && cutiContainer) {
+        btnAddCuti.addEventListener('click', () => {
+            const div = document.createElement('div');
+            div.style = 'display: flex; gap: 0.5rem; margin-bottom: 0.5rem; align-items: center;';
+            div.innerHTML = `
+                <input type="date" class="waRegCutiDate" style="flex: 1; background: var(--input-bg); color: var(--text-main); border: 1px solid var(--border); padding: 0.8rem; border-radius: 6px;" required>
+                <button type="button" onclick="this.parentElement.remove()" style="background: transparent; color: var(--danger); border: none; cursor: pointer; padding: 0.5rem;"><i class="fa-solid fa-trash"></i></button>
+            `;
+            cutiContainer.appendChild(div);
+        });
+    }
+
     const waRegForm = document.getElementById('waRegulerForm');
     if (waRegForm) {
-        waRegForm.addEventListener('submit', (e) => {
+        waRegForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+            
+            const btnSubmit = waRegForm.querySelector('button[type="submit"]');
+            const originalBtnText = btnSubmit.innerHTML;
+            btnSubmit.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generating...';
+            btnSubmit.disabled = true;
+
             const startDateStr = document.getElementById('waRegStartDate').value;
             const endDateStr = document.getElementById('waRegEndDate').value;
             const excludeWeekends = document.getElementById('waRegExcludeWeekends').checked;
+            const excludeHolidaysCheckbox = document.getElementById('waRegExcludeHolidays');
+            const excludeHolidays = excludeHolidaysCheckbox ? excludeHolidaysCheckbox.checked : false;
+            
+            const cutiInputs = document.querySelectorAll('.waRegCutiDate');
+            const cutiDates = Array.from(cutiInputs).map(inp => inp.value).filter(val => val !== '');
+            
             const bossName = document.getElementById('waRegName').value;
             const monthName = document.getElementById('waRegMonth').value;
+            const bossPhone = document.getElementById('waRegPhone').value;
             
             let start = new Date(startDateStr);
             let end = new Date(endDateStr);
             
             if (start > end) {
                 showToast('Start Date harus lebih kecil dari End Date', 'error');
+                btnSubmit.innerHTML = originalBtnText;
+                btnSubmit.disabled = false;
                 return;
             }
+
+            let holidaysSet = new Set();
+            if (excludeHolidays) {
+                try {
+                    const res = await fetch(`${API_URL}?action=get_indonesian_holidays`, { method: 'POST' });
+                    const data = await res.json();
+                    if (data.success && data.holidays) {
+                        data.holidays.forEach(h => holidaysSet.add(h.date));
+                    }
+                } catch(err) {
+                    console.error("Gagal memuat hari libur", err);
+                }
+            }
+            
+            let cutiSet = new Set(cutiDates);
             
             let activeDates = [];
             let current = new Date(start);
             while (current <= end) {
                 const dayOfWeek = current.getDay();
                 const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
-                if (!excludeWeekends || !isWeekend) {
+                
+                const m = current.getMonth() + 1;
+                const d = current.getDate();
+                const dateString = `${current.getFullYear()}-${m.toString().padStart(2, '0')}-${d.toString().padStart(2, '0')}`;
+                
+                const isHoliday = holidaysSet.has(dateString);
+                const isCuti = cutiSet.has(dateString);
+
+                let isExcluded = false;
+                if (excludeWeekends && isWeekend) isExcluded = true;
+                if (excludeHolidays && isHoliday) isExcluded = true;
+                if (isCuti) isExcluded = true;
+
+                if (!isExcluded) {
                     activeDates.push(new Date(current));
                 }
                 current.setDate(current.getDate() + 1);
@@ -1821,8 +1889,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 finalLines.push(formatRange(rangeStart, rangeEnd));
             }
             
-            const msg = `selamat Pagi ${bossName}, mohon izin untuk minta approval kehadiran di bulan ${monthName}, berikut jadwal saya masuk:\n\n${finalLines.join('\n')}\n\nTerima kasih 🙏`;
-            showWAPreview(msg);
+            const msg = `selamat Pagi ${bossName}, mohon izin untuk minta approval kehadiran di bulan ${monthName}, berikut jadwal saya masuk:\n\n${finalLines.join('\n')}\n\nTerima Kasih \\uD83D\\uDE4F`;
+            showWAPreview(msg, bossPhone);
+            
+            btnSubmit.innerHTML = originalBtnText;
+            btnSubmit.disabled = false;
         });
     }
 
@@ -2163,7 +2234,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!valid || dateRanges.length === 0) return;
             
             const bossName = document.getElementById('waShiftBossName').value;
-            const monthName = document.getElementById('waShiftMonth').value;
+            const chatMonth = document.getElementById('waShiftMonth').value;
+            const bossPhone = document.getElementById('waShiftPhone').value;
             
             if (!sheetName || !name) {
                 showToast('Pilih Sheet Tab dan Nama karyawan terlebih dahulu', 'warning');
@@ -2272,9 +2344,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         finalLines.push(`${formatShort(startDt)} - ${formatShort(endDt)}`);
                     }
                     
-                    const bossSalutation = (bossName.split(' ')[0] || '').toLowerCase();
-                    const msg = `selamat Pagi ${bossName}, mohon izin untuk minta approval kehadiran di bulan ${monthName}, berikut jadwal saya masuk:\n\n${finalLines.join('\n')}\n\nTerima kasih ${bossSalutation} 🙏`;
-                    showWAPreview(msg);
+                    const msg = `selamat Pagi ${bossName}, mohon izin untuk minta approval kehadiran di bulan ${chatMonth}, berikut jadwal saya masuk:\n\n${finalLines.join('\n')}\n\nTerima Kasih \\uD83D\\uDE4F`;
+                    showWAPreview(msg, bossPhone);
                 } else {
                     showToast('Gagal memuat jadwal: ' + (data.message || 'Error'), 'error');
                 }
@@ -2292,7 +2363,11 @@ document.addEventListener('DOMContentLoaded', () => {
         waSendBtn.addEventListener('click', () => {
             if (!generatedWAMessage) return;
             const encoded = encodeURIComponent(generatedWAMessage);
-            window.open(`https://wa.me/?text=${encoded}`, '_blank');
+            let url = `https://wa.me/?text=${encoded}`;
+            if (generatedWAPhone) {
+                url = `https://wa.me/${generatedWAPhone}?text=${encoded}`;
+            }
+            window.open(url, '_blank');
         });
     }
 
@@ -2307,12 +2382,134 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
     }
+
+    const waSaveBtn = document.getElementById('waSaveBtn');
+    if (waSaveBtn) {
+        waSaveBtn.addEventListener('click', async () => {
+            if (!generatedWAMessage) return;
+            const originalText = waSaveBtn.innerHTML;
+            waSaveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...';
+            waSaveBtn.disabled = true;
+            
+            try {
+                // Determine title based on active tab
+                let title = "WA Approval Reguler";
+                const isShift = document.getElementById('wa-shift').style.display === 'block';
+                if (isShift) {
+                    const bossName = document.getElementById('waShiftBossName').value;
+                    const chatMonth = document.getElementById('waShiftMonth').value;
+                    title = `Shift - ${bossName} (${chatMonth})`;
+                } else {
+                    const bossName = document.getElementById('waRegName').value;
+                    const monthName = document.getElementById('waRegMonth').value;
+                    title = `Reguler - ${bossName} (${monthName})`;
+                }
+
+                const payload = attachSettings({
+                    title: title,
+                    phone: generatedWAPhone,
+                    message: generatedWAMessage
+                });
+                
+                const res = await fetch(`${API_URL}?action=save_wa_approval`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                
+                if (data.success) {
+                    showToast('Berhasil disimpan ke daftar!', 'success');
+                    loadWaApprovals();
+                } else {
+                    showToast(data.error || 'Gagal menyimpan', 'error');
+                }
+            } catch (err) {
+                showToast('Kesalahan jaringan saat menyimpan', 'error');
+            }
+            waSaveBtn.innerHTML = originalText;
+            waSaveBtn.disabled = false;
+        });
+    }
+
+    async function loadWaApprovals() {
+        const tbody = document.getElementById('waApprovalTableBody');
+        if (!tbody) return;
+        
+        try {
+            const res = await fetch(`${API_URL}?action=get_wa_approvals`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(attachSettings({}))
+            });
+            const data = await res.json();
+            
+            if (data.success && data.data) {
+                tbody.innerHTML = '';
+                if (data.data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--text-muted);">Belum ada daftar WA Approval tersimpan</td></tr>';
+                    return;
+                }
+                
+                data.data.forEach(item => {
+                    const tr = document.createElement('tr');
+                    
+                    const dt = new Date(item.created_at);
+                    const formattedDate = `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')} ${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}`;
+                    
+                    let url = `https://wa.me/?text=${encodeURIComponent(item.message)}`;
+                    if (item.phone) {
+                        url = `https://wa.me/${item.phone}?text=${encodeURIComponent(item.message)}`;
+                    }
+
+                    tr.innerHTML = `
+                        <td><span style="font-size: 0.85rem; color: var(--text-muted);">${formattedDate}</span></td>
+                        <td>
+                            <strong style="display: block; color: var(--text-main);">${item.title}</strong>
+                            <small style="color: var(--primary);">${item.phone || 'Tanpa Nomor'}</small>
+                        </td>
+                        <td><span class="status-ready" style="font-size: 0.75rem; background: rgba(16,185,129,0.1); color: #10b981; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: bold;">Tersimpan</span></td>
+                        <td>
+                            <a href="${url}" target="_blank" style="background:#25D366; color:#fff; padding:0.4rem 0.8rem; border-radius:4px; text-decoration:none; display:inline-block; font-size:0.8rem; font-weight:bold;"><i class="fa-brands fa-whatsapp"></i> Kirim WA</a>
+                            <button onclick="deleteWaApproval('${item.id}')" style="background:transparent; border:none; color:var(--danger); cursor:pointer; margin-left:10px;" title="Hapus"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+        } catch (err) {
+            console.error('Error loading WA approvals', err);
+        }
+    }
+
+    window.deleteWaApproval = async function(id) {
+        if (!confirm('Hapus item ini dari daftar?')) return;
+        
+        try {
+            const res = await fetch(`${API_URL}?action=delete_wa_approval`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(attachSettings({ id: id }))
+            });
+            const data = await res.json();
+            if (data.success) {
+                showToast('Item berhasil dihapus', 'success');
+                loadWaApprovals();
+            } else {
+                showToast(data.error || 'Gagal menghapus', 'error');
+            }
+        } catch (err) {
+            showToast('Kesalahan jaringan saat menghapus', 'error');
+        }
+    }
+
     
     checkAuth().then(async valid => {
         if (valid) {
             await loadSettings();
             await fetchLogs();
             await loadZohoProjects();
+            await loadWaApprovals();
         }
     });
 
