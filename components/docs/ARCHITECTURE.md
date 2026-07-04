@@ -56,6 +56,7 @@ Selain sinkronisasi Zoho, TrackHub juga memfasilitasi kebutuhan HR dan kehadiran
   - **Dynamic Schedule Fetcher**: Fitur ini membaca jadwal karyawan dari Google Sheet terpisah berdasarkan nama yang dipilih.
   - **Auto-Grouping**: Jika terdapat shift berurutan (misal: 10 Jan - 15 Jan), sistem akan menggabungkannya secara dinamis menjadi rentang (*range*).
   - **Multi-Range Selection**: Pengguna bisa memilih dan menambahkan lebih dari satu *date-range* sekaligus ke dalam satu pesan pengajuan yang profesional, menghemat waktu pengetikan manual.
+  - **Edit & Delete Management**: Pengguna dapat mengubah kembali (judul, nomor telepon tujuan, atau isi pesan) serta menghapus data *Approval* yang sudah tersimpan kapan saja sebelum dikirim.
 
 ## 6. Analytics & Visualisasi Data
 Setiap kali data log di-*render* di halaman **Data Logs**, `app.js` akan memanggil fungsi `updateAnalytics()`.

@@ -20,7 +20,7 @@ Proses input ganda (double-entry) ini sangat memakan waktu, membosankan, dan raw
 3. **Sync Manager (The Core Engine)**
    Sistem penarik data pintar yang otomatis mengambil data "Pending" dari Google Sheets, mencocokkan ID Project dan ID Task, dan memasukkan *Time Log* secara otomatis ke server Zoho. Jika Task belum ada, otomatis akan dibuat.
 4. **Modul Absensi Terpadu & WA Approval Generator**
-   Iframe bawaan untuk form absensi internal dan sistem pembuat teks pengajuan *Approval* via WhatsApp untuk atasan dalam hitungan detik.
+   Iframe bawaan untuk form absensi internal dan sistem pembuat teks pengajuan *Approval* via WhatsApp untuk atasan dalam hitungan detik, yang kini dilengkapi dengan fitur manajemen (Edit/Hapus) untuk memodifikasi pengajuan yang telah tersimpan.
 5. **Token Auto-Generator Terintegrasi**
    Menukar *Zoho Authorization Code* menjadi *Refresh Token* dengan mudah secara langsung tanpa aplikasi pihak ketiga (seperti Postman).
 6. **Analytics Dashboard**
