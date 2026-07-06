@@ -2786,7 +2786,7 @@ document.addEventListener('DOMContentLoaded', () => {
             for (let sid in uniqueStatuses) {
                 opts += `<option value="${sid}" ${sid === node.status_id ? 'selected' : ''}>${sanitizeHTML(uniqueStatuses[sid])}</option>`;
             }
-            return `<select class="status-select" data-id="${node.id}" style="font-size: 0.7rem; background: var(--panel-bg); color: ${node.status.toLowerCase().includes('closed') ? 'var(--danger)' : 'var(--success)'}; border: 1px solid var(--panel-border); border-radius: 4px; padding: 0.1rem; cursor: pointer;">${opts}</select>`;
+            return `<select class="status-select" data-project-id="${node.project_id || currentProjectId}" data-id="${node.id}" style="font-size: 0.7rem; background: var(--panel-bg); color: ${node.status.toLowerCase().includes('closed') ? 'var(--danger)' : 'var(--success)'}; border: 1px solid var(--panel-border); border-radius: 4px; padding: 0.1rem; cursor: pointer;">${opts}</select>`;
         };
 
         const filterVal = document.getElementById('taskStatusFilter') ? document.getElementById('taskStatusFilter').value : 'all';
@@ -2874,9 +2874,11 @@ document.addEventListener('DOMContentLoaded', () => {
             btn.addEventListener('click', (e) => {
                 const parentId = e.currentTarget.getAttribute('data-id');
                 const parentPath = e.currentTarget.getAttribute('data-path');
+                const nodeProjectId = e.currentTarget.getAttribute('data-project-id') || currentProjectId;
+                const nodeProjectName = e.currentTarget.getAttribute('data-project-name') || taskManagerProject.value;
                 const taskName = prompt('Nama Subtask Baru:');
                 if (taskName) {
-                    createZohoTask(taskName, parentId, parentPath);
+                    createZohoTask(taskName, parentId, parentPath, nodeProjectId, nodeProjectName);
                 }
             });
         });
@@ -2885,7 +2887,7 @@ document.addEventListener('DOMContentLoaded', () => {
             btn.addEventListener('click', (e) => {
                 const path = e.currentTarget.getAttribute('data-path');
                 const parts = path.split(' > ');
-                document.querySelector('.singleProjectName').value = taskManagerProject.value;
+                document.querySelector('.singleProjectName').value = e.currentTarget.getAttribute('data-project-name') || taskManagerProject.value;
                 document.querySelector('.singleTaskName').value = parts[0]?.trim() || '';
                 
                 const singleSub = document.querySelector('.singleSubTaskName');
@@ -2922,10 +2924,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Fetch from API
                 icon.className = 'fa-solid fa-spinner fa-spin';
                 try {
+                    const nodeProjectId = e.currentTarget.getAttribute('data-project-id') || currentProjectId;
                     const res = await fetch(`${API_URL}?action=get_subtasks`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(attachSettings({ projectId: currentProjectId, taskId }))
+                        body: JSON.stringify(attachSettings({ projectId: nodeProjectId, taskId }))
                     });
                     
                     const data = await res.json();
@@ -2971,9 +2974,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 newBtn.addEventListener('click', (e) => {
                     const parentId = e.currentTarget.getAttribute('data-id');
                     const parentPath = e.currentTarget.getAttribute('data-path');
+                    const nodeProjectId = e.currentTarget.getAttribute('data-project-id') || currentProjectId;
+                    const nodeProjectName = e.currentTarget.getAttribute('data-project-name') || taskManagerProject.value;
                     const taskName = prompt('Nama Subtask Baru:');
                     if (taskName) {
-                        createZohoTask(taskName, parentId, parentPath);
+                        createZohoTask(taskName, parentId, parentPath, nodeProjectId, nodeProjectName);
                     }
                 });
             });
@@ -2984,7 +2989,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 newBtn.addEventListener('click', (e) => {
                     const path = e.currentTarget.getAttribute('data-path');
                     const parts = path.split(' > ');
-                    document.querySelector('.singleProjectName').value = taskManagerProject.value;
+                    document.querySelector('.singleProjectName').value = e.currentTarget.getAttribute('data-project-name') || taskManagerProject.value;
                     document.querySelector('.singleTaskName').value = parts[0]?.trim() || '';
                     
                     const singleSub = document.querySelector('.singleSubTaskName');
@@ -3004,12 +3009,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 newSel.addEventListener('change', async (e) => {
                     const taskId = e.currentTarget.getAttribute('data-id');
                     const statusId = e.currentTarget.value;
+                    const nodeProjectId = e.currentTarget.getAttribute('data-project-id') || currentProjectId;
                     showToast('Mengubah status task...', 'info');
                     try {
                         const res = await fetch(`${API_URL}?action=update_project_task_status`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(attachSettings({ projectId: currentProjectId, taskId, statusId }))
+                            body: JSON.stringify(attachSettings({ projectId: nodeProjectId, taskId, statusId }))
                         });
                         const data = await res.json();
                         if (data.success) {

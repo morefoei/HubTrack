@@ -1568,10 +1568,7 @@ if ($action === 'get_project_tasks' && $method === 'POST') {
     set_time_limit(0);
     $settings = getSettings();
     $projectName = $input['projectName'] ?? '';
-    if (!$projectName) {
-        echo json_encode(['success' => false, 'message' => 'Project Name required']);
-        exit;
-    }
+    $isAllProjects = (empty($projectName) || strtolower($projectName) === 'semua project' || strtolower($projectName) === 'all');
     
     // Auth
     $ch = curl_init();
@@ -1607,62 +1604,62 @@ if ($action === 'get_project_tasks' && $method === 'POST') {
         return json_decode($res, true);
     }
     
-    // Find project ID by name
+    // Find project IDs
     $projData = localApiCall('/projects/');
-    $pid = null;
+    $targetProjects = [];
     if (isset($projData['projects'])) {
         foreach ($projData['projects'] as $p) {
-            if (strtolower($p['name']) === strtolower($projectName)) {
-                $pid = $p['id_string'];
+            if ($isAllProjects) {
+                $targetProjects[] = $p;
+            } else if (strtolower($p['name']) === strtolower($projectName)) {
+                $targetProjects[] = $p;
                 break;
             }
         }
     }
     
-    if (!$pid) {
+    if (empty($targetProjects)) {
         echo json_encode(['success' => false, 'message' => 'Project not found in Zoho']);
         exit;
     }
     
-    // Get All Tasks with Pagination
+    // Get All Tasks with Pagination for target projects
     $allTasks = [];
-    $subtaskUrls = [];
-    $index = 0;
-    $range = 100;
+    $mainProjectId = $isAllProjects ? 'all' : $targetProjects[0]['id_string'];
     
-    while (true) {
-        $taskRes = localApiCall('/projects/' . $pid . '/tasks/?range=' . $range . '&index=' . $index);
+    foreach ($targetProjects as $proj) {
+        $pid = $proj['id_string'];
+        $pName = $proj['name'];
         
-        if (!isset($taskRes['tasks']) || count($taskRes['tasks']) === 0) {
-            break;
-        }
-
-        foreach ($taskRes['tasks'] as $t) {
-            $statusRaw = $t['status'] ?? '';
-            $statusName = is_array($statusRaw) ? ($statusRaw['name'] ?? '') : $statusRaw;
-            $allTasks[] = [
-                'id' => $t['id_string'],
-                'name' => $t['name'] ?? 'Unknown Task',
-                'parent' => null,
-                'status' => $statusName,
-                'status_id' => is_array($statusRaw) ? ($statusRaw['id'] ?? '') : ''
-            ];
+        $index = 0;
+        $range = 100;
+        
+        while (true) {
+            $taskRes = localApiCall('/projects/' . $pid . '/tasks/?range=' . $range . '&index=' . $index);
             
-            // LAZY LOADING OPTIMIZATION: Subtasks are no longer fetched automatically here to prevent server timeout/500 errors.
-            // They will be fetched separately via get_subtasks API action when requested by the frontend.
-            /* 
-            $statusLower = strtolower($statusName);
-            if (strpos($statusLower, 'complete') === false && strpos($statusLower, 'closed') === false) {
-                // frontend handles this now
+            if (!isset($taskRes['tasks']) || count($taskRes['tasks']) === 0) {
+                break;
             }
-            */
+
+            foreach ($taskRes['tasks'] as $t) {
+                $statusRaw = $t['status'] ?? '';
+                $statusName = is_array($statusRaw) ? ($statusRaw['name'] ?? '') : $statusRaw;
+                $allTasks[] = [
+                    'id' => $t['id_string'],
+                    'name' => $t['name'] ?? 'Unknown Task',
+                    'parent' => null,
+                    'status' => $statusName,
+                    'status_id' => is_array($statusRaw) ? ($statusRaw['id'] ?? '') : '',
+                    'project_id' => $pid,
+                    'project_name' => $pName
+                ];
+            }
+            
+            $index += $range;
         }
-        
-        $index += $range;
     }
 
-
-    echo json_encode(['success' => true, 'tasks' => $allTasks, 'projectId' => $pid]);
+    echo json_encode(['success' => true, 'tasks' => $allTasks, 'projectId' => $mainProjectId]);
     exit;
 }
 

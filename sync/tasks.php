@@ -24,7 +24,8 @@
                             <i class="fa-solid fa-circle-xmark" id="clearTaskSearch" style="position: absolute; right: 0.6rem; cursor: pointer; color: var(--text-muted); display: none; font-size: 0.9rem;" title="Hapus pencarian"></i>
                         </div>
                         <select id="taskStatusFilter" style="background: var(--input-bg); color: var(--text-main); border: 1px solid var(--panel-border); padding: 0.4rem; border-radius: 4px; font-size: 0.85rem; width: auto;">
-                            <option value="backlog" selected>Backlog Only</option>
+                            <option value="all" selected>All Tasks</option>
+                            <option value="backlog">Backlog Only</option>
                             <option value="open">Open / In Progress</option>
                             <option value="complete">Complete / Closed</option>
                         </select>
