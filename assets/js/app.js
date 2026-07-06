@@ -62,7 +62,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const currentPath = window.location.pathname.replace(/^\/|\/$/g, '');
             if (currentPath !== routeName) {
                 // Determine base path to avoid breaking if app is in a subfolder
-                const pathPrefix = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/'));
+                let pathPrefix = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/'));
+                if (!pathPrefix) pathPrefix = '';
                 window.history.pushState({ target: targetId }, '', `${pathPrefix}/${routeName}`);
             }
         });
@@ -80,6 +81,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 const parentDetails = targetBtn.closest('details.nav-dropdown');
                 if (parentDetails) parentDetails.setAttribute('open', 'true');
             }
+        } else {
+            // Default load (e.g. Absen View)
+            const defaultBtn = document.querySelector('.nav-btn[data-target="absen-view"]');
+            if(defaultBtn) defaultBtn.click();
         }
     };
     initRouting();
