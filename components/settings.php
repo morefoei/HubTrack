@@ -35,6 +35,29 @@
                 <input type="password" id="profilePassword">
             </div>
             <hr style="border-color: var(--panel-border); margin: 1.5rem 0;">
+            <h3 style="margin-bottom: 1rem; color: var(--text-main);">Default Google Form Absensi</h3>
+            <div class="form-group">
+                <label>Nama Default Absensi</label>
+                <input type="text" id="absenName" placeholder="Contoh: FADLY FAHRUDIN">
+            </div>
+            <div class="form-group">
+                <label>Divisi Default Absensi</label>
+                <select id="absenDivisi" style="background: var(--input-bg); color: var(--text-main); border: 1px solid var(--panel-border); padding: 0.8rem; border-radius: 4px; width: 100%;">
+                    <option value="">-- Pilih Divisi --</option>
+                    <option value="PMO">PMO</option>
+                    <option value="SALES BMS">SALES BMS</option>
+                    <option value="FA">FA</option>
+                    <option value="HCA">HCA</option>
+                    <option value="DATA & ITM">DATA & ITM</option>
+                    <option value="PLATFORM TECHNOLOGY">PLATFORM TECHNOLOGY</option>
+                    <option value="BUSINESS MANAGEMENT SOLUTIONS">BUSINESS MANAGEMENT SOLUTIONS</option>
+                    <option value="MARKETING">MARKETING</option>
+                    <option value="SALES PLDT">SALES PLDT</option>
+                    <option value="RnD">RnD</option>
+                </select>
+            </div>
+            <hr style="border-color: var(--panel-border); margin: 1.5rem 0;">
+            <h3 style="margin-bottom: 1rem; color: var(--text-main);">Zoho Configuration</h3>
             <div class="form-group">
                 <label>Zoho Client ID</label>
                 <input type="text" id="clientId" placeholder="From Zoho API Console">

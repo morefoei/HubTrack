@@ -2297,6 +2297,159 @@ if ($action === 'edit_wa_approval' && $method === 'POST') {
     echo json_encode(['error' => 'Data tidak ditemukan']);
     exit;
 }
+// --- Rencana Absensi ---
+if ($action === 'get_absen_plans' && $method === 'POST') {
+    $profile = $input['profile'] ?? '';
+    if (empty($profile)) {
+        echo json_encode(['error' => 'Profile required']);
+        exit;
+    }
+    
+    $cleanProfile = strtolower(preg_replace('/[^a-zA-Z0-9_-]/', '', substr($profile, 0, 32)));
+    $file = $DATA_DIR . '/absen_plans_' . $cleanProfile . '.json';
+    
+    $plans = [];
+    if (file_exists($file)) {
+        $plans = json_decode(file_get_contents($file), true) ?: [];
+    }
+    
+    echo json_encode(['success' => true, 'data' => $plans]);
+    exit;
+}
+
+if ($action === 'save_absen_plan' && $method === 'POST') {
+    $profile = $input['profile'] ?? '';
+    $planType = trim($input['planType'] ?? '');
+    $startDate = trim($input['startDate'] ?? '');
+    $endDate = trim($input['endDate'] ?? '');
+    
+    if (empty($profile) || empty($planType) || empty($startDate) || empty($endDate)) {
+        echo json_encode(['error' => 'Data tidak lengkap']);
+        exit;
+    }
+    
+    $cleanProfile = strtolower(preg_replace('/[^a-zA-Z0-9_-]/', '', substr($profile, 0, 32)));
+    $file = $DATA_DIR . '/absen_plans_' . $cleanProfile . '.json';
+    
+    $plans = [];
+    if (file_exists($file)) {
+        $plans = json_decode(file_get_contents($file), true) ?: [];
+    }
+    
+    $newPlan = [
+        'id' => time() . rand(100, 999),
+        'planType' => $planType,
+        'startDate' => $startDate,
+        'endDate' => $endDate,
+        'created_at' => date('Y-m-d H:i:s')
+    ];
+    
+    array_unshift($plans, $newPlan); // Add to top
+    
+    file_put_contents($file, json_encode($plans, JSON_PRETTY_PRINT));
+    echo json_encode(['success' => true]);
+    exit;
+}
+
+if ($action === 'save_absen_plan_bulk' && $method === 'POST') {
+    $profile = $input['profile'] ?? '';
+    $plansToSave = $input['plans'] ?? []; // Array of {planType, startDate, endDate}
+    
+    if (empty($profile) || !is_array($plansToSave) || empty($plansToSave)) {
+        echo json_encode(['error' => 'Data tidak lengkap']);
+        exit;
+    }
+    
+    $cleanProfile = strtolower(preg_replace('/[^a-zA-Z0-9_-]/', '', substr($profile, 0, 32)));
+    $file = $DATA_DIR . '/absen_plans_' . $cleanProfile . '.json';
+    
+    $plans = [];
+    if (file_exists($file)) {
+        $plans = json_decode(file_get_contents($file), true) ?: [];
+    }
+    
+    // Reverse plansToSave before prepending so they appear in correct chronological order at top
+    $plansToSave = array_reverse($plansToSave);
+    
+    foreach($plansToSave as $p) {
+        $newPlan = [
+            'id' => time() . rand(100, 9999),
+            'planType' => $p['planType'],
+            'startDate' => $p['startDate'],
+            'endDate' => $p['endDate'],
+            'created_at' => date('Y-m-d H:i:s')
+        ];
+        array_unshift($plans, $newPlan);
+        usleep(1000); // Small delay to ensure unique IDs if relying on time() somewhat (rand covers it mostly)
+    }
+    
+    file_put_contents($file, json_encode($plans, JSON_PRETTY_PRINT));
+    echo json_encode(['success' => true]);
+    exit;
+}
+
+if ($action === 'delete_absen_plan' && $method === 'POST') {
+    $profile = $input['profile'] ?? '';
+    $id = $input['id'] ?? '';
+    
+    if (empty($profile) || empty($id)) {
+        echo json_encode(['error' => 'Data tidak lengkap']);
+        exit;
+    }
+    
+    $cleanProfile = strtolower(preg_replace('/[^a-zA-Z0-9_-]/', '', substr($profile, 0, 32)));
+    $file = $DATA_DIR . '/absen_plans_' . $cleanProfile . '.json';
+    
+    if (file_exists($file)) {
+        $plans = json_decode(file_get_contents($file), true) ?: [];
+        $newPlans = array_filter($plans, function($s) use ($id) {
+            return $s['id'] != $id;
+        });
+        
+        file_put_contents($file, json_encode(array_values($newPlans), JSON_PRETTY_PRINT));
+        echo json_encode(['success' => true]);
+        exit;
+    }
+    echo json_encode(['error' => 'Data tidak ditemukan']);
+    exit;
+}
+
+if ($action === 'edit_absen_plan' && $method === 'POST') {
+    $profile = $input['profile'] ?? '';
+    $id = $input['id'] ?? '';
+    $planType = $input['planType'] ?? '';
+    
+    if (empty($profile) || empty($id) || empty($planType)) {
+        echo json_encode(['error' => 'Data tidak lengkap']);
+        exit;
+    }
+    
+    $cleanProfile = strtolower(preg_replace('/[^a-zA-Z0-9_-]/', '', substr($profile, 0, 32)));
+    $file = $DATA_DIR . '/absen_plans_' . $cleanProfile . '.json';
+    
+    if (file_exists($file)) {
+        $plans = json_decode(file_get_contents($file), true) ?: [];
+        $found = false;
+        foreach ($plans as &$p) {
+            if ($p['id'] == $id) {
+                $p['planType'] = $planType;
+                $found = true;
+                break;
+            }
+        }
+        
+        if ($found) {
+            file_put_contents($file, json_encode($plans, JSON_PRETTY_PRINT));
+            echo json_encode(['success' => true]);
+        } else {
+            echo json_encode(['error' => 'Plan tidak ditemukan']);
+        }
+    } else {
+        echo json_encode(['error' => 'File tidak ditemukan']);
+    }
+    exit;
+}
+
 // -----------------------
 
 echo json_encode(['error' => 'Invalid action']);

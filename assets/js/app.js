@@ -49,44 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             if (targetId === 'absen-view') {
-                const loadAbsen = async () => {
-                    let formUrl = '';
-                    const iframe = document.getElementById('absenIframe');
-                    const emptyMsg = document.getElementById('absenEmptyMsg');
-                    
-                    try {
-                        const res = await fetch(`${API_URL}?action=get_settings`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ profile: userProfile, password: userPassword })
-                        });
-                        const data = await res.json();
-                        if (data.settings && data.settings.formAbsenUrl) {
-                            formUrl = data.settings.formAbsenUrl.trim();
-                            
-                            // Sanitasi protocol untuk mencegah XSS via javascript: URI
-                            if (formUrl && !/^https?:\/\//i.test(formUrl)) {
-                                formUrl = 'https://' + formUrl;
-                            }
-                            
-                            const newTabBtn = document.getElementById('absenNewTabBtn');
-                            if (newTabBtn) {
-                                newTabBtn.href = formUrl;
-                                newTabBtn.style.display = 'inline-block';
-                            }
-                        }
-                    } catch(e) {}
-                    
-                    if (formUrl) {
-                        if (iframe.src !== formUrl) iframe.src = formUrl;
-                        iframe.style.display = 'block';
-                        emptyMsg.style.display = 'none';
-                    } else {
-                        iframe.style.display = 'none';
-                        emptyMsg.style.display = 'block';
-                    }
-                };
-                loadAbsen();
+                loadAbsenPlans();
             } else if (targetId === 'settings-view') {
                 loadSettings();
             } else if (targetId === 'logs-view' || targetId === 'data-view') {
@@ -1302,6 +1265,662 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    const loadAbsenPlans = async () => {
+        try {
+            const res = await fetch(`${API_URL}?action=get_absen_plans`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(attachSettings())
+            });
+            const data = await res.json();
+            const tbody = document.getElementById('absenPlansTableBody');
+            if (!tbody) return;
+            
+            if (data.success && data.data && data.data.length > 0) {
+                tbody.innerHTML = '';
+                data.data.forEach(plan => {
+                    const tr = document.createElement('tr');
+                    let tglDisplay = plan.startDate;
+                    if (plan.startDate !== plan.endDate) {
+                        tglDisplay = `${plan.startDate} - ${plan.endDate}`;
+                    }
+                    
+                    tr.innerHTML = `
+                        <td>${tglDisplay}</td>
+                        <td>
+                            <select class="select-edit-plan-type" data-id="${plan.id}" style="background: rgba(168,85,247,0.1); color: #c084fc; border: 1px solid rgba(168,85,247,0.3); padding: 0.3rem 0.6rem; border-radius: 6px; font-size: 0.85rem; font-weight: 500; cursor: pointer; outline: none; transition: all 0.2s;">
+                                <option value="Sakit" ${plan.planType === 'Sakit' ? 'selected' : ''}>Sakit</option>
+                                <option value="Izin" ${plan.planType === 'Izin' ? 'selected' : ''}>Izin</option>
+                                <option value="Cuti Tahunan" ${plan.planType === 'Cuti Tahunan' ? 'selected' : ''}>Cuti Tahunan</option>
+                                <option value="Cuti Khusus" ${plan.planType === 'Cuti Khusus' ? 'selected' : ''}>Cuti Khusus</option>
+                                <option value="Hadir" ${plan.planType === 'Hadir' ? 'selected' : ''}>Hadir</option>
+                                <option value="Overtime (Di Wajibkan Mengisi Jam Awal & Jam Akhir OT)" ${plan.planType === 'Overtime (Di Wajibkan Mengisi Jam Awal & Jam Akhir OT)' ? 'selected' : ''}>Overtime (Di Wajibkan Mengisi Jam Awal & Jam Akhir OT)</option>
+                            </select>
+                        </td>
+                        <td>
+                            <div style="display: flex; gap: 0.5rem; align-items: center; white-space: nowrap;">
+                                <button class="btn-open-absen" data-id="${plan.id}" style="background: linear-gradient(90deg, rgba(16,185,129,0.15), rgba(16,185,129,0.05)); color: #34d399; border: 1px solid rgba(16,185,129,0.3); padding: 0.4rem 0.8rem; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.2s;"><i class="fa-solid fa-arrow-up-right-from-square"></i> Buka Form</button>
+                                <button class="btn-del-absen" data-id="${plan.id}" style="background: rgba(239,68,68,0.1); color: #ef4444; border: 1px solid rgba(239,68,68,0.2); padding: 0.4rem 0.6rem; border-radius: 6px; cursor: pointer; transition: all 0.2s;"><i class="fa-solid fa-trash"></i></button>
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+                // Attach events
+                document.querySelectorAll('.select-edit-plan-type').forEach(sel => {
+                    sel.addEventListener('change', async (e) => {
+                        const id = e.target.dataset.id;
+                        const newType = e.target.value;
+                        const origBg = e.target.style.background;
+                        
+                        e.target.style.background = 'rgba(255,255,255,0.1)';
+                        e.target.disabled = true;
+                        
+                        try {
+                            const res = await fetch(`${API_URL}?action=edit_absen_plan`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(attachSettings({ id: id, planType: newType }))
+                            });
+                            const dt = await res.json();
+                            if(!dt.success) {
+                                alert('Gagal mengedit tipe absen.');
+                            } else {
+                                // Update local state so Buka Form uses the new type
+                                const planObj = data.data.find(p => p.id == id);
+                                if (planObj) planObj.planType = newType;
+                            }
+                        } catch(err) {
+                            console.error(err);
+                        }
+                        
+                        e.target.style.background = origBg;
+                        e.target.disabled = false;
+                    });
+                });
+                
+                document.querySelectorAll('.btn-open-absen').forEach(btn => {
+                    btn.addEventListener('click', async (e) => {
+                        const id = e.target.closest('button').dataset.id;
+                        const plan = data.data.find(p => p.id == id);
+                        if(plan) {
+                            // Get settings first for Name and Divisi
+                            let formUrl = '';
+                            let absenName = '';
+                            let absenDivisi = '';
+                            try {
+                                const sRes = await fetch(`${API_URL}?action=get_settings`, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify(attachSettings())
+                                });
+                                const sData = await sRes.json();
+                                if (sData.settings && sData.settings.formAbsenUrl) {
+                                    formUrl = sData.settings.formAbsenUrl.trim();
+                                    absenName = sData.settings.absenName || '';
+                                    absenDivisi = sData.settings.absenDivisi || '';
+                                } else {
+                                    alert('URL Google Form belum diatur di Settings!');
+                                    return;
+                                }
+                            } catch(err) {
+                                alert('Gagal memuat pengaturan.'); return;
+                            }
+                            
+                            if (formUrl && !/^https?:\/\//i.test(formUrl)) formUrl = 'https://' + formUrl;
+                            
+                            try {
+                                const urlObj = new URL(formUrl);
+                                if (urlObj.hostname === 'docs.google.com' && urlObj.pathname.includes('/forms/')) {
+                                    if (absenName) urlObj.searchParams.set('entry.2058242752', absenName);
+                                    if (absenDivisi) urlObj.searchParams.set('entry.1155716239', absenDivisi);
+                                    
+                                    // Parse Jenis Pengajuan
+                                    let jPengajuan = plan.planType;
+                                    if(jPengajuan.includes('Overtime')) jPengajuan = 'Overtime (Di Wajibkan Mengisi Jam Awal & Jam Akhir OT)';
+                                    urlObj.searchParams.set('entry.234073371', jPengajuan); 
+                                    
+                                    urlObj.searchParams.set('entry.2130747736', plan.startDate);
+                                    urlObj.searchParams.set('entry.766288703', plan.endDate);
+                                    
+                                    let finalUrl = urlObj.toString();
+                                    const iframe = document.getElementById('absenIframe');
+                                    const emptyMsg = document.getElementById('absenEmptyMsg');
+                                    const newTabBtn = document.getElementById('absenNewTabBtn');
+                                    
+                                    if (iframe) {
+                                        iframe.src = finalUrl;
+                                        if(emptyMsg) emptyMsg.style.display = 'none';
+                                        iframe.style.display = 'block';
+                                    }
+                                    if (newTabBtn) {
+                                        newTabBtn.href = finalUrl;
+                                        newTabBtn.style.display = 'inline-block';
+                                    }
+                                } else {
+                                    window.open(formUrl, '_blank');
+                                }
+                            } catch(err) {
+                                window.open(formUrl, '_blank');
+                            }
+                        }
+                    });
+                });
+
+                document.querySelectorAll('.btn-del-absen').forEach(btn => {
+                    btn.addEventListener('click', async (e) => {
+                        if (!confirm('Hapus rencana ini?')) return;
+                        const id = e.target.closest('button').dataset.id;
+                        try {
+                            const res = await fetch(`${API_URL}?action=delete_absen_plan`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(attachSettings({ id: id }))
+                            });
+                            const delData = await res.json();
+                            if (delData.success) {
+                                loadAbsenPlans();
+                            } else {
+                                alert('Gagal menghapus: ' + delData.error);
+                            }
+                        } catch(err) {}
+                    });
+                });
+
+            } else {
+                tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color: var(--text-muted); padding: 2rem;">Belum ada rencana absensi tersimpan.</td></tr>';
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    // Shift Toggle Logic
+    const absenGenModeBulk = document.getElementById('absenGenModeBulk');
+    const absenGenModeShift = document.getElementById('absenGenModeShift');
+    const absenShiftPanel = document.getElementById('absenShiftPanel');
+    const absenDateRangePanel = document.getElementById('absenDateRangePanel');
+    
+    if (absenGenModeBulk && absenGenModeShift) {
+        absenGenModeBulk.addEventListener('change', () => {
+            if (absenGenModeBulk.checked) {
+                absenShiftPanel.style.display = 'none';
+                if(absenDateRangePanel) absenDateRangePanel.style.display = 'block';
+            }
+        });
+        absenGenModeShift.addEventListener('change', () => {
+            if (absenGenModeShift.checked) {
+                absenShiftPanel.style.display = 'block';
+                if(absenDateRangePanel) absenDateRangePanel.style.display = 'none';
+            }
+        });
+    }
+
+    // Shift Data Sync Logic
+    const btnAbsenSyncShiftTabs = document.getElementById('btnAbsenSyncShiftTabs');
+    const absenShiftTabSelect = document.getElementById('absenShiftTabSelect');
+    const absenShiftNameSelect = document.getElementById('absenShiftNameSelect');
+
+    if (btnAbsenSyncShiftTabs) {
+        btnAbsenSyncShiftTabs.addEventListener('click', async () => {
+            const originalText = btnAbsenSyncShiftTabs.innerHTML;
+            btnAbsenSyncShiftTabs.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Syncing...';
+            btnAbsenSyncShiftTabs.disabled = true;
+
+            try {
+                const res = await fetch(`${API_URL}?action=get_shift_tabs`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(attachSettings())
+                });
+                const data = await res.json();
+
+                if (data.success && data.tabs && data.tabs.length > 0) {
+                    absenShiftTabSelect.innerHTML = '<option value="">-- Pilih Sheet Tab --</option>';
+                    data.tabs.forEach(tab => {
+                        const opt = document.createElement('option');
+                        opt.value = tab;
+                        opt.textContent = tab;
+                        absenShiftTabSelect.appendChild(opt);
+                    });
+                } else {
+                    alert('Gagal mengambil daftar sheet tab atau sheet kosong.');
+                }
+            } catch (e) {
+                alert('Terjadi kesalahan jaringan.');
+            }
+            btnAbsenSyncShiftTabs.innerHTML = originalText;
+            btnAbsenSyncShiftTabs.disabled = false;
+        });
+    }
+
+    if (absenShiftTabSelect) {
+        absenShiftTabSelect.addEventListener('change', async () => {
+            const tabName = absenShiftTabSelect.value;
+            if (!tabName) return;
+
+            absenShiftNameSelect.innerHTML = '<option value="">Loading...</option>';
+            absenShiftNameSelect.disabled = true;
+
+            try {
+                const res = await fetch(`${API_URL}?action=get_shift_names`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(attachSettings({ sheetName: tabName }))
+                });
+                const data = await res.json();
+
+                if (data.success && data.names && data.names.length > 0) {
+                    absenShiftNameSelect.innerHTML = '<option value="">-- Pilih Nama --</option>';
+                    data.names.forEach(name => {
+                        const opt = document.createElement('option');
+                        opt.value = name;
+                        opt.textContent = name;
+                        absenShiftNameSelect.appendChild(opt);
+                    });
+                } else {
+                    absenShiftNameSelect.innerHTML = '<option value="">Gagal memuat nama</option>';
+                }
+            } catch (e) {
+                absenShiftNameSelect.innerHTML = '<option value="">Error jaringan</option>';
+            }
+            absenShiftNameSelect.disabled = false;
+        });
+    }
+
+    if (absenShiftNameSelect) {
+        absenShiftNameSelect.addEventListener('change', async (e) => {
+            const name = e.target.value;
+            const sheetName = absenShiftTabSelect.value;
+            const infoDiv = document.getElementById('absenShiftScheduleInfo');
+            const infoText = document.getElementById('absenShiftScheduleText');
+            
+            if (!name) {
+                if(infoDiv) infoDiv.style.display = 'none';
+                return;
+            }
+            
+            if(infoDiv) {
+                infoDiv.style.display = 'block';
+                infoText.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Memuat jadwal absen...';
+            }
+            
+            try {
+                const res = await fetch(`${API_URL}?action=get_shift_schedule`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(attachSettings({ name, sheetName }))
+                });
+                const data = await res.json();
+                if (data.success && data.dates) {
+                    if (data.dates.length === 0) {
+                        infoText.innerHTML = 'Tidak ada jadwal shift (angka 1 atau 2) yang ditemukan untuk nama ini.';
+                    } else {
+                        // Apply month filter logic if present
+                        const monthFilterSelect = document.getElementById('absenShiftMonthFilter');
+                        let filteredDates = data.dates;
+                        if (monthFilterSelect) {
+                            monthFilterSelect.onchange = () => {
+                                const selectedMonth = monthFilterSelect.value;
+                                if (selectedMonth === 'all') {
+                                    // Just use all dates
+                                }
+                                
+                                let validDays = [];
+                                data.dates.forEach(dStr => {
+                                    let dt = new Date(dStr);
+                                    if (isNaN(dt.getTime())) {
+                                        const parts = dStr.split(/[-/]/);
+                                        if (parts.length === 3) dt = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+                                    }
+                                    if (!isNaN(dt.getTime())) {
+                                        dt.setHours(0,0,0,0);
+                                        if (selectedMonth === 'all' || dt.getMonth() === parseInt(selectedMonth)) {
+                                            validDays.push(dt);
+                                        }
+                                    }
+                                });
+                                
+                                validDays.sort((a,b) => a.getTime() - b.getTime());
+                                
+                                if (validDays.length === 0) {
+                                    infoText.innerHTML = 'Tidak ada jadwal di bulan ini.';
+                                    return;
+                                }
+                                
+                                let blocks = [];
+                                let blockStart = validDays[0];
+                                let blockEnd = validDays[0];
+                                
+                                for (let i = 1; i < validDays.length; i++) {
+                                    const prevDay = validDays[i-1];
+                                    const currDay = validDays[i];
+                                    const daysDiff = Math.round((currDay.getTime() - prevDay.getTime()) / (1000 * 3600 * 24));
+                                    
+                                    if (daysDiff === 1 && currDay.getDay() !== 1) {
+                                        blockEnd = currDay;
+                                    } else {
+                                        blocks.push({ start: blockStart, end: blockEnd });
+                                        blockStart = currDay;
+                                        blockEnd = currDay;
+                                    }
+                                }
+                                blocks.push({ start: blockStart, end: blockEnd });
+                                
+                                const formatDDisplay = (d) => {
+                                    const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ags','Sep','Okt','Nov','Des'];
+                                    return `${String(d.getDate()).padStart(2, '0')} ${months[d.getMonth()]} ${String(d.getFullYear()).slice(-2)}`;
+                                };
+                                const formatD = (d) => {
+                                    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+                                };
+                                
+                                let html = '<div style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.8rem;">';
+                                blocks.forEach((blk) => {
+                                    const sStrDisplay = formatDDisplay(blk.start);
+                                    const eStrDisplay = formatDDisplay(blk.end);
+                                    const sStr = formatD(blk.start);
+                                    const eStr = formatD(blk.end);
+                                    let title = sStrDisplay;
+                                    if (sStr !== eStr) title += ' - ' + eStrDisplay;
+                                    
+                                    html += `
+                                    <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.03); padding: 0.6rem 0.8rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.05);">
+                                        <span style="font-size: 0.85rem;">${title}</span>
+                                        <button type="button" class="btn-use-shift-block" data-start="${sStr}" data-end="${eStr}" style="background: rgba(16,185,129,0.1); color: #10b981; border: 1px solid rgba(16,185,129,0.3); padding: 0.3rem 0.6rem; border-radius: 4px; font-size: 0.75rem; cursor: pointer; transition: all 0.2s;">
+                                            <i class="fa-solid fa-plus"></i> Gunakan
+                                        </button>
+                                    </div>
+                                    `;
+                                });
+                                html += '</div>';
+                                infoText.innerHTML = html;
+                                
+                                // Attach listeners
+                                const infoDivEl = document.getElementById('absenShiftScheduleInfo');
+                                const btns = infoDivEl.querySelectorAll('.btn-use-shift-block');
+                                btns.forEach(btn => {
+                                    btn.addEventListener('click', async (e) => {
+                                        const tgt = e.currentTarget;
+                                        const bs = tgt.getAttribute('data-start');
+                                        const be = tgt.getAttribute('data-end');
+                                        const planType = document.getElementById('absenPlanType').value;
+                                        
+                                        tgt.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+                                        tgt.disabled = true;
+                                        
+                                        const payload = {
+                                            profile: document.getElementById('profileSelector') ? document.getElementById('profileSelector').value : 'default',
+                                            plans: [{ planType: planType, startDate: bs, endDate: be }]
+                                        };
+                                        
+                                        try {
+                                            const r = await fetch(`${API_URL}?action=save_absen_plan_bulk`, {
+                                                method: 'POST',
+                                                headers: { 'Content-Type': 'application/json' },
+                                                body: JSON.stringify(attachSettings(payload))
+                                            });
+                                            const d = await r.json();
+                                            if (d.success) {
+                                                tgt.innerHTML = '<i class="fa-solid fa-check"></i>';
+                                                tgt.style.background = '#10b981';
+                                                tgt.style.color = '#fff';
+                                                if(typeof loadAbsenPlans === 'function') loadAbsenPlans();
+                                            } else {
+                                                alert('Gagal: ' + d.message);
+                                                tgt.innerHTML = '<i class="fa-solid fa-plus"></i> Gunakan';
+                                                tgt.disabled = false;
+                                            }
+                                        } catch(err) {
+                                            alert('Error jaringan');
+                                            tgt.innerHTML = '<i class="fa-solid fa-plus"></i> Gunakan';
+                                            tgt.disabled = false;
+                                        }
+                                    });
+                                });
+                            };
+                            // Trigger initial render
+                            monthFilterSelect.dispatchEvent(new Event('change'));
+                        } else {
+                            // Fallback
+                            infoText.innerHTML = data.dates.join(', ');
+                        }
+                    }
+                } else {
+                    infoText.innerHTML = 'Gagal memuat jadwal: ' + (data.message || 'Error');
+                }
+            } catch (err) {
+                infoText.innerHTML = 'Error jaringan saat memuat jadwal.';
+            }
+        });
+    }
+
+    if (document.getElementById('btnSaveAbsenPlan')) {
+        document.getElementById('btnSaveAbsenPlan').addEventListener('click', async () => {
+            const planType = document.getElementById('absenPlanType').value;
+            const startDate = document.getElementById('absenPlanStartDate').value;
+            const endDate = document.getElementById('absenPlanEndDate').value;
+            const genMode = document.querySelector('input[name="absenGenMode"]:checked')?.value || 'bulk';
+            
+            if (genMode === 'bulk' && (!startDate || !endDate)) {
+                alert('Tanggal awal dan akhir harus diisi!');
+                return;
+            }
+            
+            const btn = document.getElementById('btnSaveAbsenPlan');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...';
+            btn.disabled = true;
+
+            try {
+                let finalPlans = [];
+                
+                if (genMode === 'shift') {
+                    const sheetName = absenShiftTabSelect.value;
+                    const name = absenShiftNameSelect.value;
+                    if (!sheetName || !name) {
+                        alert('Silakan pilih Sheet Tab dan Nama Karyawan terlebih dahulu!');
+                        btn.innerHTML = originalText;
+                        btn.disabled = false;
+                        return;
+                    }
+                    
+                    let activeDates = [];
+                    try {
+                        const res = await fetch(`${API_URL}?action=get_shift_schedule`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(attachSettings({ sheetName: sheetName, name: name }))
+                        });
+                        const data = await res.json();
+                        if (data.success && data.dates) {
+                            activeDates = data.dates;
+                        }
+                    } catch(e) {
+                        console.error(e);
+                    }
+                    
+                    if (activeDates.length === 0) {
+                        alert('Tidak ada jadwal shift yang ditemukan atau gagal memuat jadwal.');
+                        btn.innerHTML = originalText;
+                        btn.disabled = false;
+                        return;
+                    }
+                    
+                    const monthFilterSelect = document.getElementById('absenShiftMonthFilter');
+                    const selectedMonth = monthFilterSelect ? monthFilterSelect.value : 'all';
+                    
+                    let validDays = [];
+                    activeDates.forEach(dStr => {
+                        let dt = new Date(dStr);
+                        if (isNaN(dt.getTime())) {
+                            const parts = dStr.split(/[-/]/);
+                            if (parts.length === 3) dt = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+                        }
+                        
+                        if (!isNaN(dt.getTime())) {
+                            dt.setHours(0,0,0,0);
+                            if (selectedMonth === 'all' || dt.getMonth() === parseInt(selectedMonth)) {
+                                validDays.push(dt);
+                            }
+                        }
+                    });
+                    
+                    // Sort validDays ascending
+                    validDays.sort((a,b) => a.getTime() - b.getTime());
+                    
+                    const formatD = (d) => {
+                        const yyyy = d.getFullYear();
+                        const mm = String(d.getMonth() + 1).padStart(2, '0');
+                        const dd = String(d.getDate()).padStart(2, '0');
+                        return `${yyyy}-${mm}-${dd}`;
+                    };
+                    
+                    if (validDays.length > 0) {
+                        let blockStart = validDays[0];
+                        let blockEnd = validDays[0];
+                        
+                        for (let i = 1; i < validDays.length; i++) {
+                            const prevDay = validDays[i-1];
+                            const currDay = validDays[i];
+                            const daysDiff = Math.round((currDay.getTime() - prevDay.getTime()) / (1000 * 3600 * 24));
+                            
+                            // For shift, we just group contiguous days. 
+                            // If they want it split per week, we can also break on Monday.
+                            if (daysDiff === 1 && currDay.getDay() !== 1) {
+                                blockEnd = currDay;
+                            } else {
+                                finalPlans.push({
+                                    planType: planType,
+                                    startDate: formatD(blockStart),
+                                    endDate: formatD(blockEnd)
+                                });
+                                blockStart = currDay;
+                                blockEnd = currDay;
+                            }
+                        }
+                        finalPlans.push({
+                            planType: planType,
+                            startDate: formatD(blockStart),
+                            endDate: formatD(blockEnd)
+                        });
+                    }
+                    
+                } else if (genMode === 'bulk' && startDate !== endDate) {
+                    // Fetch holidays unconditionally for bulk generate
+                    let holidays = [];
+                    try {
+                        const hRes = await fetch(`${API_URL}?action=get_indonesian_holidays`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(attachSettings())
+                        });
+                        const hData = await hRes.json();
+                        if (hData.success && hData.holidays) {
+                            holidays = hData.holidays.map(h => h.date);
+                        }
+                    } catch(e) {
+                        console.error('Failed fetching holidays', e);
+                    }
+                    
+                    let curr = new Date(startDate);
+                    let end = new Date(endDate);
+                    let validDays = [];
+                    
+                    while(curr <= end) {
+                        const dayOfWeek = curr.getDay();
+                        const yyyy = curr.getFullYear();
+                        const mm = String(curr.getMonth() + 1).padStart(2, '0');
+                        const dd = String(curr.getDate()).padStart(2, '0');
+                        const dateStr = `${yyyy}-${mm}-${dd}`;
+                        
+                        let skip = false;
+                        if (dayOfWeek === 0 || dayOfWeek === 6 || holidays.includes(dateStr)) {
+                            skip = true;
+                        }
+                        
+                        if (!skip) {
+                            validDays.push(new Date(curr.getTime()));
+                        }
+                        curr.setDate(curr.getDate() + 1);
+                    }
+                    
+                    const formatD = (d) => {
+                        const yyyy = d.getFullYear();
+                        const mm = String(d.getMonth() + 1).padStart(2, '0');
+                        const dd = String(d.getDate()).padStart(2, '0');
+                        return `${yyyy}-${mm}-${dd}`;
+                    };
+                    
+                    if (validDays.length > 0) {
+                        let blockStart = validDays[0];
+                        let blockEnd = validDays[0];
+                        
+                        for (let i = 1; i < validDays.length; i++) {
+                            const prevDay = validDays[i-1];
+                            const currDay = validDays[i];
+                            
+                            const daysDiff = Math.round((currDay.getTime() - prevDay.getTime()) / (1000 * 3600 * 24));
+                            
+                            // Break block if not contiguous OR if currDay is Monday (1)
+                            if (daysDiff === 1 && currDay.getDay() !== 1) {
+                                blockEnd = currDay; // Extend block
+                            } else {
+                                // Break block
+                                finalPlans.push({
+                                    planType: planType,
+                                    startDate: formatD(blockStart),
+                                    endDate: formatD(blockEnd)
+                                });
+                                blockStart = currDay;
+                                blockEnd = currDay;
+                            }
+                        }
+                        // Push last block
+                        finalPlans.push({
+                            planType: planType,
+                            startDate: formatD(blockStart),
+                            endDate: formatD(blockEnd)
+                        });
+                    }
+                } else {
+                    finalPlans.push({
+                        planType: planType,
+                        startDate: startDate,
+                        endDate: endDate
+                    });
+                }
+                
+                if(finalPlans.length === 0) {
+                    alert('Tidak ada hari kerja yang bisa di-generate pada rentang tanggal tersebut.');
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                    return;
+                }
+
+                const res = await fetch(`${API_URL}?action=save_absen_plan_bulk`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(attachSettings({ plans: finalPlans }))
+                });
+                const data = await res.json();
+                
+                if (data.success) {
+                    document.getElementById('absenPlanStartDate').value = '';
+                    document.getElementById('absenPlanEndDate').value = '';
+                    loadAbsenPlans();
+                } else {
+                    alert('Gagal menyimpan: ' + data.error);
+                }
+            } catch (err) {
+                alert('Terjadi kesalahan jaringan.');
+            }
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        });
+    }
+
     const loadSettings = async () => {
         try {
             const res = await fetch(`${API_URL}?action=get_settings`, {
@@ -1326,6 +1945,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('sheetName').value = data.settings.sheetName || 'Sheet1';
                 document.getElementById('googleCredentials').value = data.settings.googleCredentials || '';
                 document.getElementById('profilePassword').value = userPassword || ''; // backend no longer sends password
+                
+                if (document.getElementById('absenName')) document.getElementById('absenName').value = data.settings.absenName || '';
+                if (document.getElementById('absenDivisi')) document.getElementById('absenDivisi').value = data.settings.absenDivisi || '';
+                
                 document.getElementById('clientId').value = data.settings.clientId || '';
                 document.getElementById('clientSecret').value = data.settings.clientSecret || '';
                 document.getElementById('refreshToken').value = data.settings.refreshToken || '';
@@ -1407,7 +2030,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 refreshToken: document.getElementById('refreshToken').value,
                 portalName: document.getElementById('portalName').value,
                 accountsUrl: document.getElementById('accountsUrl').value,
-                apiUrl: document.getElementById('apiUrl').value
+                apiUrl: document.getElementById('apiUrl').value,
+                absenName: document.getElementById('absenName') ? document.getElementById('absenName').value : '',
+                absenDivisi: document.getElementById('absenDivisi') ? document.getElementById('absenDivisi').value : ''
             }
         };
 
