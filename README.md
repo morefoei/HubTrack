@@ -15,12 +15,14 @@ Proses input ganda (double-entry) ini sangat memakan waktu, membosankan, dan raw
 
 1. **Sistem Multi-Profile Terisolasi (Multi-Tenant) dengan Admin Control**
    Setiap pengguna dapat masuk menggunakan username profil masing-masing. Pengguna dapat mewarisi konfigurasi Google Sheet utama secara terpusat, sambil mempertahankan pengaturan Zoho API spesifik individu.
-2. **Daily-Track & Fast-Track (Bulk Insert)**
-   Fitur pengisian otomatis untuk rentang waktu panjang dengan pengecualian hari libur (terintegrasi API Kalender Google), melompati akhir pekan secara otomatis, serta fitur *Paksa Masuk (Lembur)*.
+2. **Fleksibilitas Rencana Absensi (Reguler & Berbasis Shift)**
+   Fitur pengisian otomatis rentang waktu dengan dua mode:
+   - *Pecah Otomatis per Minggu*: Mengisi rencana untuk rentang waktu panjang, melewati Sabtu-Minggu dan hari libur secara otomatis.
+   - *Berdasarkan Jadwal Shift*: Sinkronisasi langsung jadwal shift dari Google Sheets. Otomatis membaca jadwal per-bulan dan menyusunnya dalam kelompok mingguan untuk diinput dengan sekali klik!
 3. **Sync Manager (The Core Engine)**
    Sistem penarik data pintar yang otomatis mengambil data "Pending" dari Google Sheets, mencocokkan ID Project dan ID Task, dan memasukkan *Time Log* secara otomatis ke server Zoho. Jika Task belum ada, otomatis akan dibuat.
 4. **Modul Absensi Terpadu & WA Approval Generator**
-   Iframe bawaan untuk form absensi internal dan sistem pembuat teks pengajuan *Approval* via WhatsApp untuk atasan dalam hitungan detik, yang kini dilengkapi dengan fitur manajemen (Edit/Hapus) untuk memodifikasi pengajuan yang telah tersimpan.
+   Iframe bawaan untuk form absensi internal dan sistem pembuat teks pengajuan *Approval* via WhatsApp untuk atasan dalam hitungan detik. Kini dilengkapi dengan fitur pengeditan *inline* (*real-time edit*) dan UI *Glassmorphism* modern.
 5. **Token Auto-Generator Terintegrasi**
    Menukar *Zoho Authorization Code* menjadi *Refresh Token* dengan mudah secara langsung tanpa aplikasi pihak ketiga (seperti Postman).
 6. **Analytics Dashboard**
@@ -28,7 +30,7 @@ Proses input ganda (double-entry) ini sangat memakan waktu, membosankan, dan raw
 
 ## 💻 Stack Teknologi
 Aplikasi dirancang agar dapat berjalan pada server *shared hosting* paling standar sekalipun:
-- **Frontend**: HTML5, Vanilla JavaScript, CSS3 (Custom Glassmorphism UI), FontAwesome.
+- **Frontend**: HTML5, Vanilla JavaScript (SPA Hash/Clean Routing), CSS3 (Modern Glassmorphism UI), FontAwesome.
 - **Backend**: PHP 7.4+ (Native API Engine, cURL, File System).
 - **Data Source**: Google Sheets API v4.
 - **Target Endpoint**: Zoho Projects API.
@@ -72,15 +74,15 @@ Jika di komputer Anda sudah terinstal PHP (minimal versi 7.4), Anda dapat langsu
    ```bash
    cd path/to/sync-work
    ```
-3. Jalankan perintah server lokal PHP:
+3. Jalankan perintah server lokal PHP (Penting: Tambahkan `index.php` agar routing SPA berjalan lancar seperti `.htaccess`):
    ```bash
-   php -S localhost:8000
+   php -S localhost:8000 index.php
    ```
 4. Buka browser (Chrome, Firefox, Safari) dan kunjungi URL berikut:
    `http://localhost:8000`
 
 ### Cara 2: Menggunakan Web Server Lokal (XAMPP, MAMP, atau LAMP)
-Jika Anda terbiasa menggunakan paket web server lokal yang mencakup Apache/Nginx:
+Jika Anda terbiasa menggunakan paket web server lokal yang mencakup Apache/Nginx (Sangat direkomendasikan karena fitur `.htaccess` langsung aktif):
 
 1. Salin atau pindahkan folder `sync-work` ke dalam direktori root/dokumen (Document Root) dari web server Anda.
    - Untuk **XAMPP** di Windows: Pindahkan ke `C:\xampp\htdocs\sync-work`
