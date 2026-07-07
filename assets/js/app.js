@@ -40,8 +40,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const targetId = btn.getAttribute('data-target');
             document.getElementById(targetId).classList.add('active');
             
-            // Close any open dropdowns
-            document.querySelectorAll('details.nav-dropdown').forEach(d => d.removeAttribute('open'));
+            // Close any open dropdowns except the one containing the clicked button
+            const parentDetails = btn.closest('details.nav-dropdown');
+            document.querySelectorAll('details.nav-dropdown').forEach(d => {
+                if (d !== parentDetails) d.removeAttribute('open');
+            });
+            if (parentDetails) parentDetails.setAttribute('open', 'true');
             
             // Close mobile menu
             if (window.innerWidth <= 768) {
@@ -62,8 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const currentPath = window.location.pathname.replace(/^\/|\/$/g, '');
             if (currentPath !== routeName) {
                 // Determine base path to avoid breaking if app is in a subfolder
-                let pathPrefix = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/'));
-                if (!pathPrefix) pathPrefix = '';
+                let pathPrefix = (window.BASE_URL || '/').replace(/\/$/, '');
                 window.history.pushState({ target: targetId }, '', `${pathPrefix}/${routeName}`);
             }
         });
@@ -168,7 +171,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 parentDetails.style.display = 'block';
                 const summary = parentDetails.querySelector('.nav-dropdown-summary');
                 if (summary) {
-                    summary.innerHTML = '<i class="fa-solid fa-user-shield"></i> <span class="nav-text">Administration</span>';
+                    summary.innerHTML = '<i class="fa-solid fa-user-shield"></i> <span class="nav-text">Administration</span> <i class="fa-solid fa-chevron-down dropdown-icon nav-text"></i>';
                 }
                 
                 parentDetails.querySelectorAll('.nav-btn').forEach(btn => {
@@ -239,7 +242,7 @@ document.addEventListener('DOMContentLoaded', () => {
         userPassword = '';
         sessionStorage.removeItem('zohoProfile');
         sessionStorage.removeItem('zohoPassword');
-        window.location.reload();
+        window.location.href = (window.BASE_URL || '/') + 'login.php';
     });
 
     const attachSettings = (payload = {}) => {

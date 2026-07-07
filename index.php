@@ -1,3 +1,6 @@
+<?php
+$base_url = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/\\') . '/';
+?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -15,8 +18,9 @@
     <meta name="theme-color" content="#0f172a">
     <link rel="apple-touch-icon" href="assets/css/img/logo.png">
     <script>
+        const BASE_URL = '<?= $base_url ?>';
         if (!sessionStorage.getItem('zohoProfile') || !sessionStorage.getItem('zohoPassword')) {
-            window.location.href = 'login.php';
+            window.location.href = BASE_URL + 'login.php';
         }
     </script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>

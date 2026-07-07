@@ -38,6 +38,9 @@ $v = time();
             100% { opacity: 1; transform: translateY(0) scale(1); }
         }
     </style>
+    <script>
+        const BASE_URL = '<?= rtrim(dirname($_SERVER["SCRIPT_NAME"]), "/\\") ?>/';
+    </script>
 </head>
 <body>
 
@@ -185,7 +188,7 @@ $v = time();
 
         // Check if already logged in
         if (sessionStorage.getItem('zohoProfile') && sessionStorage.getItem('zohoPassword')) {
-            window.location.href = './';
+            window.location.href = BASE_URL;
         }
 
         const sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
@@ -239,7 +242,7 @@ $v = time();
                     // Success login
                     sessionStorage.setItem('zohoProfile', p);
                     sessionStorage.setItem('zohoPassword', pwd);
-                    window.location.href = './';
+                    window.location.href = BASE_URL;
                 }
             } catch (err) {
                 alert('Terjadi kesalahan koneksi ke server.');
@@ -319,7 +322,7 @@ $v = time();
                 } else {
                     sessionStorage.setItem('zohoProfile', data.profile);
                     sessionStorage.setItem('zohoPassword', data.password);
-                    window.location.href = './';
+                    window.location.href = BASE_URL;
                 }
             } catch (err) {
                 alert('Terjadi kesalahan koneksi ke server.');
