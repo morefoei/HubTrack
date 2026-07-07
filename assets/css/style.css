@@ -263,6 +263,10 @@ main {
     display: block;
 }
 
+#about-view.active {
+    display: flex;
+}
+
 @keyframes fadeSlideUp {
     0% {
         opacity: 0;

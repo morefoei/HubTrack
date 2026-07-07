@@ -1,4 +1,4 @@
-<section id="about-view" class="view-section" style="display: flex; align-items: center; justify-content: center; min-height: calc(100vh - 120px); padding: 2rem;">
+<section id="about-view" class="view-section" style="align-items: center; justify-content: center; min-height: calc(100vh - 120px); padding: 2rem;">
     <div class="card" style="text-align: center; padding: 5rem 3rem; background: linear-gradient(145deg, rgba(30,41,59,0.7), rgba(15,23,42,0.9)); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1); border-radius: 24px; max-width: 600px; width: 100%; position: relative; overflow: hidden;">
         
         <!-- Decorative background glow -->
