@@ -76,7 +76,7 @@
                         <label>Task Name
                             <button type="button" class="btn-add-project" style="padding: 2px 6px; font-size: 0.7rem; margin-left: 5px; background: rgba(245,158,11,0.2); color: #fcd34d; border: none; border-radius: 4px; cursor: pointer;" title="Tambah Proyek baru untuk Task ini">+ Proyek</button>
                         </label>
-                        <input type="text" class="bulkTaskName" placeholder="Main Task" required style="width: 100%;">
+                        <input type="text" class="bulkTaskName" list="zohoTasksList" autocomplete="off" placeholder="Main Task" required style="width: 100%;">
                     </div>
                     <div class="form-group" style="flex: 1; position: relative;">
                         <label>Subtask <small style="color: var(--text-muted);">(Opsional)</small></label>

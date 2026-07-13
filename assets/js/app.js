@@ -90,8 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if(defaultBtn) defaultBtn.click();
         }
     };
-    initRouting();
-
+    
     // Handle Browser Back/Forward buttons
     window.addEventListener('popstate', (e) => {
         if (e.state && e.state.target) {
@@ -3476,6 +3475,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                         <div class="task-actions">
                             <button class="task-btn task-btn-primary use-task-btn" data-path="${sanitizeHTML(nodePath)}"><i class="fa-solid fa-pen"></i> Log</button>
+                            <button class="task-btn task-btn-outline view-logs-btn" data-id="${node.id}" data-pid="${node.project_id}" data-name="${sanitizeHTML(node.name)}" style="background: rgba(139, 92, 246, 0.1); color: #8b5cf6; border-color: #8b5cf6;"><i class="fa-solid fa-clock-rotate-left"></i> History</button>
                             ${depth === 0 ? `<button class="task-btn task-btn-success fetch-subtasks-btn" data-id="${node.id}" data-path="${sanitizeHTML(nodePath)}"><i class="fa-solid fa-plus"></i> Subtasks</button>` : ''}
                             <button class="task-btn task-btn-outline add-subtask-btn" data-id="${node.id}" data-path="${sanitizeHTML(nodePath)}"><i class="fa-solid fa-plus"></i> New Sub</button>
                         </div>
@@ -3531,6 +3531,74 @@ document.addEventListener('DOMContentLoaded', () => {
                 const dailyTrackBtn = document.querySelector('button[data-target="logs-view"]');
                 if (dailyTrackBtn) dailyTrackBtn.click();
                 window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        });
+
+        // View Logs History Button
+        taskManagerContainer.querySelectorAll('.view-logs-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const taskId = e.currentTarget.getAttribute('data-id');
+                const projectId = e.currentTarget.getAttribute('data-pid');
+                const taskName = e.currentTarget.getAttribute('data-name');
+                
+                if (!projectId || !taskId) {
+                    showToast('Project ID atau Task ID tidak ditemukan', 'error');
+                    return;
+                }
+                
+                const modal = document.getElementById('taskLogsModal');
+                const subtitle = document.getElementById('taskLogsSubtitle');
+                const loading = document.getElementById('taskLogsLoading');
+                const content = document.getElementById('taskLogsContent');
+                const tbody = document.getElementById('taskLogsTbody');
+                
+                subtitle.textContent = `Task: ${taskName}`;
+                tbody.innerHTML = '';
+                loading.style.display = 'block';
+                content.style.display = 'none';
+                modal.style.display = 'flex';
+                
+                let rawText = '';
+                try {
+                    const res = await fetch(`${API_URL}?action=get_task_logs`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(attachSettings({ projectId, taskId }))
+                    });
+                    
+                    rawText = await res.text();
+                    const data = JSON.parse(rawText);
+                    
+                    loading.style.display = 'none';
+                    if (data.success) {
+                        if (data.logs.length === 0) {
+                            tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 2rem; color: var(--text-muted);">Belum ada riwayat work log untuk task ini.</td></tr>';
+                        } else {
+                            data.logs.forEach(log => {
+                                const owner = log.owner_name || (log.owner ? log.owner.name : 'Unknown');
+                                const tr = document.createElement('tr');
+                                tr.innerHTML = `
+                                    <td style="padding: 1rem 1.5rem; border-bottom: 1px solid var(--panel-border); font-size: 0.85rem;">${log.log_date}</td>
+                                    <td style="padding: 1rem 1.5rem; border-bottom: 1px solid var(--panel-border); font-size: 0.85rem;"><i class="fa-solid fa-user-circle" style="color: var(--primary); margin-right: 4px;"></i> ${owner}</td>
+                                    <td style="padding: 1rem 1.5rem; border-bottom: 1px solid var(--panel-border); font-size: 0.85rem; font-weight: bold; color: var(--success);">${log.hours_display}</td>
+                                    <td style="padding: 1rem 1.5rem; border-bottom: 1px solid var(--panel-border); font-size: 0.85rem; color: var(--text-muted);">${log.notes || '-'}</td>
+                                `;
+                                tbody.appendChild(tr);
+                            });
+                        }
+                        content.style.display = 'block';
+                    } else {
+                        const rawError = data.raw ? JSON.stringify(data.raw) : '';
+                        tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 2rem; color: var(--danger);">Gagal memuat log: ${data.message}<br><small>${rawError}</small></td></tr>`;
+                        content.style.display = 'block';
+                    }
+                } catch (err) {
+                    loading.style.display = 'none';
+                    console.error("JSON Parse failed for get_task_logs", err, rawText);
+                    const safeRaw = rawText.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                    tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 2rem; color: var(--danger);">Terjadi kesalahan saat memproses data.<br><br><b>Raw Output:</b><br><pre style="text-align:left; background:#1e1e1e; padding:1rem; border-radius:8px; overflow:auto;">${safeRaw}</pre></td></tr>`;
+                    content.style.display = 'block';
+                }
             });
         });
 
@@ -4088,5 +4156,98 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
         }
+
+        // Zoho Tasks autocomplete for Fast-Track & Daily-Track
+        let zohoTasksCache = {};
+        
+        const fetchAndPopulateTasks = async (projectName, taskInputEl = null) => {
+            if (!projectName) return;
+            
+            if (zohoTasksCache[projectName]) {
+                populateTasksDatalist(zohoTasksCache[projectName]);
+                return;
+            }
+            
+            if (taskInputEl) taskInputEl.style.cursor = 'wait';
+            try {
+                const res = await fetch(`${API_URL}?action=get_project_tasks`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(attachSettings({ projectName }))
+                });
+                const data = await res.json();
+                
+                if (data.success) {
+                    const filteredTasks = data.tasks.filter(t => {
+                        if (!t.status) return true;
+                        const statusStr = t.status.toLowerCase();
+                        if (statusStr.includes('closed') || statusStr.includes('completed') || statusStr.includes('done') || statusStr.includes('selesai')) return false;
+                        return true;
+                    });
+                    
+                    zohoTasksCache[projectName] = filteredTasks;
+                    populateTasksDatalist(filteredTasks);
+                } else {
+                    console.log('API returned success=false:', data.message);
+                }
+            } catch (err) {
+                console.error('Failed to fetch tasks', err);
+            } finally {
+                if (taskInputEl) taskInputEl.style.cursor = 'text';
+            }
+        };
+
+        // Fetch on project name change
+        document.addEventListener('change', (e) => {
+            if (e.target.classList.contains('singleProjectName') || e.target.classList.contains('bulkProjectName')) {
+                const projectName = e.target.value.trim();
+                fetchAndPopulateTasks(projectName);
+            }
+        }, true);
+
+        // Fetch on focus of task name (fallback if they didn't trigger change on project name)
+        document.addEventListener('focus', (e) => {
+            if (e.target.classList.contains('singleTaskName') || e.target.classList.contains('bulkTaskName')) {
+                const row = e.target.closest('.form-row');
+                if (!row) return;
+                const projectInput = row.querySelector('.singleProjectName') || row.querySelector('.bulkProjectName');
+                if (!projectInput) return;
+                
+                const projectName = projectInput.value.trim();
+                fetchAndPopulateTasks(projectName, e.target);
+            }
+        }, true);
+    
+        function populateTasksDatalist(tasks) {
+            let datalist = document.getElementById('zohoTasksList');
+            if (!datalist) return;
+            datalist.innerHTML = '';
+            const seen = new Set();
+            tasks.forEach(t => {
+                if (!seen.has(t.name)) {
+                    const option = document.createElement('option');
+                    option.value = t.name;
+                    datalist.appendChild(option);
+                    seen.add(t.name);
+                }
+            });
+        }
     }
+    
+    // Task Logs Modal Close handlers
+    const taskLogsModal = document.getElementById('taskLogsModal');
+    const closeTaskLogsModal = document.getElementById('closeTaskLogsModal');
+    if (taskLogsModal && closeTaskLogsModal) {
+        closeTaskLogsModal.addEventListener('click', () => {
+            taskLogsModal.style.display = 'none';
+        });
+        taskLogsModal.addEventListener('click', (e) => {
+            if (e.target === taskLogsModal) {
+                taskLogsModal.style.display = 'none';
+            }
+        });
+    }
+
+    // Initialize routing after all functions are defined
+    initRouting();
 });

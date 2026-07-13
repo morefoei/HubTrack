@@ -94,7 +94,14 @@ $base_url = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/\\') . '/';
         <div class="top-nav-right">
             <div class="profile-section" style="display: flex; gap: 0.8rem; align-items: center;">
                 <button id="profileDisplay" style="font-size: 0.85rem; margin: 0; padding: 0.4rem 1rem; background: transparent; border: 1px solid var(--primary); color: var(--primary); border-radius: 20px; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s;" title="Logout Aplikasi" onmouseover="this.style.background='var(--primary)'; this.style.color='#fff';" onmouseout="this.style.background='transparent'; this.style.color='var(--primary)';">
-                    <i class="fa-solid fa-user"></i> 
+                    <script>
+                        var pic = sessionStorage.getItem('zohoPicture');
+                        if (pic && pic !== 'undefined' && pic.trim() !== '') {
+                            document.write('<img src="' + pic + '" style="width: 20px; height: 20px; border-radius: 50%; object-fit: cover;" referrerpolicy="no-referrer">');
+                        } else {
+                            document.write('<i class="fa-solid fa-user"></i>');
+                        }
+                    </script>
                     <span id="profileNameDisplay"><script>var up = sessionStorage.getItem('zohoProfile') || 'Profile'; document.write(up);</script></span> 
                     <i class="fa-solid fa-sign-out-alt"></i>
                 </button>
@@ -143,6 +150,7 @@ $base_url = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/\\') . '/';
 
     <div id="toast-container"></div>
     <datalist id="zohoProjectsList"></datalist>
+    <datalist id="zohoTasksList"></datalist>
 
     <script src="assets/js/lang.js?v=<?= time() ?>"></script>
     <script src="assets/js/app.js?v=<?php echo time(); ?>"></script>

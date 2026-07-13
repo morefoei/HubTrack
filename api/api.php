@@ -511,6 +511,59 @@ function updateRowInSheet($rowIndex, $log, $newStatus, $taskUrl) {
     curl_close($ch);
     return true;
 }
+function getValidZohoAccessToken(&$settings) {
+    global $DATA_DIR, $input;
+    $reqProfile = isset($input['profile']) ? strtolower(preg_replace('/[^a-zA-Z0-9_-]/', '', substr($input['profile'], 0, 32))) : 'default';
+    
+    // Check if token exists and is not expiring within 5 minutes (300 seconds)
+    if (!empty($settings['zohoAccessToken']) && !empty($settings['zohoTokenExpiry'])) {
+        if (time() < ($settings['zohoTokenExpiry'] - 300)) {
+            return $settings['zohoAccessToken'];
+        }
+    }
+    
+    // Need new token
+    if (empty($settings['accountsUrl']) || empty($settings['clientId']) || empty($settings['clientSecret']) || empty($settings['refreshToken'])) {
+        return null;
+    }
+    
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, rtrim($settings['accountsUrl'], '/') . '/oauth/v2/token');
+    curl_setopt($ch, CURLOPT_POST, 1);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query([
+        'grant_type' => 'refresh_token',
+        'client_id' => $settings['clientId'],
+        'client_secret' => $settings['clientSecret'],
+        'refresh_token' => $settings['refreshToken']
+    ]));
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    $response = curl_exec($ch);
+    curl_close($ch);
+    
+    $tokenData = json_decode($response, true);
+    if (!empty($tokenData['access_token'])) {
+        // Save to cache
+        $settings['zohoAccessToken'] = $tokenData['access_token'];
+        $settings['zohoTokenExpiry'] = time() + ($tokenData['expires_in'] ?? 3600);
+        
+        $profileToSave = $reqProfile;
+        $fileToSave = $DATA_DIR . '/settings_' . $profileToSave . '.php';
+        if (file_exists($fileToSave)) {
+            $content = file_get_contents($fileToSave);
+            $startPos = strpos($content, '{');
+            if ($startPos !== false) {
+                $existingSettings = json_decode(substr($content, $startPos), true) ?: [];
+                $existingSettings['zohoAccessToken'] = $settings['zohoAccessToken'];
+                $existingSettings['zohoTokenExpiry'] = $settings['zohoTokenExpiry'];
+                file_put_contents($fileToSave, "<?php exit('No direct script access allowed'); ?>\n" . json_encode($existingSettings, JSON_PRETTY_PRINT));
+            }
+        }
+        return $settings['zohoAccessToken'];
+    }
+    
+    return null;
+}
+
 
 $action = $_GET['action'] ?? '';
 $method = $_SERVER['REQUEST_METHOD'];
@@ -633,7 +686,7 @@ if ($action === 'google_login' && $method === 'POST') {
     $json = json_encode($settings, JSON_PRETTY_PRINT);
     file_put_contents($file, "<?php exit('No direct script access allowed'); ?>\n" . $json);
     
-    echo json_encode(['success' => true, 'profile' => $profile, 'password' => $googleId]);
+    echo json_encode(['success' => true, 'profile' => $profile, 'password' => $googleId, 'picture' => $data['picture'] ?? '']);
     exit;
 }
 
@@ -1514,26 +1567,12 @@ if ($action === 'get_zoho_projects' && $method === 'POST') {
         exit;
     }
 
-    // Refresh Token
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $settings['accountsUrl'] . '/oauth/v2/token');
-    curl_setopt($ch, CURLOPT_POST, 1);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query([
-        'grant_type' => 'refresh_token',
-        'client_id' => $settings['clientId'],
-        'client_secret' => $settings['clientSecret'],
-        'refresh_token' => $settings['refreshToken']
-    ]));
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    $tokenResponse = curl_exec($ch);
-    curl_close($ch);
-    
-    $tokenData = json_decode($tokenResponse, true);
-    if (empty($tokenData['access_token'])) {
-        echo json_encode(['success' => false, 'message' => 'Failed to refresh Zoho token: ' . $tokenResponse]);
+    // Get Cached Token
+    $accessToken = getValidZohoAccessToken($settings);
+    if (!$accessToken) {
+        echo json_encode(['success' => false, 'message' => 'Failed to retrieve a valid Zoho access token.']);
         exit;
     }
-    $accessToken = $tokenData['access_token'];
 
     $portal = $settings['portalName'];
     $apiUrl = $settings['apiUrl'];
@@ -1570,26 +1609,12 @@ if ($action === 'get_project_tasks' && $method === 'POST') {
     $projectName = $input['projectName'] ?? '';
     $isAllProjects = (empty($projectName) || strtolower($projectName) === 'semua project' || strtolower($projectName) === 'all');
     
-    // Auth
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $settings['accountsUrl'] . '/oauth/v2/token');
-    curl_setopt($ch, CURLOPT_POST, 1);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query([
-        'grant_type' => 'refresh_token',
-        'client_id' => $settings['clientId'],
-        'client_secret' => $settings['clientSecret'],
-        'refresh_token' => $settings['refreshToken']
-    ]));
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    $tokenResponse = curl_exec($ch);
-    curl_close($ch);
-    
-    $tokenData = json_decode($tokenResponse, true);
-    if (empty($tokenData['access_token'])) {
-        echo json_encode(['success' => false, 'message' => 'Failed to refresh Zoho token: ' . $tokenResponse]);
+    // Get Cached Token
+    $accessToken = getValidZohoAccessToken($settings);
+    if (!$accessToken) {
+        echo json_encode(['success' => false, 'message' => 'Failed to retrieve a valid Zoho access token.']);
         exit;
     }
-    $accessToken = $tokenData['access_token'];
     $portal = $settings['portalName'];
     $apiUrl = $settings['apiUrl'];
 
@@ -1673,26 +1698,12 @@ if ($action === 'get_subtasks' && $method === 'POST') {
         exit;
     }
     
-    // Auth
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $settings['accountsUrl'] . '/oauth/v2/token');
-    curl_setopt($ch, CURLOPT_POST, 1);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query([
-        'grant_type' => 'refresh_token',
-        'client_id' => $settings['clientId'],
-        'client_secret' => $settings['clientSecret'],
-        'refresh_token' => $settings['refreshToken']
-    ]));
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    $tokenResponse = curl_exec($ch);
-    curl_close($ch);
-    
-    $tokenData = json_decode($tokenResponse, true);
-    if (empty($tokenData['access_token'])) {
-        echo json_encode(['success' => false, 'message' => 'Failed to refresh Zoho token: ' . $tokenResponse]);
+    // Get Cached Token
+    $accessToken = getValidZohoAccessToken($settings);
+    if (!$accessToken) {
+        echo json_encode(['success' => false, 'message' => 'Failed to retrieve a valid Zoho access token.']);
         exit;
     }
-    $accessToken = $tokenData['access_token'];
     $portal = $settings['portalName'];
     $apiUrl = $settings['apiUrl'];
 
@@ -1718,12 +1729,68 @@ if ($action === 'get_subtasks' && $method === 'POST') {
                 'name' => $sub['name'] ?? 'Unknown Subtask',
                 'parent' => (string)$taskId,
                 'status' => is_array($subStatusRaw) ? ($subStatusRaw['name'] ?? '') : $subStatusRaw,
-                'status_id' => is_array($subStatusRaw) ? ($subStatusRaw['id'] ?? '') : ''
+                'status_id' => is_array($subStatusRaw) ? ($subStatusRaw['id'] ?? '') : '',
+                'project_id' => (string)$pid
             ];
         }
     }
     
     echo json_encode(['success' => true, 'subtasks' => $subtasks]);
+    exit;
+}
+
+if ($action === 'get_task_logs' && $method === 'POST') {
+    $settings = getSettings();
+    $pid = $input['projectId'] ?? '';
+    $tid = $input['taskId'] ?? '';
+    
+    if (empty($pid) || empty($tid)) {
+        echo json_encode(['success' => false, 'message' => 'Project ID dan Task ID dibutuhkan.']);
+        exit;
+    }
+    
+    // Get Cached Token
+    $accessToken = getValidZohoAccessToken($settings);
+    if (!$accessToken) {
+        echo json_encode(['success' => false, 'message' => 'Failed to retrieve a valid Zoho access token.']);
+        exit;
+    }
+    $portal = $settings['portalName'];
+    $apiUrl = rtrim($settings['apiUrl'], '/');
+    
+    $url = $apiUrl . '/restapi/portal/' . $portal . '/projects/' . $pid . '/tasks/' . $tid . '/logs/';
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Authorization: Bearer ' . $accessToken]);
+    $res = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    
+    if ($httpCode === 204) {
+        echo json_encode(['success' => true, 'logs' => []]);
+    } else if ($httpCode >= 200 && $httpCode < 300) {
+        $logsData = json_decode($res, true);
+        $logs = [];
+        if (is_array($logsData) && isset($logsData['timelogs'])) {
+            if (isset($logsData['timelogs']['tasklogs'])) {
+                $logs = $logsData['timelogs']['tasklogs'];
+            } else if (isset($logsData['timelogs']['timelog'])) {
+                $logs = $logsData['timelogs']['timelog'];
+            } else {
+                $logs = $logsData['timelogs'];
+            }
+        }
+        
+        // Ensure logs is always an array sequentially so frontend forEach works
+        if (!is_array($logs) || (count($logs) > 0 && !isset($logs[0]))) {
+            if (empty($logs)) $logs = [];
+            else $logs = [$logs];
+        }
+        
+        echo json_encode(['success' => true, 'logs' => $logs]);
+    } else {
+        echo json_encode(['success' => false, 'message' => "Gagal mengambil riwayat log dari Zoho (HTTP $httpCode)", 'raw' => $res]);
+    }
     exit;
 }
 
@@ -1738,22 +1805,12 @@ if ($action === 'create_project_task' && $method === 'POST') {
         exit;
     }
     
-    // Auth
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $settings['accountsUrl'] . '/oauth/v2/token');
-    curl_setopt($ch, CURLOPT_POST, 1);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query([
-        'grant_type' => 'refresh_token',
-        'client_id' => $settings['clientId'],
-        'client_secret' => $settings['clientSecret'],
-        'refresh_token' => $settings['refreshToken']
-    ]));
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    $tokenResponse = curl_exec($ch);
-    curl_close($ch);
-    
-    $tokenData = json_decode($tokenResponse, true);
-    $accessToken = $tokenData['access_token'] ?? '';
+    // Get Cached Token
+    $accessToken = getValidZohoAccessToken($settings);
+    if (!$accessToken) {
+        echo json_encode(['success' => false, 'message' => 'Failed to retrieve a valid Zoho access token.']);
+        exit;
+    }
     $portal = $settings['portalName'];
     $apiUrl = $settings['apiUrl'];
     
@@ -1794,22 +1851,12 @@ if ($action === 'update_project_task_status' && $method === 'POST') {
         exit;
     }
     
-    // Auth
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $settings['accountsUrl'] . '/oauth/v2/token');
-    curl_setopt($ch, CURLOPT_POST, 1);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query([
-        'grant_type' => 'refresh_token',
-        'client_id' => $settings['clientId'],
-        'client_secret' => $settings['clientSecret'],
-        'refresh_token' => $settings['refreshToken']
-    ]));
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    $tokenResponse = curl_exec($ch);
-    curl_close($ch);
-    
-    $tokenData = json_decode($tokenResponse, true);
-    $accessToken = $tokenData['access_token'] ?? '';
+    // Get Cached Token
+    $accessToken = getValidZohoAccessToken($settings);
+    if (!$accessToken) {
+        echo json_encode(['success' => false, 'message' => 'Failed to retrieve a valid Zoho access token.']);
+        exit;
+    }
     $portal = $settings['portalName'];
     $apiUrl = $settings['apiUrl'];
     
@@ -1855,27 +1902,13 @@ if ($action === 'sync' && $method === 'POST') {
 
     logMsg('Refreshing Zoho Access Token...', 'info');
     
-    // 1. Get Access Token
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $settings['accountsUrl'] . '/oauth/v2/token');
-    curl_setopt($ch, CURLOPT_POST, 1);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query([
-        'grant_type' => 'refresh_token',
-        'client_id' => $settings['clientId'],
-        'client_secret' => $settings['clientSecret'],
-        'refresh_token' => $settings['refreshToken']
-    ]));
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    $tokenResponse = curl_exec($ch);
-    curl_close($ch);
-    
-    $tokenData = json_decode($tokenResponse, true);
-    if (empty($tokenData['access_token'])) {
-        logMsg('Failed to refresh token: ' . $tokenResponse, 'error');
+    // Get Cached Token
+    $accessToken = getValidZohoAccessToken($settings);
+    if (!$accessToken) {
+        logMsg('Failed to retrieve a valid Zoho access token.', 'error');
         echo json_encode(['success' => false, 'logs' => $outputLogs]);
         exit;
     }
-    $accessToken = $tokenData['access_token'];
     logMsg('Access Token acquired.', 'success');
 
     $portal = $settings['portalName'];

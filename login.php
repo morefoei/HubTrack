@@ -322,6 +322,7 @@ $v = time();
                 } else {
                     sessionStorage.setItem('zohoProfile', data.profile);
                     sessionStorage.setItem('zohoPassword', data.password);
+                    if (data.picture) sessionStorage.setItem('zohoPicture', data.picture);
                     window.location.href = BASE_URL;
                 }
             } catch (err) {
