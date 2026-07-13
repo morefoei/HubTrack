@@ -570,6 +570,8 @@ $method = $_SERVER['REQUEST_METHOD'];
 
 $input = json_decode(file_get_contents('php://input'), true);
 
+$ADMIN_USERNAME = 'superman';
+
 // -- GLOBAL AUTHENTICATION CHECK --
 if ($action !== 'manual_login' && $action !== 'google_login' && $action !== 'get_all_profiles' && $action !== 'reset_password' && $action !== 'delete_profile' && $action !== 'test_shift_spreadsheet' && $action !== 'test_form_url' && $action !== 'get_indonesian_holidays' && !empty($action)) {
     $reqProfile = isset($input['profile']) ? strtolower(preg_replace('/[^a-zA-Z0-9_-]/', '', substr($input['profile'], 0, 32))) : 'default';
@@ -580,18 +582,10 @@ if ($action !== 'manual_login' && $action !== 'google_login' && $action !== 'get
         exit;
     }
     
-    // Explicitly protect the admin profile
-    if ($reqProfile === 'admin') {
-        if ($reqPassword !== 'admin') {
-            echo json_encode(['success' => false, 'message' => 'Akses Ditolak: Password admin salah!']);
-            exit;
-        }
-        // admin is fully authenticated via hardcoded password, skip file-based checks
-    } else {
-        $checkFile = $DATA_DIR . '/settings_' . $reqProfile . '.php';
-        $oldCheckFile = $DATA_DIR . '/settings_' . $reqProfile . '.json';
-        
-        $fileToRead = file_exists($checkFile) ? $checkFile : (file_exists($oldCheckFile) ? $oldCheckFile : null);
+    $checkFile = $DATA_DIR . '/settings_' . $reqProfile . '.php';
+    $oldCheckFile = $DATA_DIR . '/settings_' . $reqProfile . '.json';
+    
+    $fileToRead = file_exists($checkFile) ? $checkFile : (file_exists($oldCheckFile) ? $oldCheckFile : null);
         
         if ($fileToRead) {
             $content = file_get_contents($fileToRead);
@@ -628,9 +622,16 @@ if ($action !== 'manual_login' && $action !== 'google_login' && $action !== 'get
                 file_put_contents($fileToRead, "<?php exit('No direct script access allowed'); ?>\n" . json_encode($existingData, JSON_PRETTY_PRINT));
             }
         } else {
-            // Blokir akses jika file profil tidak ada, pendaftaran hanya via Google Login
-            echo json_encode(['success' => false, 'message' => 'Akses Ditolak: Hanya "admin" yang diizinkan masuk melalui form ini!']);
-            exit;
+            // Blokir akses jika file profil tidak ada, pendaftaran hanya via Google Login (Kecuali admin)
+            if ($reqProfile === $ADMIN_USERNAME) {
+                $existingData = [];
+                $existingData['profile_password'] = password_hash($reqPassword, PASSWORD_DEFAULT);
+                $existingData['last_login'] = time();
+                file_put_contents($checkFile, "<?php exit('No direct script access allowed'); ?>\n" . json_encode($existingData, JSON_PRETTY_PRINT));
+            } else {
+                echo json_encode(['success' => false, 'message' => 'Akses Ditolak: Hanya "superman" yang diizinkan masuk melalui form ini!']);
+                exit;
+            }
         }
     }
 }
@@ -694,11 +695,25 @@ if ($action === 'manual_login' && $method === 'POST') {
     $reqProfile = isset($input['profile']) ? strtolower(preg_replace('/[^a-zA-Z0-9_-]/', '', substr($input['profile'], 0, 32))) : '';
     $reqPassword = $input['password'] ?? '';
     
-    if ($reqProfile === 'admin') {
-        if ($reqPassword === 'musikrock1') {
-            echo json_encode(['success' => true]);
-        } else {
+    if ($reqProfile === $ADMIN_USERNAME) {
+        $checkFile = $DATA_DIR . '/settings_' . $reqProfile . '.php';
+        if (file_exists($checkFile)) {
+            $content = file_get_contents($checkFile);
+            $startPos = strpos($content, '{');
+            $jsonStr = $startPos !== false ? substr($content, $startPos) : '{}';
+            $existingData = json_decode($jsonStr, true) ?: [];
+            if (!empty($existingData['profile_password']) && password_verify($reqPassword, $existingData['profile_password'])) {
+                echo json_encode(['success' => true]);
+                exit;
+            }
+            if (!empty($existingData['profile_password']) && hash_equals($existingData['profile_password'], $reqPassword)) {
+                echo json_encode(['success' => true]);
+                exit;
+            }
             echo json_encode(['success' => false, 'message' => 'Akses Ditolak: Password admin salah!']);
+        } else {
+            // Login pertama kali, langsung berhasil (password otomatis disimpan di GLOBAL CHECK berikutnya)
+            echo json_encode(['success' => true]);
         }
     } else {
         echo json_encode(['success' => false, 'message' => 'Akses Ditolak: Harap gunakan tombol "Sign in with Google" untuk masuk!']);
@@ -707,7 +722,20 @@ if ($action === 'manual_login' && $method === 'POST') {
 }
 
 if ($action === 'get_all_profiles' && $method === 'POST') {
-    if (isset($input['profile']) && $input['profile'] === 'admin' && isset($input['password']) && $input['password'] === 'musikrock1') {
+    // Basic verification for admin password
+    $checkFile = $DATA_DIR . '/settings_' . $ADMIN_USERNAME . '.php';
+    $isAdminValid = false;
+    if (file_exists($checkFile)) {
+        $content = file_get_contents($checkFile);
+        $startPos = strpos($content, '{');
+        $jsonStr = $startPos !== false ? substr($content, $startPos) : '{}';
+        $existingData = json_decode($jsonStr, true) ?: [];
+        if (!empty($existingData['profile_password'])) {
+            $isAdminValid = password_verify($input['password'] ?? '', $existingData['profile_password']) || hash_equals($existingData['profile_password'], $input['password'] ?? '');
+        }
+    }
+    
+    if (isset($input['profile']) && $input['profile'] === $ADMIN_USERNAME && $isAdminValid) {
         $files = glob($DATA_DIR . '/settings_*.{php,json}', GLOB_BRACE);
         $profiles = [];
         if (is_array($files)) {

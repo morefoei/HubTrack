@@ -1,7 +1,8 @@
 # GitLab CI
 
-# Data profil lokal (jangan di-upload agar aman)
+# Data profil lokal dan config rahasia (jangan di-upload agar aman)
 api/data/
+api/config.php
 
 # Log files
 *.log
