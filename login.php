@@ -228,7 +228,7 @@ $v = time();
             btn.disabled = true;
 
             try {
-                const res = await fetch(`api/api.php?action=manual_login`, {
+                const res = await fetch(`${BASE_URL}api/api.php?action=manual_login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ profile: p, password: pwd })
@@ -309,7 +309,7 @@ $v = time();
         // Handle Google Login Callback
         async function handleGoogleLogin(response) {
             try {
-                const res = await fetch(`api/api.php?action=google_login`, {
+                const res = await fetch(`${BASE_URL}api/api.php?action=google_login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ credential: response.credential })

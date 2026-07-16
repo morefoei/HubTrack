@@ -1,4 +1,6 @@
 <?php
+error_reporting(0);
+ini_set('display_errors', 0);
 header('Content-Type: application/json');
 
 $DATA_DIR = __DIR__ . '/data';
@@ -633,8 +635,8 @@ if ($action !== 'manual_login' && $action !== 'google_login' && $action !== 'get
                 exit;
             }
         }
-    }
 }
+
 // -- END AUTHENTICATION CHECK --
 
 if ($action === 'google_login' && $method === 'POST') {
