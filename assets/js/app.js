@@ -2446,6 +2446,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // Set default date to today
     document.getElementById('startDate').valueAsDate = new Date();
     
+    function getWAGreeting() {
+        const h = new Date().getHours();
+        if (h >= 11 && h < 15) return "selamat siang";
+        if (h >= 15 && h < 18) return "selamat sore";
+        if (h >= 18 || h < 4) return "selamat malam";
+        return "selamat Pagi";
+    }
+
     // WA Approval Tab Switching
     const waTabs = document.querySelectorAll('#wa-approval-view .tab-btn');
     const waContents = document.querySelectorAll('#wa-approval-view .tab-content');
@@ -2621,7 +2629,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 finalLines.push(formatRange(rangeStart, rangeEnd));
             }
             
-            const msg = `selamat Pagi ${bossName}, mohon izin untuk minta approval kehadiran di bulan ${monthName}, berikut jadwal saya masuk:\n\n${finalLines.join('\n')}\n\nTerima Kasih`;
+            const msg = `${getWAGreeting()} ${bossName}, mohon izin untuk minta approval kehadiran di bulan ${monthName}, berikut jadwal saya masuk:\n\n${finalLines.join('\n')}\n\nTerima Kasih`;
             showWAPreview(msg, bossPhone);
             
             btnSubmit.innerHTML = originalBtnText;
@@ -3076,7 +3084,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         finalLines.push(`${formatShort(startDt)} - ${formatShort(endDt)}`);
                     }
                     
-                    const msg = `selamat Pagi ${bossName}, mohon izin untuk minta approval kehadiran di bulan ${chatMonth}, berikut jadwal saya masuk:\n\n${finalLines.join('\n')}\n\nTerima Kasih`;
+                    const msg = `${getWAGreeting()} ${bossName}, mohon izin untuk minta approval kehadiran di bulan ${chatMonth}, berikut jadwal saya masuk:\n\n${finalLines.join('\n')}\n\nTerima Kasih`;
                     showWAPreview(msg, bossPhone);
                 } else {
                     showToast('Gagal memuat jadwal: ' + (data.message || 'Error'), 'error');
