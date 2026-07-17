@@ -16,3 +16,6 @@ vendor/
 
 #Notes
 admin_notes.txt
+
+# Local Development Scripts
+router.php

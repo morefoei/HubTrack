@@ -3214,9 +3214,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const dt = new Date(item.created_at);
             const formattedDate = `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')} ${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}`;
             
-            let url = `https://wa.me/?text=${encodeURIComponent(item.message)}`;
-            if (item.phone) {
-                url = `https://wa.me/${item.phone}?text=${encodeURIComponent(item.message)}`;
+            let cleanPhone = (item.phone || '').replace(/\D/g, '');
+            if (cleanPhone.startsWith('0')) {
+                cleanPhone = '62' + cleanPhone.substring(1);
+            }
+            
+            let url = `https://api.whatsapp.com/send?text=${encodeURIComponent(item.message)}`;
+            if (cleanPhone) {
+                url = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(item.message)}`;
             }
 
             const safeMsg = item.message.replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/\n/g, '\\n');
