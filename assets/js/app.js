@@ -1293,7 +1293,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                     
                     tr.innerHTML = `
-                        <td>${tglDisplay}</td>
+                        <td>${tglDisplay} ${plan.status === 'done' ? '<span class="absen-done-badge" style="margin-left: 0.5rem; background: rgba(16, 185, 129, 0.15); color: #34d399; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;"><i class="fa-solid fa-check"></i> Selesai</span>' : ''}</td>
                         <td>
                             <select class="select-edit-plan-type" data-id="${plan.id}" style="background: rgba(168,85,247,0.1); color: #c084fc; border: 1px solid rgba(168,85,247,0.3); padding: 0.3rem 0.6rem; border-radius: 6px; font-size: 0.85rem; font-weight: 500; cursor: pointer; outline: none; transition: all 0.2s;">
                                 <option value="Sakit" ${plan.planType === 'Sakit' ? 'selected' : ''}>Sakit</option>
@@ -1306,7 +1306,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         </td>
                         <td>
                             <div style="display: flex; gap: 0.5rem; align-items: center; white-space: nowrap;">
-                                <button class="btn-open-absen" data-id="${plan.id}" style="background: linear-gradient(90deg, rgba(16,185,129,0.15), rgba(16,185,129,0.05)); color: #34d399; border: 1px solid rgba(16,185,129,0.3); padding: 0.4rem 0.8rem; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.2s;"><i class="fa-solid fa-arrow-up-right-from-square"></i> Buka Form</button>
+                                <button class="btn-auto-submit-absen" data-id="${plan.id}" title="Submit Otomatis ke Google Form" style="background: linear-gradient(90deg, rgba(59,130,246,0.15), rgba(59,130,246,0.05)); color: #60a5fa; border: 1px solid rgba(59,130,246,0.3); padding: 0.4rem 0.8rem; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.2s;"><i class="fa-solid fa-paper-plane"></i> Auto Submit</button>
+                                <button class="btn-open-absen" data-id="${plan.id}" title="Buka Form" style="background: linear-gradient(90deg, rgba(16,185,129,0.15), rgba(16,185,129,0.05)); color: #34d399; border: 1px solid rgba(16,185,129,0.3); padding: 0.4rem 0.6rem; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.2s;"><i class="fa-solid fa-arrow-up-right-from-square"></i></button>
                                 <button class="btn-del-absen" data-id="${plan.id}" style="background: rgba(239,68,68,0.1); color: #ef4444; border: 1px solid rgba(239,68,68,0.2); padding: 0.4rem 0.6rem; border-radius: 6px; cursor: pointer; transition: all 0.2s;"><i class="fa-solid fa-trash"></i></button>
                             </div>
                         </td>
@@ -1398,13 +1399,29 @@ document.addEventListener('DOMContentLoaded', () => {
                                     
                                     if (iframe) {
                                         iframe.src = finalUrl;
-                                        if(emptyMsg) emptyMsg.style.display = 'none';
                                         iframe.style.display = 'block';
+                                        if (emptyMsg) emptyMsg.style.display = 'none';
                                     }
                                     if (newTabBtn) {
                                         newTabBtn.href = finalUrl;
                                         newTabBtn.style.display = 'inline-block';
                                     }
+                                    
+                                    // Set status "done"
+                                    if (plan.status !== 'done') {
+                                        plan.status = 'done';
+                                        const tdTgl = e.target.closest('tr').querySelector('td:first-child');
+                                        if (tdTgl && !tdTgl.querySelector('.absen-done-badge')) {
+                                            tdTgl.innerHTML += ' <span class="absen-done-badge" style="margin-left: 0.5rem; background: rgba(16, 185, 129, 0.15); color: #34d399; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;"><i class="fa-solid fa-check"></i> Selesai</span>';
+                                        }
+                                        
+                                        fetch(`${API_URL}?action=set_absen_plan_status`, {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify(attachSettings({ id: id, status: 'done' }))
+                                        }).catch(console.error);
+                                    }
+                                    
                                 } else {
                                     window.open(formUrl, '_blank');
                                 }
@@ -1412,6 +1429,85 @@ document.addEventListener('DOMContentLoaded', () => {
                                 window.open(formUrl, '_blank');
                             }
                         }
+                    });
+                });
+
+                document.querySelectorAll('.btn-auto-submit-absen').forEach(btn => {
+                    btn.addEventListener('click', async (e) => {
+                        const btnEl = e.currentTarget;
+                        const id = btnEl.dataset.id;
+                        const plan = data.data.find(p => p.id == id);
+                        if(!plan) return;
+                        
+                        const origHtml = btnEl.innerHTML;
+                        btnEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Submitting...';
+                        btnEl.disabled = true;
+
+                        try {
+                            const sRes = await fetch(`${API_URL}?action=get_settings`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(attachSettings())
+                            });
+                            const sData = await sRes.json();
+                            let formUrl = sData.settings?.formAbsenUrl?.trim() || '';
+                            let absenName = sData.settings?.absenName || '';
+                            let absenDivisi = sData.settings?.absenDivisi || '';
+                            
+                            if (!formUrl) {
+                                alert('URL Google Form belum diatur di Settings!');
+                                btnEl.innerHTML = origHtml;
+                                btnEl.disabled = false;
+                                return;
+                            }
+                            
+                            if (formUrl && !/^https?:\/\//i.test(formUrl)) formUrl = 'https://' + formUrl;
+                            
+                            const urlObj = new URL(formUrl);
+                            if (urlObj.hostname === 'docs.google.com' && urlObj.pathname.includes('/forms/')) {
+                                urlObj.pathname = urlObj.pathname.replace('/viewform', '/formResponse');
+                                
+                                const formData = new URLSearchParams();
+                                if (absenName) formData.set('entry.2058242752', absenName);
+                                if (absenDivisi) formData.set('entry.1155716239', absenDivisi);
+                                
+                                let jPengajuan = plan.planType;
+                                if(jPengajuan.includes('Overtime')) jPengajuan = 'Overtime (Di Wajibkan Mengisi Jam Awal & Jam Akhir OT)';
+                                formData.set('entry.234073371', jPengajuan); 
+                                formData.set('entry.2130747736', plan.startDate);
+                                formData.set('entry.766288703', plan.endDate);
+                                
+                                await fetch(urlObj.toString(), {
+                                    method: 'POST',
+                                    mode: 'no-cors',
+                                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                                    body: formData.toString()
+                                });
+                                
+                                showToast('Auto Submit ke Google Form berhasil!', 'success');
+                                
+                                if (plan.status !== 'done') {
+                                    plan.status = 'done';
+                                    const tdTgl = btnEl.closest('tr').querySelector('td:first-child');
+                                    if (tdTgl && !tdTgl.querySelector('.absen-done-badge')) {
+                                        tdTgl.innerHTML += ' <span class="absen-done-badge" style="margin-left: 0.5rem; background: rgba(16, 185, 129, 0.15); color: #34d399; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;"><i class="fa-solid fa-check"></i> Selesai</span>';
+                                    }
+                                    fetch(`${API_URL}?action=set_absen_plan_status`, {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify(attachSettings({ id: id, status: 'done' }))
+                                    }).catch(console.error);
+                                }
+                            } else {
+                                alert('URL Form tidak mendukung Auto Submit. Harap gunakan Buka Form.');
+                            }
+                        } catch (err) {
+                            alert('Terjadi kesalahan saat submit otomatis.');
+                            console.error(err);
+                        }
+                        
+                        btnEl.innerHTML = origHtml;
+                        btnEl.disabled = false;
                     });
                 });
 

@@ -2199,16 +2199,15 @@ if ($action === 'sync' && $method === 'POST') {
 }
 
 if ($action === 'get_indonesian_holidays' && $method === 'POST') {
-    $url = "https://calendar.google.com/calendar/ical/id.indonesian%23holiday%40group.v.calendar.google.com/public/basic.ics";
-    $ch = curl_init($url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-    $icsData = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-
-    if ($httpCode !== 200 || empty($icsData)) {
-        echo json_encode(['success' => false, 'message' => 'Gagal mengambil data dari Google Calendar API']);
+    $file = __DIR__ . '/basic.ics';
+    if (!file_exists($file)) {
+        echo json_encode(['success' => false, 'message' => 'File basic.ics tidak ditemukan.']);
+        exit;
+    }
+    
+    $icsData = file_get_contents($file);
+    if (empty($icsData)) {
+        echo json_encode(['success' => false, 'message' => 'File basic.ics kosong.']);
         exit;
     }
 
@@ -2496,6 +2495,42 @@ if ($action === 'edit_absen_plan' && $method === 'POST') {
         foreach ($plans as &$p) {
             if ($p['id'] == $id) {
                 $p['planType'] = $planType;
+                $found = true;
+                break;
+            }
+        }
+        
+        if ($found) {
+            file_put_contents($file, json_encode($plans, JSON_PRETTY_PRINT));
+            echo json_encode(['success' => true]);
+        } else {
+            echo json_encode(['error' => 'Plan tidak ditemukan']);
+        }
+    } else {
+        echo json_encode(['error' => 'File tidak ditemukan']);
+    }
+    exit;
+}
+
+if ($action === 'set_absen_plan_status' && $method === 'POST') {
+    $profile = $input['profile'] ?? '';
+    $id = $input['id'] ?? '';
+    $status = $input['status'] ?? 'done';
+    
+    if (empty($profile) || empty($id)) {
+        echo json_encode(['error' => 'Data tidak lengkap']);
+        exit;
+    }
+    
+    $cleanProfile = strtolower(preg_replace('/[^a-zA-Z0-9_-]/', '', substr($profile, 0, 32)));
+    $file = $DATA_DIR . '/absen_plans_' . $cleanProfile . '.json';
+    
+    if (file_exists($file)) {
+        $plans = json_decode(file_get_contents($file), true) ?: [];
+        $found = false;
+        foreach ($plans as &$p) {
+            if ($p['id'] == $id) {
+                $p['status'] = $status;
                 $found = true;
                 break;
             }
