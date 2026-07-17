@@ -145,7 +145,7 @@
             </h2>
             
             <p style="font-size: 0.95rem; line-height: 1.6; margin-bottom: 1.5rem;">
-                Gunakan ekstensi ini sebagai pengganti Cron Job. Ekstensi ini akan memicu <strong>cron_absen.php</strong> di hosting Anda secara otomatis setiap hari tanpa membebani laptop.
+                Gunakan ekstensi ini sebagai pengganti Cron Job. Ekstensi ini akan memicu <strong>sistem pengiriman absen (auto submit)</strong> di hosting Anda secara otomatis sesuai waktu yang ditentukan tanpa membebani laptop.
             </p>
             
             <ol style="line-height: 1.8; padding-left: 1.5rem; font-size: 0.95rem; margin-bottom: 2rem;">
@@ -154,7 +154,7 @@
                 <li>Buka Google Chrome, ketik <code style="background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px;">chrome://extensions/</code> di URL, dan tekan Enter.</li>
                 <li>Aktifkan <strong>Developer mode</strong> (Mode Pengembang) di pojok kanan atas.</li>
                 <li>Klik tombol <strong>Load unpacked</strong> dan pilih folder hasil ekstrak tadi.</li>
-                <li>Klik ikon ekstensi di pojok kanan atas browser untuk mengatur pada jam berapa absen harus dijalankan setiap harinya.</li>
+                <li>Klik ikon ekstensi di pojok kanan atas browser untuk mengatur tanggal dan jam pengiriman absen Anda.</li>
             </ol>
             
             <div style="text-align: right; border-top: 1px solid var(--border); padding-top: 1.5rem;">

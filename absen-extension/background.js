@@ -8,16 +8,52 @@ chrome.alarms.onAlarm.addListener((alarm) => {
     if (alarm.name === "autoAbsenAlarm") {
         console.log("Alarm triggered at " + new Date().toLocaleTimeString());
         
-        chrome.storage.local.get(['alarmDate'], (data) => {
+        chrome.storage.local.get(['alarmDate'], async (data) => {
+            let HARDCODED_URL = 'https://hubtrack.xo.je/cron_absen.php';
+            
             if (data.alarmDate) {
-                const today = new Date().getDate();
-                if (today != data.alarmDate) {
-                    console.log(`Today is ${today}, but alarm is set for ${data.alarmDate}. Skipping.`);
+                const now = new Date();
+                const today = now.getDate();
+                const year = now.getFullYear();
+                const month = now.getMonth();
+                
+                // Fetch holidays
+                let holidays = [];
+                try {
+                    const fd = new FormData();
+                    fd.append('year', year);
+                    const response = await fetch('https://hubtrack.xo.je/api/api.php?action=get_indonesian_holidays', {
+                        method: 'POST',
+                        body: fd
+                    });
+                    const resData = await response.json();
+                    if (resData.success && resData.holidays) {
+                        holidays = resData.holidays.map(h => h.date);
+                    }
+                } catch(e) { console.error('Failed to fetch holidays', e); }
+
+                let effectiveDate = parseInt(data.alarmDate);
+                while (effectiveDate > 0) {
+                    let checkDate = new Date(year, month, effectiveDate);
+                    let dayOfWeek = checkDate.getDay();
+                    let dateString = `${year}-${String(month+1).padStart(2,'0')}-${String(effectiveDate).padStart(2,'0')}`;
+                    
+                    let isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
+                    let isHoliday = holidays.includes(dateString);
+                    
+                    if (isWeekend || isHoliday) {
+                        effectiveDate--; // Move to previous day
+                    } else {
+                        break; // Found a valid workday!
+                    }
+                }
+                
+                if (today != effectiveDate) {
+                    console.log(`Today is ${today}, but effective alarm date is ${effectiveDate}. Skipping.`);
                     return; // Skip if date doesn't match
                 }
+                HARDCODED_URL += '?mode=monthly'; // Tell the server to submit everything for this month
             }
-            
-            const HARDCODED_URL = 'https://hubtrack.xo.je/cron_absen.php';
             
             // Open the URL in an inactive tab so it doesn't disturb the user
             chrome.tabs.create({ url: HARDCODED_URL, active: false }, (tab) => {

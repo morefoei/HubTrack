@@ -153,6 +153,14 @@
                                     <li>Klik tombol <strong><i class="fa-solid fa-arrow-up-right-from-square"></i> Buka Form</strong> pada tabel. Sistem akan secara otomatis mengisi (<em>auto-prefill</em>) Google Form di sebelah kanan sesuai dengan tanggal dan jenis pengajuan yang Anda pilih! Anda tinggal menekan tombol Submit di Google Form tersebut.</li>
                                 </ul>
                             </li>
+                            <li><strong>Absensi - Ekstensi Auto Absen Sync:</strong>
+                                <ul style="margin-top: 0.5rem; margin-bottom: 0.5rem;">
+                                    <li>Fitur ini memungkinkan pengiriman absen (Google Form) secara <strong>otomatis di latar belakang</strong> (<em>background</em>) tanpa perlu Anda menekan tombol Submit setiap hari.</li>
+                                    <li><strong>Cara Kerja Tanggal Eksekusi:</strong> Jika Anda mengisi <strong>Tanggal Eksekusi (Bulanan)</strong> dengan angka (misalnya <strong>17</strong>), maka ekstensi HANYA akan "bangun" dan bekerja setiap tanggal 17 saja. Saat tanggal 17 tiba, sistem akan menarik seluruh daftar rencana absen Anda untuk bulan tersebut, dan mensubmit semuanya sekaligus secara massal (merapel absen).</li>
+                                    <li><strong>Setiap Hari:</strong> Jika kolom Tanggal Eksekusi dibiarkan kosong, maka ekstensi akan berjalan secara rutin setiap hari untuk mengirimkan absen pada hari tersebut (Real-time).</li>
+                                    <li>Pastikan browser Google Chrome Anda minimal sedang terbuka (meski jendelanya di-minimize) pada jam eksekusi yang telah Anda atur agar ekstensi bisa memicu server.</li>
+                                </ul>
+                            </li>
                             <li><strong>Absensi - WA Approval (Pembuat Pesan Izin):</strong>
                                 <ul style="margin-top: 0.5rem; margin-bottom: 0.5rem;">
                                     <li>Fitur ini digunakan untuk membuat pesan teks *request approval* (minta izin kehadiran) ke atasan via WhatsApp secara otomatis.</li>
@@ -295,6 +303,14 @@
                                     <li>You can create an attendance plan (e.g., "Present", "Sick", "Annual Leave") for a specific date range in Bulk or by pulling directly from your Google Sheets Shift Schedule.</li>
                                     <li>Once a plan is created, it will appear in the <strong>Attendance Plan List</strong> table. You can edit the plan type directly on the table (*Inline Edit*).</li>
                                     <li>Click the <strong><i class="fa-solid fa-arrow-up-right-from-square"></i> Open Form</strong> button on the table. The system will magically auto-prefill the Google Form on the right with your selected date and plan type! You just need to press the Submit button inside the Google Form.</li>
+                                </ul>
+                            </li>
+                            <li><strong>Attendance - Auto Absen Sync Extension:</strong>
+                                <ul style="margin-top: 0.5rem; margin-bottom: 0.5rem;">
+                                    <li>This feature allows for automatic attendance (Google Form) submission in the <strong>background</strong> without requiring you to manually press Submit every day.</li>
+                                    <li><strong>How Execution Date Works:</strong> If you fill in the <strong>Execution Date (Monthly)</strong> with a number (e.g., <strong>17</strong>), the extension will ONLY wake up and trigger on the 17th of every month. The system will pull all your planned attendance for that month and bulk-submit them at once.</li>
+                                    <li><strong>Every Day:</strong> If the Execution Date is left blank, the extension will run routinely every day to submit the attendance just for that specific day (Real-time).</li>
+                                    <li>Ensure your Google Chrome browser is open (even if minimized) at your scheduled execution time so the extension can trigger the server.</li>
                                 </ul>
                             </li>
                             <li><strong>Attendance - WA Approval Generator:</strong>

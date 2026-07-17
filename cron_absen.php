@@ -107,8 +107,28 @@ foreach ($planFiles as $planFile) {
         $endDate = $plan['endDate'] ?? '';
         $planType = $plan['planType'] ?? '';
         
-        // Auto-submit triggers if today matches or is past the startDate
-        if (!empty($startDate) && $today >= $startDate) {
+        $isMonthlyMode = isset($_GET['mode']) && $_GET['mode'] === 'monthly';
+        $planMonth = substr($startDate, 0, 7); // e.g. "2026-08"
+        $currentMonth = date('Y-m');
+        
+        $shouldSubmit = false;
+        
+        if (!empty($startDate)) {
+            if ($isMonthlyMode) {
+                // In monthly mode, submit all plans for the current month and past months
+                if ($planMonth <= $currentMonth) {
+                    $shouldSubmit = true;
+                }
+            } else {
+                // In daily mode, submit only if the start date has passed or is today
+                if ($today >= $startDate) {
+                    $shouldSubmit = true;
+                }
+            }
+        }
+        
+        // Auto-submit triggers based on mode logic
+        if ($shouldSubmit) {
             echo "  - Submitting plan ID: {$plan['id']} (Date: $startDate to $endDate)... ";
             
             $jPengajuan = $planType;
