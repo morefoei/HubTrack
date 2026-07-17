@@ -100,6 +100,9 @@ $v = time();
                     <div style="text-align: center; margin-top: 1rem; color: var(--text-muted); font-size: 0.85rem;">
                         <i class="fa-solid fa-shield-halved"></i> Hanya email <strong>ITG Indonesia</strong> yang diizinkan.
                     </div>
+                    <div style="text-align: center; margin-top: 1.5rem;">
+                        <a href="demo.php" style="display: inline-block; background: rgba(14, 165, 233, 0.1); color: var(--primary); padding: 0.5rem 1rem; border-radius: 6px; text-decoration: none; font-size: 0.85rem; font-weight: 600; border: 1px solid rgba(14, 165, 233, 0.2); transition: all 0.2s;"><i class="fa-solid fa-flask"></i> Coba Akun Demo</a>
+                    </div>
                 </div>
 
                 <!-- Old Login Form (Hidden by default, used for Super Admin) -->
