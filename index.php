@@ -98,9 +98,7 @@ $base_url = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/\\') . '/';
     <main>
         <div class="top-nav-right">
             <div class="profile-section" style="display: flex; gap: 0.8rem; align-items: center;">
-                <button id="themeToggleBtn" class="top-action-btn" title="Ganti Mode Malam/Siang" onclick="toggleTheme()">
-                    <i class="fa-solid fa-moon" id="themeIcon"></i>
-                </button>
+
                 <div id="dateTimeDisplay" style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500; text-align: right; line-height: 1.2; padding-right: 0.5rem; border-right: 1px solid var(--panel-border); display: none;">
                 </div>
                 <button id="profileDisplay" class="top-action-btn profile-btn" title="Logout Aplikasi">
@@ -156,6 +154,9 @@ $base_url = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/\\') . '/';
                         }
                     })();
                 </script>
+                <button id="themeToggleBtn" class="top-action-btn" title="Ganti Mode Malam/Siang" onclick="toggleTheme()">
+                    <i class="fa-solid fa-moon" id="themeIcon"></i>
+                </button>
                 <button id="langToggleBtn" class="top-action-btn" title="Ubah Bahasa / Change Language">ID</button>
             </div>
         </div>
