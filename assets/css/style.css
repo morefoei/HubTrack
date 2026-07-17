@@ -1,7 +1,7 @@
 :root {
     --bg-color: #0f172a;
-    --panel-bg: rgba(30, 41, 59, 0.65);
-    --panel-border: rgba(255, 255, 255, 0.12);
+    --panel-bg: rgba(0, 0, 0, 0.2);
+    --panel-border: rgba(255, 255, 255, 0.15);
     --primary: #3b82f6;
     --primary-hover: #2563eb;
     --text-main: #f8fafc;
@@ -9,7 +9,7 @@
     --success: #10b981;
     --warning: #f59e0b;
     --danger: #ef4444;
-    --glass-blur: blur(12px);
+    --glass-blur: blur(16px);
 }
 
 * {
@@ -20,9 +20,7 @@
 
 body {
     font-family: 'Inter', sans-serif;
-    background: linear-gradient(-45deg, #0f172a, #1e3a8a, #1e293b, #3730a3);
-    background-size: 400% 400%;
-    animation: gradientBG 45s ease infinite;
+    background: linear-gradient(180deg, #68bdfa 0%, #125796 50%, #071f40 100%);
     background-attachment: fixed;
     color: var(--text-main);
     min-height: 100vh;
@@ -109,9 +107,7 @@ body.sidebar-minimized #sidebarToggleBtn:hover {
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    background: linear-gradient(135deg, #f43f5e, #a855f7, #3b82f6);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+    color: #0f172a;
     letter-spacing: -0.5px;
 }
 
@@ -741,4 +737,60 @@ body[data-lang="id"] .lang-en { display: none !important; }
     gap: 0.5rem;
     flex-wrap: nowrap;
     align-items: center;
+}
+
+/* Dark Theme Overrides */
+[data-theme="dark"] {
+    --bg-color: #020617;
+    --panel-bg: rgba(0, 0, 0, 0.4);
+    --panel-border: rgba(255, 255, 255, 0.1);
+    --text-main: #f8fafc;
+}
+
+[data-theme="dark"] body {
+    background: linear-gradient(180deg, #020617 0%, #0f172a 50%, #1e293b 100%);
+}
+
+.top-action-btn {
+    font-size: 0.85rem;
+    padding: 0.4rem 0.8rem;
+    background: transparent;
+    border: 1px solid #0f172a;
+    color: #0f172a;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.top-action-btn:hover {
+    background: rgba(15, 23, 42, 0.1);
+}
+
+.top-action-btn.profile-btn {
+    border-radius: 20px;
+    padding: 0.4rem 1rem;
+    margin: 0;
+}
+
+.top-action-btn.profile-btn:hover {
+    background: #0f172a;
+    color: #fff;
+}
+
+[data-theme="dark"] .logo,
+[data-theme="dark"] .top-action-btn {
+    color: #f8fafc !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+[data-theme="dark"] .top-action-btn:hover {
+    background: rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-theme="dark"] .top-action-btn.profile-btn:hover {
+    background: rgba(255, 255, 255, 0.2) !important;
+    color: #fff !important;
 }

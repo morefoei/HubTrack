@@ -22,6 +22,11 @@ $base_url = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/\\') . '/';
         if (!sessionStorage.getItem('zohoProfile') || !sessionStorage.getItem('zohoPassword')) {
             window.location.href = BASE_URL + 'login.php';
         }
+        
+        const savedTheme = localStorage.getItem('TrackHubTheme') || 'light';
+        if (savedTheme === 'dark') {
+            document.documentElement.setAttribute('data-theme', 'dark');
+        }
     </script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
@@ -93,7 +98,10 @@ $base_url = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/\\') . '/';
     <main>
         <div class="top-nav-right">
             <div class="profile-section" style="display: flex; gap: 0.8rem; align-items: center;">
-                <button id="profileDisplay" style="font-size: 0.85rem; margin: 0; padding: 0.4rem 1rem; background: transparent; border: 1px solid var(--primary); color: var(--primary); border-radius: 20px; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s;" title="Logout Aplikasi" onmouseover="this.style.background='var(--primary)'; this.style.color='#fff';" onmouseout="this.style.background='transparent'; this.style.color='var(--primary)';">
+                <button id="themeToggleBtn" class="top-action-btn" title="Ganti Mode Malam/Siang" onclick="toggleTheme()">
+                    <i class="fa-solid fa-moon" id="themeIcon"></i>
+                </button>
+                <button id="profileDisplay" class="top-action-btn profile-btn" title="Logout Aplikasi">
                     <script>
                         var pic = sessionStorage.getItem('zohoPicture');
                         if (pic && pic !== 'undefined' && pic.trim() !== '') {
@@ -105,9 +113,32 @@ $base_url = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/\\') . '/';
                     <span id="profileNameDisplay"><script>var up = sessionStorage.getItem('zohoProfile') || 'Profile'; document.write(up);</script></span> 
                     <i class="fa-solid fa-sign-out-alt"></i>
                 </button>
-                <button id="langToggleBtn" style="font-size: 0.85rem; padding: 0.4rem 0.8rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text-main); border-radius: 6px; cursor: pointer; transition: all 0.2s;" title="Ubah Bahasa / Change Language" onmouseover="this.style.background='rgba(255,255,255,0.1)';" onmouseout="this.style.background='rgba(255,255,255,0.05)';">ID</button>
+                <button id="langToggleBtn" class="top-action-btn" title="Ubah Bahasa / Change Language">ID</button>
             </div>
         </div>
+
+        <script>
+            function toggleTheme() {
+                const currentTheme = document.documentElement.getAttribute('data-theme');
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                document.documentElement.setAttribute('data-theme', newTheme);
+                localStorage.setItem('TrackHubTheme', newTheme);
+                
+                const icon = document.getElementById('themeIcon');
+                if (newTheme === 'dark') {
+                    icon.className = 'fa-solid fa-sun';
+                } else {
+                    icon.className = 'fa-solid fa-moon';
+                }
+            }
+            
+            // Set initial icon on load
+            window.addEventListener('DOMContentLoaded', () => {
+                if (document.documentElement.getAttribute('data-theme') === 'dark') {
+                    document.getElementById('themeIcon').className = 'fa-solid fa-sun';
+                }
+            });
+        </script>
 
         <div class="main-content-wrapper">
             <!-- Time Logs View -->
