@@ -102,17 +102,32 @@ $base_url = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/\\') . '/';
                     <i class="fa-solid fa-moon" id="themeIcon"></i>
                 </button>
                 <button id="profileDisplay" class="top-action-btn profile-btn" title="Logout Aplikasi">
-                    <script>
-                        var pic = sessionStorage.getItem('zohoPicture');
-                        if (pic && pic !== 'undefined' && pic.trim() !== '') {
-                            document.write('<img src="' + pic + '" style="width: 20px; height: 20px; border-radius: 50%; object-fit: cover;" referrerpolicy="no-referrer">');
-                        } else {
-                            document.write('<i class="fa-solid fa-user"></i>');
-                        }
-                    </script>
-                    <span id="profileNameDisplay"><script>var up = sessionStorage.getItem('zohoProfile') || 'Profile'; document.write(up);</script></span> 
+                    <span id="profilePicDisplay"><i class="fa-solid fa-user"></i></span>
+                    <span id="profileNameDisplay">Profile</span> 
                     <i class="fa-solid fa-sign-out-alt"></i>
                 </button>
+                <script>
+                    (function() {
+                        var pic = sessionStorage.getItem('zohoPicture');
+                        var name = sessionStorage.getItem('zohoProfile') || 'Profile';
+                        
+                        // Aman dari XSS karena textContent memaksa render sebagai teks murni
+                        document.getElementById('profileNameDisplay').textContent = name;
+                        
+                        if (pic && pic !== 'undefined' && pic.trim() !== '') {
+                            // Validasi URL hanya boleh http/https untuk mencegah javascript: URI XSS
+                            if (pic.startsWith('http')) {
+                                var img = document.createElement('img');
+                                img.src = pic;
+                                img.style.cssText = "width: 20px; height: 20px; border-radius: 50%; object-fit: cover;";
+                                img.referrerPolicy = "no-referrer";
+                                var picDisplay = document.getElementById('profilePicDisplay');
+                                picDisplay.innerHTML = '';
+                                picDisplay.appendChild(img);
+                            }
+                        }
+                    })();
+                </script>
                 <button id="langToggleBtn" class="top-action-btn" title="Ubah Bahasa / Change Language">ID</button>
             </div>
         </div>

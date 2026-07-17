@@ -7,6 +7,26 @@ $DATA_DIR = __DIR__ . '/data';
 if (!is_dir($DATA_DIR)) {
     mkdir($DATA_DIR, 0755, true);
 }
+
+$ADMIN_USERNAME = 'superman';
+
+function verifyAdminAccess($input) {
+    global $DATA_DIR, $ADMIN_USERNAME;
+    if (empty($input['profile']) || empty($input['password']) || $input['profile'] !== $ADMIN_USERNAME) return false;
+    
+    $checkFile = $DATA_DIR . '/settings_' . $ADMIN_USERNAME . '.php';
+    if (!file_exists($checkFile)) return false;
+    
+    $content = file_get_contents($checkFile);
+    $startPos = strpos($content, '{');
+    $jsonStr = $startPos !== false ? substr($content, $startPos) : '{}';
+    $existingData = json_decode($jsonStr, true) ?: [];
+    
+    if (empty($existingData['profile_password'])) return false;
+    
+    return password_verify($input['password'], $existingData['profile_password']) || hash_equals($existingData['profile_password'], $input['password']);
+}
+
 function getSettingsFile() {
     global $input, $DATA_DIR;
     $profile = 'default';
@@ -113,16 +133,16 @@ function getSettings() {
         }
     }
 
-    $userSettings['sheetConfigMode'] = $userSettings['sheetConfigMode'] ?? 'admin';
+    $userSettings['sheetConfigMode'] = $userSettings['sheetConfigMode'] ?? $ADMIN_USERNAME;
     global $input;
     $currentProfile = 'default';
     if (!empty($input['profile'])) {
         $currentProfile = strtolower(preg_replace('/[^a-zA-Z0-9_-]/', '', substr($input['profile'], 0, 32)));
     }
 
-    if ($userSettings['sheetConfigMode'] === 'admin' && $currentProfile !== 'admin') {
+    if ($userSettings['sheetConfigMode'] === $ADMIN_USERNAME && $currentProfile !== $ADMIN_USERNAME) {
         // Inherit from admin's personal profile
-        $adminFile = $DATA_DIR . '/settings_admin.php';
+        $adminFile = $DATA_DIR . '/settings_' . $ADMIN_USERNAME . '.php';
         if (file_exists($adminFile)) {
             $adminContent = file_get_contents($adminFile);
             $adminStart = strpos($adminContent, '{');
@@ -572,7 +592,7 @@ $method = $_SERVER['REQUEST_METHOD'];
 
 $input = json_decode(file_get_contents('php://input'), true);
 
-$ADMIN_USERNAME = 'superman';
+$input = json_decode(file_get_contents('php://input'), true);
 
 // -- GLOBAL AUTHENTICATION CHECK --
 if ($action !== 'manual_login' && $action !== 'google_login' && $action !== 'get_all_profiles' && $action !== 'reset_password' && $action !== 'delete_profile' && $action !== 'test_shift_spreadsheet' && $action !== 'test_form_url' && $action !== 'get_indonesian_holidays' && !empty($action)) {
@@ -697,6 +717,25 @@ if ($action === 'manual_login' && $method === 'POST') {
     $reqProfile = isset($input['profile']) ? strtolower(preg_replace('/[^a-zA-Z0-9_-]/', '', substr($input['profile'], 0, 32))) : '';
     $reqPassword = $input['password'] ?? '';
     
+    $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+    $attemptsFile = $DATA_DIR . '/login_attempts.json';
+    $attemptsData = file_exists($attemptsFile) ? json_decode(file_get_contents($attemptsFile), true) ?: [] : [];
+    
+    $now = time();
+    foreach ($attemptsData as $key => $time) {
+        if ($now - $time > 900) unset($attemptsData[$key]);
+    }
+    
+    $ipAttempts = 0;
+    foreach ($attemptsData as $key => $time) {
+        if (strpos($key, $ip . '_') === 0) $ipAttempts++;
+    }
+    
+    if ($ipAttempts >= 5) {
+        echo json_encode(['success' => false, 'message' => 'Terlalu banyak percobaan gagal. Silakan coba lagi setelah 15 menit.']);
+        exit;
+    }
+    
     if ($reqProfile === $ADMIN_USERNAME) {
         $checkFile = $DATA_DIR . '/settings_' . $reqProfile . '.php';
         if (file_exists($checkFile)) {
@@ -704,17 +743,28 @@ if ($action === 'manual_login' && $method === 'POST') {
             $startPos = strpos($content, '{');
             $jsonStr = $startPos !== false ? substr($content, $startPos) : '{}';
             $existingData = json_decode($jsonStr, true) ?: [];
-            if (!empty($existingData['profile_password']) && password_verify($reqPassword, $existingData['profile_password'])) {
+            
+            $isValid = false;
+            if (!empty($existingData['profile_password'])) {
+                if (password_verify($reqPassword, $existingData['profile_password']) || hash_equals($existingData['profile_password'], $reqPassword)) {
+                    $isValid = true;
+                }
+            }
+            
+            if ($isValid) {
+                foreach ($attemptsData as $key => $time) {
+                    if (strpos($key, $ip . '_') === 0) unset($attemptsData[$key]);
+                }
+                file_put_contents($attemptsFile, json_encode($attemptsData));
                 echo json_encode(['success' => true]);
                 exit;
             }
-            if (!empty($existingData['profile_password']) && hash_equals($existingData['profile_password'], $reqPassword)) {
-                echo json_encode(['success' => true]);
-                exit;
-            }
+            
+            $attemptsData[$ip . '_' . uniqid()] = $now;
+            file_put_contents($attemptsFile, json_encode($attemptsData));
             echo json_encode(['success' => false, 'message' => 'Akses Ditolak: Password admin salah!']);
         } else {
-            // Login pertama kali, langsung berhasil (password otomatis disimpan di GLOBAL CHECK berikutnya)
+            // Login pertama kali
             echo json_encode(['success' => true]);
         }
     } else {
@@ -724,20 +774,7 @@ if ($action === 'manual_login' && $method === 'POST') {
 }
 
 if ($action === 'get_all_profiles' && $method === 'POST') {
-    // Basic verification for admin password
-    $checkFile = $DATA_DIR . '/settings_' . $ADMIN_USERNAME . '.php';
-    $isAdminValid = false;
-    if (file_exists($checkFile)) {
-        $content = file_get_contents($checkFile);
-        $startPos = strpos($content, '{');
-        $jsonStr = $startPos !== false ? substr($content, $startPos) : '{}';
-        $existingData = json_decode($jsonStr, true) ?: [];
-        if (!empty($existingData['profile_password'])) {
-            $isAdminValid = password_verify($input['password'] ?? '', $existingData['profile_password']) || hash_equals($existingData['profile_password'], $input['password'] ?? '');
-        }
-    }
-    
-    if (isset($input['profile']) && $input['profile'] === $ADMIN_USERNAME && $isAdminValid) {
+    if (verifyAdminAccess($input)) {
         $files = glob($DATA_DIR . '/settings_*.{php,json}', GLOB_BRACE);
         $profiles = [];
         if (is_array($files)) {
@@ -768,7 +805,7 @@ if ($action === 'get_all_profiles' && $method === 'POST') {
 }
 
 if ($action === 'reset_password' && $method === 'POST') {
-    if (isset($input['profile']) && $input['profile'] === 'admin' && isset($input['password']) && $input['password'] === 'musikrock1') {
+    if (verifyAdminAccess($input)) {
         $targetUser = strtolower(preg_replace('/[^a-zA-Z0-9_-]/', '', substr($input['targetUser'] ?? '', 0, 32)));
         if (empty($targetUser)) {
             echo json_encode(['success' => false, 'message' => 'Username tidak valid.']);
@@ -803,7 +840,7 @@ if ($action === 'reset_password' && $method === 'POST') {
 }
 
 if ($action === 'update_user_sheet_name' && $method === 'POST') {
-    if (isset($input['profile']) && $input['profile'] === 'admin' && isset($input['password']) && $input['password'] === 'musikrock1') {
+    if (verifyAdminAccess($input)) {
         $targetUser = strtolower(preg_replace('/[^a-zA-Z0-9_-]/', '', substr($input['targetUser'] ?? '', 0, 32)));
         $newSheetName = trim($input['newSheetName'] ?? '');
         
@@ -835,9 +872,9 @@ if ($action === 'update_user_sheet_name' && $method === 'POST') {
 }
 
 if ($action === 'delete_profile' && $method === 'POST') {
-    if (isset($input['profile']) && $input['profile'] === 'admin' && isset($input['password']) && $input['password'] === 'musikrock1') {
+    if (verifyAdminAccess($input)) {
         $targetUser = strtolower(preg_replace('/[^a-zA-Z0-9_-]/', '', substr($input['targetUser'] ?? '', 0, 32)));
-        if (empty($targetUser) || $targetUser === 'admin') {
+        if (empty($targetUser) || $targetUser === $ADMIN_USERNAME) {
             echo json_encode(['success' => false, 'message' => 'Username tidak valid.']);
             exit;
         }
@@ -867,7 +904,7 @@ if ($action === 'delete_profile' && $method === 'POST') {
 }
 
 if ($action === 'save_global_settings' && $method === 'POST') {
-    if (isset($input['profile']) && $input['profile'] === 'admin' && isset($input['password']) && $input['password'] === 'musikrock1') {
+    if (verifyAdminAccess($input)) {
         global $DATA_DIR;
         $globalFile = $DATA_DIR . '/global_settings.json';
         $newData = [
@@ -885,7 +922,7 @@ if ($action === 'save_global_settings' && $method === 'POST') {
 }
 
 if ($action === 'test_shift_spreadsheet' && $method === 'POST') {
-    if (isset($input['profile']) && $input['profile'] === 'admin' && isset($input['password']) && $input['password'] === 'musikrock1') {
+    if (verifyAdminAccess($input)) {
         $spreadsheetId = $input['spreadsheetId'] ?? '';
         if (empty($spreadsheetId)) {
             echo json_encode(['success' => false, 'message' => 'ID Spreadsheet Kosong!']);
@@ -898,7 +935,8 @@ if ($action === 'test_shift_spreadsheet' && $method === 'POST') {
         $validToken = null;
         if (is_array($files)) {
             foreach ($files as $f) {
-                if (strpos($f, 'settings_admin') !== false) continue;
+                if ($f === '.' || $f === '..' || is_dir($DATA_DIR.'/'.$f)) continue;
+                if (strpos($f, 'settings_' . $ADMIN_USERNAME) !== false) continue;
                 $content = file_get_contents($f);
                 $startPos = strpos($content, '{');
                 if ($startPos !== false) {
@@ -942,7 +980,7 @@ if ($action === 'test_shift_spreadsheet' && $method === 'POST') {
 }
 
 if ($action === 'test_data_spreadsheet' && $method === 'POST') {
-    if (isset($input['profile']) && $input['profile'] === 'admin' && isset($input['password']) && $input['password'] === 'musikrock1') {
+    if (verifyAdminAccess($input)) {
         $spreadsheetId = $input['spreadsheetId'] ?? '';
         $credentials = $input['credentials'] ?? '';
         
@@ -990,7 +1028,7 @@ if ($action === 'test_data_spreadsheet' && $method === 'POST') {
 }
 
 if ($action === 'rename_sheet_tab' && $method === 'POST') {
-    if (isset($input['profile']) && $input['profile'] === 'admin' && isset($input['password']) && $input['password'] === 'musikrock1') {
+    if (verifyAdminAccess($input)) {
         $spreadsheetId = $input['spreadsheetId'] ?? '';
         $credentials = $input['credentials'] ?? '';
         $sheetId = $input['sheetId'] ?? null;
@@ -1045,7 +1083,7 @@ if ($action === 'rename_sheet_tab' && $method === 'POST') {
 }
 
 if ($action === 'delete_sheet_tab' && $method === 'POST') {
-    if (isset($input['profile']) && $input['profile'] === 'admin' && isset($input['password']) && $input['password'] === 'musikrock1') {
+    if (verifyAdminAccess($input)) {
         $spreadsheetId = $input['spreadsheetId'] ?? '';
         $credentials = $input['credentials'] ?? '';
         $sheetId = $input['sheetId'] ?? null;
@@ -1095,7 +1133,7 @@ if ($action === 'delete_sheet_tab' && $method === 'POST') {
 }
 
 if ($action === 'test_form_url' && $method === 'POST') {
-    if (isset($input['profile']) && $input['profile'] === 'admin' && isset($input['password']) && $input['password'] === 'musikrock1') {
+    if (verifyAdminAccess($input)) {
         $formUrl = $input['formUrl'] ?? '';
         if (empty($formUrl)) {
             echo json_encode(['success' => false, 'message' => 'URL Kosong!']);

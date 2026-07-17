@@ -1402,6 +1402,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                     const newTabBtn = document.getElementById('absenNewTabBtn');
                                     
                                     if (iframe) {
+                                        iframe.removeAttribute('srcdoc');
                                         iframe.src = finalUrl;
                                         iframe.style.display = 'block';
                                         if (emptyMsg) emptyMsg.style.display = 'none';
@@ -1481,30 +1482,38 @@ document.addEventListener('DOMContentLoaded', () => {
                                 formData.set('entry.2130747736', plan.startDate);
                                 formData.set('entry.766288703', plan.endDate);
                                 
+                                await fetch(urlObj.toString(), {
+                                    method: 'POST',
+                                    mode: 'no-cors',
+                                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                                    body: formData.toString()
+                                });
+                                
                                 const iframe = document.getElementById('absenIframe');
                                 const emptyMsg = document.getElementById('absenEmptyMsg');
                                 if (iframe) {
-                                    iframe.removeAttribute('srcdoc');
-                                    iframe.name = 'absenIframe';
+                                    const successHtml = `
+                                        <div style="padding: 3rem 2rem; font-family: 'Segoe UI', system-ui, sans-serif; text-align: center; color: #0f172a; background: #f8fafc; height: 100vh; box-sizing: border-box;">
+                                            <div style="font-size: 4rem; color: #10b981; margin-bottom: 1rem; animation: popIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);">✓</div>
+                                            <h2 style="margin: 0 0 0.5rem 0; font-size: 1.5rem; color: #0f172a;">Auto Submit Berhasil!</h2>
+                                            <p style="color: #64748b; margin-bottom: 2rem;">Tanggapan Anda telah direkam oleh Google Form.</p>
+                                            <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; text-align: left; max-width: 400px; margin: 0 auto; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
+                                                <h3 style="margin: 0 0 1rem 0; font-size: 1rem; color: #334155; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.5rem;">Preview Data Terkirim</h3>
+                                                <div style="margin-bottom: 0.5rem; font-size: 0.9rem;"><strong style="display:inline-block; width: 100px; color: #64748b;">Nama</strong>: <span style="font-weight: 500;">${absenName || '-'}</span></div>
+                                                <div style="margin-bottom: 0.5rem; font-size: 0.9rem;"><strong style="display:inline-block; width: 100px; color: #64748b;">Divisi</strong>: <span style="font-weight: 500;">${absenDivisi || '-'}</span></div>
+                                                <div style="margin-bottom: 0.5rem; font-size: 0.9rem;"><strong style="display:inline-block; width: 100px; color: #64748b;">Pengajuan</strong>: <span style="font-weight: 500;">${jPengajuan}</span></div>
+                                                <div style="margin-bottom: 0.5rem; font-size: 0.9rem;"><strong style="display:inline-block; width: 100px; color: #64748b;">Tanggal Mulai</strong>: <span style="font-weight: 500;">${plan.startDate}</span></div>
+                                                <div style="font-size: 0.9rem;"><strong style="display:inline-block; width: 100px; color: #64748b;">Tanggal Selesai</strong>: <span style="font-weight: 500;">${plan.endDate}</span></div>
+                                            </div>
+                                            <style>@keyframes popIn { 0% { transform: scale(0); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }</style>
+                                        </div>
+                                    `;
+                                    iframe.src = '';
+                                    iframe.removeAttribute('name');
+                                    iframe.srcdoc = successHtml;
                                     iframe.style.display = 'block';
                                     if (emptyMsg) emptyMsg.style.display = 'none';
                                 }
-
-                                const form = document.createElement('form');
-                                form.method = 'POST';
-                                form.action = urlObj.toString();
-                                form.target = 'absenIframe';
-                                
-                                for (const [key, value] of formData.entries()) {
-                                    const input = document.createElement('input');
-                                    input.type = 'hidden';
-                                    input.name = key;
-                                    input.value = value;
-                                    form.appendChild(input);
-                                }
-                                document.body.appendChild(form);
-                                form.submit();
-                                document.body.removeChild(form);
                                 
                                 showToast('Auto Submit ke Google Form berhasil!', 'success');
                                 
