@@ -1481,12 +1481,30 @@ document.addEventListener('DOMContentLoaded', () => {
                                 formData.set('entry.2130747736', plan.startDate);
                                 formData.set('entry.766288703', plan.endDate);
                                 
-                                await fetch(urlObj.toString(), {
-                                    method: 'POST',
-                                    mode: 'no-cors',
-                                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                                    body: formData.toString()
-                                });
+                                const iframe = document.getElementById('absenIframe');
+                                const emptyMsg = document.getElementById('absenEmptyMsg');
+                                if (iframe) {
+                                    iframe.removeAttribute('srcdoc');
+                                    iframe.name = 'absenIframe';
+                                    iframe.style.display = 'block';
+                                    if (emptyMsg) emptyMsg.style.display = 'none';
+                                }
+
+                                const form = document.createElement('form');
+                                form.method = 'POST';
+                                form.action = urlObj.toString();
+                                form.target = 'absenIframe';
+                                
+                                for (const [key, value] of formData.entries()) {
+                                    const input = document.createElement('input');
+                                    input.type = 'hidden';
+                                    input.name = key;
+                                    input.value = value;
+                                    form.appendChild(input);
+                                }
+                                document.body.appendChild(form);
+                                form.submit();
+                                document.body.removeChild(form);
                                 
                                 showToast('Auto Submit ke Google Form berhasil!', 'success');
                                 
