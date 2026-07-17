@@ -67,10 +67,40 @@
                             <li>Buka <strong>Zoho API Console</strong> (api-console.zoho.com).</li>
                             <li>Klik <strong>Add Client</strong>, lalu pilih <strong>Self Client</strong>.</li>
                             <li>Klik <strong>Create</strong>. Zoho akan memberikan Anda <strong>Client ID</strong> dan <strong>Client Secret</strong>. <em>Copy</em> keduanya ke tab Settings aplikasi kita.</li>
-                            <li>Di Zoho API Console, buka tab <strong>Generate Code</strong>. Masukkan scope berikut secara persis:<br>
-<pre style="background: rgba(0,0,0,0.3); padding: 1rem; border-radius: 8px; overflow-x: auto; margin-top: 0.5rem; border: 1px solid rgba(255,255,255,0.05);"><code style="color: #fcd34d;">ZohoProjects.tasks.ALL,ZohoProjects.projects.ALL,ZohoProjects.portals.ALL,ZohoProjects.timelogs.ALL</code></pre>
+                            <li>Di Zoho API Console, buka tab <strong>Generate Code</strong>. Lengkapi form yang muncul persis seperti ilustrasi di bawah ini:<br>
+<div style="background: #ffffff; color: #333; padding: 1.5rem; border-radius: 8px; margin: 1rem 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; border: 1px solid #e5e7eb; box-shadow: 0 4px 6px rgba(0,0,0,0.05); max-width: 650px; position: relative;">
+    <div style="position: absolute; top: 0; right: 0; background: #fbbf24; color: #854d0e; font-size: 0.7rem; font-weight: bold; padding: 0.2rem 0.6rem; border-bottom-left-radius: 8px; border-top-right-radius: 8px;">ILUSTRASI ZOHO API CONSOLE</div>
+    <!-- Scope Field -->
+    <div style="margin-bottom: 1.5rem;">
+        <label style="display: block; font-size: 0.85rem; color: #4b5563; margin-bottom: 0.4rem; font-weight: 600;">Scope</label>
+        <div style="position: relative;">
+            <textarea readonly style="width: 100%; border: 1px solid #3b82f6; border-radius: 2px; padding: 0.5rem; font-family: monospace; font-size: 0.85rem; color: #1f2937; background: #fff; resize: none; outline: none; height: 65px;">ZohoProjects.tasks.ALL,ZohoProjects.projects.ALL,ZohoProjects.portals.ALL,ZohoProjects.timelogs.ALL</textarea>
+            <button onclick="navigator.clipboard.writeText('ZohoProjects.tasks.ALL,ZohoProjects.projects.ALL,ZohoProjects.portals.ALL,ZohoProjects.timelogs.ALL'); const icon = this.querySelector('i'); icon.className='fa-solid fa-check'; this.style.color='#10b981'; setTimeout(() => { icon.className='fa-regular fa-copy'; this.style.color=''; }, 2000);" style="position: absolute; bottom: 0.5rem; right: 0.5rem; background: #f3f4f6; border: 1px solid #d1d5db; color: #4b5563; cursor: pointer; padding: 0.3rem 0.6rem; border-radius: 4px; transition: all 0.2s;" title="Copy to clipboard" onmouseover="this.style.background='#e5e7eb'" onmouseout="this.style.background='#f3f4f6'">
+                <i class="fa-regular fa-copy"></i> Copy
+            </button>
+        </div>
+    </div>
+    
+    <!-- Duration Field -->
+    <div style="margin-bottom: 1.5rem;">
+        <label style="display: block; font-size: 0.85rem; color: #4b5563; margin-bottom: 0.4rem; font-weight: 600;">Code expiry duration</label>
+        <div style="border-bottom: 1px solid #d1d5db; padding: 0.3rem 0; color: #1f2937; display: flex; justify-content: space-between; font-size: 0.95rem;">
+            <span>10 minutes</span>
+            <i class="fa-solid fa-chevron-down" style="color: #9ca3af; font-size: 0.8rem; margin-top: 4px;"></i>
+        </div>
+    </div>
+    
+    <!-- Description Field -->
+    <div style="margin-bottom: 0.5rem;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 0.4rem;">
+            <label style="font-size: 0.85rem; color: #4b5563; font-weight: 600;">Description</label>
+            <span style="font-size: 0.75rem; color: #3b82f6;">Character count : 0 / 250</span>
+        </div>
+        <textarea readonly placeholder="Isi deskripsi bebas (contoh: TrackHub Sync)" style="width: 100%; border: 1px solid #d1d5db; border-radius: 2px; padding: 0.5rem; font-family: inherit; font-size: 0.95rem; color: #4b5563; background: #fff; resize: none; outline: none; height: 65px;"></textarea>
+    </div>
+</div>
                             </li>
-                            <li>Pilih durasi <strong>10 Minutes</strong> atau lebih, lalu tuliskan deskripsi bebas, dan klik <strong>Create</strong>. Pilih portal organisasi Anda dan tekan <strong>Accept/Terima</strong>.</li>
+                            <li>Setelah form terisi persis seperti di atas, klik tombol hijau <strong>Create</strong>. Pilih portal organisasi Anda dan tekan <strong>Accept/Terima</strong>.</li>
                             <li>Zoho akan menampilkan kode Authorization sementara (Authorization Code). Segera <em>copy</em> kode tersebut.</li>
                             <li>Buka menu <strong>Settings</strong> di aplikasi TrackHub ini. Pastikan Anda sudah menyalin <strong>Zoho Client ID</strong> dan <strong>Zoho Client Secret</strong>.</li>
                             <li>Pada kotak <strong>Auto-Generate Refresh Token</strong> di menu Settings, <em>Paste</em> kode Authorization sementara tersebut <em>(contoh: <code>1000.e574a13a804f9...</code>)</em>, lalu klik <strong>⚡ Generate</strong>. Token akan otomatis dibuat dan tersimpan!</li>
@@ -181,10 +211,40 @@
                             <li>Open <strong>Zoho API Console</strong> (api-console.zoho.com).</li>
                             <li>Click <strong>Add Client</strong>, then select <strong>Self Client</strong>.</li>
                             <li>Click <strong>Create</strong>. Zoho will provide a <strong>Client ID</strong> and <strong>Client Secret</strong>. <em>Copy</em> both into the Settings tab.</li>
-                            <li>In the Zoho API Console, go to the <strong>Generate Code</strong> tab. Enter the following exact scope:<br>
-<pre style="background: rgba(0,0,0,0.3); padding: 1rem; border-radius: 8px; overflow-x: auto; margin-top: 0.5rem; border: 1px solid rgba(255,255,255,0.05);"><code style="color: #fcd34d;">ZohoProjects.tasks.ALL,ZohoProjects.projects.ALL,ZohoProjects.portals.ALL,ZohoProjects.timelogs.ALL</code></pre>
+                            <li>In the Zoho API Console, go to the <strong>Generate Code</strong> tab. Fill out the form exactly like the illustration below:<br>
+<div style="background: #ffffff; color: #333; padding: 1.5rem; border-radius: 8px; margin: 1rem 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; border: 1px solid #e5e7eb; box-shadow: 0 4px 6px rgba(0,0,0,0.05); max-width: 650px; position: relative;">
+    <div style="position: absolute; top: 0; right: 0; background: #fbbf24; color: #854d0e; font-size: 0.7rem; font-weight: bold; padding: 0.2rem 0.6rem; border-bottom-left-radius: 8px; border-top-right-radius: 8px;">ZOHO API CONSOLE ILLUSTRATION</div>
+    <!-- Scope Field -->
+    <div style="margin-bottom: 1.5rem;">
+        <label style="display: block; font-size: 0.85rem; color: #4b5563; margin-bottom: 0.4rem; font-weight: 600;">Scope</label>
+        <div style="position: relative;">
+            <textarea readonly style="width: 100%; border: 1px solid #3b82f6; border-radius: 2px; padding: 0.5rem; font-family: monospace; font-size: 0.85rem; color: #1f2937; background: #fff; resize: none; outline: none; height: 65px;">ZohoProjects.tasks.ALL,ZohoProjects.projects.ALL,ZohoProjects.portals.ALL,ZohoProjects.timelogs.ALL</textarea>
+            <button onclick="navigator.clipboard.writeText('ZohoProjects.tasks.ALL,ZohoProjects.projects.ALL,ZohoProjects.portals.ALL,ZohoProjects.timelogs.ALL'); const icon = this.querySelector('i'); icon.className='fa-solid fa-check'; this.style.color='#10b981'; setTimeout(() => { icon.className='fa-regular fa-copy'; this.style.color=''; }, 2000);" style="position: absolute; bottom: 0.5rem; right: 0.5rem; background: #f3f4f6; border: 1px solid #d1d5db; color: #4b5563; cursor: pointer; padding: 0.3rem 0.6rem; border-radius: 4px; transition: all 0.2s;" title="Copy to clipboard" onmouseover="this.style.background='#e5e7eb'" onmouseout="this.style.background='#f3f4f6'">
+                <i class="fa-regular fa-copy"></i> Copy
+            </button>
+        </div>
+    </div>
+    
+    <!-- Duration Field -->
+    <div style="margin-bottom: 1.5rem;">
+        <label style="display: block; font-size: 0.85rem; color: #4b5563; margin-bottom: 0.4rem; font-weight: 600;">Code expiry duration</label>
+        <div style="border-bottom: 1px solid #d1d5db; padding: 0.3rem 0; color: #1f2937; display: flex; justify-content: space-between; font-size: 0.95rem;">
+            <span>10 minutes</span>
+            <i class="fa-solid fa-chevron-down" style="color: #9ca3af; font-size: 0.8rem; margin-top: 4px;"></i>
+        </div>
+    </div>
+    
+    <!-- Description Field -->
+    <div style="margin-bottom: 0.5rem;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 0.4rem;">
+            <label style="font-size: 0.85rem; color: #4b5563; font-weight: 600;">Description</label>
+            <span style="font-size: 0.75rem; color: #3b82f6;">Character count : 0 / 250</span>
+        </div>
+        <textarea readonly placeholder="Describe what the access token is for." style="width: 100%; border: 1px solid #d1d5db; border-radius: 2px; padding: 0.5rem; font-family: inherit; font-size: 0.95rem; color: #4b5563; background: #fff; resize: none; outline: none; height: 65px;"></textarea>
+    </div>
+</div>
                             </li>
-                            <li>Select a duration of <strong>10 Minutes</strong> or more, enter any description, and click <strong>Create</strong>. Select your portal and click <strong>Accept</strong>.</li>
+                            <li>Once the form is filled out exactly as shown above, click the green <strong>Create</strong> button. Select your portal and click <strong>Accept</strong>.</li>
                             <li>Zoho will display a temporary Authorization Code. Copy it immediately.</li>
                             <li>Go to the <strong>Settings</strong> menu in this TrackHub app. Make sure you have entered your <strong>Zoho Client ID</strong> and <strong>Zoho Client Secret</strong>.</li>
                             <li>In the <strong>Auto-Generate Refresh Token</strong> box, <em>Paste</em> the temporary Authorization Code <em>(example: <code>1000.e574a13a804f9...</code>)</em> and click <strong>⚡ Generate</strong>. The token will be automatically created and filled!</li>
