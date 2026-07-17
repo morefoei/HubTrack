@@ -75,7 +75,7 @@
                 <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.8rem;">Jika Anda belum memiliki Refresh Token, isi lengkap Client ID & Secret di atas. Lalu *paste* <strong>Authorization Code</strong> Anda dari Zoho ke bawah ini, dan klik Generate.</p>
                 <div style="display: flex; gap: 0.5rem;">
                     <input type="text" id="tempAuthCode" placeholder="Paste kode Authorization Code (misal: 1000.xxxx...)" style="flex: 1; padding: 0.5rem; background: rgba(0,0,0,0.2); border: 1px solid var(--panel-border); color: white; border-radius: 4px;">
-                    <button type="button" id="btnGenerateToken" style="background: var(--primary-color); border: none; padding: 0.5rem 1rem; color: white; border-radius: 4px; cursor: pointer; white-space: nowrap;"><i class="fa-solid fa-bolt"></i> Generate</button>
+                    <button type="button" id="btnGenerateToken" style="background: var(--primary); border: none; padding: 0.5rem 1rem; color: white; border-radius: 4px; cursor: pointer; white-space: nowrap;"><i class="fa-solid fa-bolt"></i> Generate</button>
                 </div>
             </div>
             <div class="form-group">

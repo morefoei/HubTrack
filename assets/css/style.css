@@ -10,6 +10,11 @@
     --warning: #f59e0b;
     --danger: #ef4444;
     --glass-blur: blur(16px);
+    --input-bg: rgba(255, 255, 255, 0.8);
+    --input-border: rgba(15, 23, 42, 0.15);
+    --input-focus: #0ea5e9;
+    --input-shadow: rgba(14, 165, 233, 0.15);
+    --input-text: #0f172a;
 }
 
 * {
@@ -325,9 +330,9 @@ label {
 input, select, textarea {
     width: 100%;
     max-width: 100%;
-    background: rgba(30, 41, 59, 0.4);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    color: var(--text-main);
+    background: var(--input-bg);
+    border: 1px solid var(--input-border);
+    color: var(--input-text);
     padding: 0.85rem 1.2rem;
     border-radius: 0.75rem;
     font-family: inherit;
@@ -341,36 +346,36 @@ textarea {
 }
 
 input:hover, select:hover, textarea:hover {
-    background: rgba(30, 41, 59, 0.6);
-    border-color: rgba(255, 255, 255, 0.15);
+    border-color: var(--input-focus);
 }
 
 input:focus, select:focus, textarea:focus {
     outline: none;
-    border-color: #a855f7;
-    background: rgba(30, 41, 59, 0.8);
-    box-shadow: 0 0 0 4px rgba(168, 85, 247, 0.15), 0 0 12px rgba(168, 85, 247, 0.2);
+    border-color: var(--input-focus);
+    background: var(--input-bg);
+    box-shadow: 0 0 0 4px var(--input-shadow), 0 0 12px var(--input-shadow);
     transform: translateY(-2px);
 }
 
 select option {
-    background: #1e293b;
-    color: var(--text-main);
+    background: var(--panel-bg);
+    color: var(--input-text);
 }
 
 /* Reset for checkboxes */
 input[type="checkbox"] {
-    width: 1rem;
-    height: 1rem;
+    width: 1.1rem;
+    height: 1.1rem;
     padding: 0;
     margin: 0;
     cursor: pointer;
     backdrop-filter: none;
+    accent-color: var(--primary);
 }
 
 input[type="checkbox"]:hover,
 input[type="checkbox"]:focus {
-    transform: none;
+    transform: scale(1.1);
     box-shadow: none;
     background: transparent;
 }
@@ -638,7 +643,7 @@ body[data-lang="id"] .lang-en { display: none !important; }
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: rgba(30, 41, 59, 0.4);
+    background: var(--panel-bg);
     padding: 0.75rem 1.25rem;
     border-radius: 8px;
     border: 1px solid rgba(255, 255, 255, 0.08);
@@ -647,7 +652,7 @@ body[data-lang="id"] .lang-en { display: none !important; }
 }
 
 .task-row:hover {
-    background: rgba(30, 41, 59, 0.8);
+    background: var(--input-bg);
     border-color: rgba(59, 130, 246, 0.4);
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.1);
     transform: translateY(-1px);
@@ -745,6 +750,12 @@ body[data-lang="id"] .lang-en { display: none !important; }
     --panel-bg: rgba(0, 0, 0, 0.4);
     --panel-border: rgba(255, 255, 255, 0.1);
     --text-main: #f8fafc;
+    --text-muted: #f8fafc;
+    --input-bg: rgba(30, 41, 59, 0.4);
+    --input-border: rgba(255, 255, 255, 0.08);
+    --input-focus: #a855f7;
+    --input-shadow: rgba(168, 85, 247, 0.15);
+    --input-text: #f8fafc;
 }
 
 [data-theme="dark"] body {
@@ -794,3 +805,100 @@ body[data-lang="id"] .lang-en { display: none !important; }
     background: rgba(255, 255, 255, 0.2) !important;
     color: #fff !important;
 }
+
+/* Custom Checkbox Label */
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    color: var(--text-main);
+    font-size: 0.9rem;
+    transition: color 0.2s;
+}
+
+.checkbox-label:hover {
+    color: var(--primary);
+}
+
+/* Custom Panel Container (like for exclusions) */
+.exclusion-box {
+    background: var(--panel-bg);
+    padding: 1.25rem;
+    border-radius: 0.75rem;
+    margin-bottom: 1.25rem;
+    align-items: flex-start;
+    border: 1px solid var(--panel-border);
+    backdrop-filter: var(--glass-blur);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+/* Badge Buttons */
+.badge-btn {
+    padding: 3px 8px;
+    font-size: 0.75rem;
+    border-radius: 4px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.2s;
+    font-weight: 600;
+    margin-left: 5px;
+}
+
+/* Light Mode Variations */
+.badge-btn-blue {
+    background: rgba(59, 130, 246, 0.15);
+    color: #1d4ed8;
+    border-color: rgba(59, 130, 246, 0.3);
+}
+.badge-btn-blue:hover { background: rgba(59, 130, 246, 0.25); }
+
+.badge-btn-green {
+    background: rgba(16, 185, 129, 0.15);
+    color: #047857;
+    border-color: rgba(16, 185, 129, 0.3);
+}
+.badge-btn-green:hover { background: rgba(16, 185, 129, 0.25); }
+
+.badge-btn-yellow {
+    background: rgba(245, 158, 11, 0.15);
+    color: #b45309;
+    border-color: rgba(245, 158, 11, 0.3);
+}
+.badge-btn-yellow:hover { background: rgba(245, 158, 11, 0.25); }
+
+.badge-btn-red {
+    background: rgba(244, 63, 94, 0.15);
+    color: #be123c;
+    border-color: rgba(244, 63, 94, 0.3);
+}
+.badge-btn-red:hover { background: rgba(244, 63, 94, 0.25); }
+
+/* Dark Mode Variations */
+[data-theme="dark"] .badge-btn-blue {
+    background: rgba(59, 130, 246, 0.2);
+    color: #93c5fd;
+    border-color: transparent;
+}
+[data-theme="dark"] .badge-btn-blue:hover { background: rgba(59, 130, 246, 0.3); }
+
+[data-theme="dark"] .badge-btn-green {
+    background: rgba(16, 185, 129, 0.2);
+    color: #6ee7b7;
+    border-color: transparent;
+}
+[data-theme="dark"] .badge-btn-green:hover { background: rgba(16, 185, 129, 0.3); }
+
+[data-theme="dark"] .badge-btn-yellow {
+    background: rgba(245, 158, 11, 0.2);
+    color: #fcd34d;
+    border-color: transparent;
+}
+[data-theme="dark"] .badge-btn-yellow:hover { background: rgba(245, 158, 11, 0.3); }
+
+[data-theme="dark"] .badge-btn-red {
+    background: rgba(244, 63, 94, 0.2);
+    color: #fda4af;
+    border-color: transparent;
+}
+[data-theme="dark"] .badge-btn-red:hover { background: rgba(244, 63, 94, 0.3); }

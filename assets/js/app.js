@@ -333,6 +333,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 monthlyChartInstance.destroy();
             }
             if (window.Chart) {
+                const rootStyles = getComputedStyle(document.body);
+                const textColor = rootStyles.getPropertyValue('--text-main').trim() || '#0f172a';
+                const gridColor = rootStyles.getPropertyValue('--panel-border').trim() || 'rgba(0,0,0,0.1)';
+
                 monthlyChartInstance = new Chart(ctx, {
                     type: 'line',
                     data: {
@@ -353,11 +357,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         responsive: true,
                         maintainAspectRatio: false,
                         scales: {
-                            y: { beginAtZero: true, ticks: { stepSize: 1, color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } },
-                            x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+                            y: { beginAtZero: true, ticks: { stepSize: 1, color: textColor }, grid: { color: gridColor } },
+                            x: { ticks: { color: textColor }, grid: { color: gridColor } }
                         },
                         plugins: {
-                            legend: { labels: { color: '#f8fafc', font: { family: 'Inter' } } }
+                            legend: { labels: { color: textColor, font: { family: 'Inter' } } }
                         }
                     }
                 });
@@ -527,15 +531,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td><div style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${safeNotes}">${safeNotes}</div></td>
                 <td>
                     ${log.status === 'done' ? 
-                        `<select class="status-dropdown status-badge status-done" data-rowindex="${log.rowIndex}" data-prev="done" style="cursor: pointer; outline: none; appearance: none; -webkit-appearance: none; padding-right: 1.5rem; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23ffffff%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right .4rem top 50%; background-size: .5rem auto;">
-                            <option value="done" selected style="background: #1e293b; color: #34d399;">done</option>
-                            <option value="pending" style="background: #1e293b; color: #fcd34d;">pending</option>
-                            <option value="final" style="background: #1e293b; color: #93c5fd;">final</option>
+                        `<select class="status-dropdown status-badge status-done" data-rowindex="${log.rowIndex}" data-prev="done" style="cursor: pointer;">
+                            <option value="done" selected>done</option>
+                            <option value="pending">pending</option>
+                            <option value="final">final</option>
                         </select>` :
-                        `<select class="status-dropdown status-badge ${statusClass}" data-prev="${sanitizeHTML(log.status)}" data-rowindex="${log.rowIndex}" style="cursor: pointer; outline: none; appearance: none; -webkit-appearance: none; padding-right: 1.5rem; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23ffffff%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right .4rem top 50%; background-size: .5rem auto;">
-                            <option value="pending" ${log.status !== 'final' ? 'selected' : ''} style="background: #1e293b; color: #fcd34d;">pending</option>
-                            <option value="final" ${log.status === 'final' ? 'selected' : ''} style="background: #1e293b; color: #93c5fd;">final</option>
-                            <option value="done" style="background: #1e293b; color: #34d399;">done</option>
+                        `<select class="status-dropdown status-badge ${statusClass}" data-prev="${sanitizeHTML(log.status)}" data-rowindex="${log.rowIndex}" style="cursor: pointer;">
+                            <option value="pending" ${log.status !== 'final' ? 'selected' : ''}>pending</option>
+                            <option value="final" ${log.status === 'final' ? 'selected' : ''}>final</option>
+                            <option value="done">done</option>
                         </select>`
                     }
                 </td>
@@ -4351,4 +4355,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initialize routing after all functions are defined
     initRouting();
+
+    window.addEventListener('themeChanged', () => {
+        if (typeof currentLogs !== 'undefined' && currentLogs && document.getElementById('analytics-view').classList.contains('active')) {
+            updateAnalytics(currentLogs);
+        }
+    });
 });

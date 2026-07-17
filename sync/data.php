@@ -3,15 +3,15 @@
                 <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
                     <h2 class="card-title">Current Logs</h2>
                     <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
-                        <select id="filterLogStatus" style="padding: 0.5rem; border-radius: 4px; border: 1px solid var(--panel-border); background: #1e293b; color: var(--text-main); width: auto; min-width: 140px;">
+                        <select id="filterLogStatus" style="padding: 0.5rem; border-radius: 4px; border: 1px solid var(--panel-border); width: auto; min-width: 140px;">
                             <option value="all">Semua Status</option>
                             <option value="pending" style="color: #fcd34d;">Pending</option>
                             <option value="final" style="color: #93c5fd;">Final</option>
                             <option value="done" style="color: #10b981;">Done</option>
                         </select>
-                        <select id="bulkStatusSelect" style="padding: 0.5rem; border-radius: 4px; border: 1px solid var(--panel-border); background: #1e293b; color: var(--text-main); width: auto; min-width: 120px;">
-                            <option value="final" style="background: #1e293b; color: #93c5fd;">Final</option>
-                            <option value="pending" style="background: #1e293b; color: #fcd34d;">Pending</option>
+                        <select id="bulkStatusSelect" style="padding: 0.5rem; border-radius: 4px; border: 1px solid var(--panel-border); width: auto; min-width: 120px;">
+                            <option value="final" style="color: #93c5fd;">Final</option>
+                            <option value="pending" style="color: #fcd34d;">Pending</option>
                         </select>
                         <button id="btnBulkStatus" class="secondary" style="margin: 0; padding: 0.5rem 1rem;"><i class="fa-solid fa-check-double"></i> <span class="lang-en">Set Status</span><span class="lang-id">Ubah Status</span></button>
                         <button id="btnExportCSV" class="secondary" style="margin: 0; padding: 0.5rem 1rem; background: #10b981; border-color: #10b981; color: white;"><i class="fa-solid fa-file-csv"></i> Export CSV</button>
@@ -21,14 +21,14 @@
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
                     <div style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-muted); font-size: 0.9rem; flex-wrap: wrap;">
                         Tampilkan 
-                        <select id="logsPerPage" style="padding: 0.4rem 2rem 0.4rem 0.8rem; border-radius: 6px; border: 1px solid var(--panel-border); background: #1e293b; color: var(--text-main); width: auto; font-size: 0.9rem; appearance: auto; cursor: pointer;">
+                        <select id="logsPerPage" style="padding: 0.4rem 2rem 0.4rem 0.8rem; border-radius: 6px; border: 1px solid var(--panel-border); width: auto; font-size: 0.9rem; appearance: auto; cursor: pointer;">
                             <option value="10">10</option>
                             <option value="25">25</option>
                             <option value="50">50</option>
                             <option value="100">100</option>
                         </select>
                         baris
-                        <select id="filterLogMonth" style="padding: 0.4rem 2.5rem 0.4rem 0.8rem; border-radius: 6px; border: 1px solid var(--panel-border); background: #1e293b; color: var(--text-main); cursor: pointer; min-width: 150px; width: auto; font-size: 0.9rem; appearance: auto;">
+                        <select id="filterLogMonth" style="padding: 0.4rem 2.5rem 0.4rem 0.8rem; border-radius: 6px; border: 1px solid var(--panel-border); cursor: pointer; min-width: 150px; width: auto; font-size: 0.9rem; appearance: auto;">
                             <option value="all">Semua Bulan</option>
                             <option value="01">Januari</option>
                             <option value="02">Februari</option>

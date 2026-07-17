@@ -130,6 +130,9 @@ $base_url = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/\\') . '/';
                 } else {
                     icon.className = 'fa-solid fa-moon';
                 }
+                
+                // Trigger event so chart can re-render
+                window.dispatchEvent(new Event('themeChanged'));
             }
             
             // Set initial icon on load

@@ -32,7 +32,7 @@
                         <button id="btnCreateRootTask" style="padding: 0.4rem 0.8rem; font-size: 0.85rem; white-space: nowrap; width: auto;"><i class="fa-solid fa-plus"></i> New Main Task</button>
                     </div>
                 </div>
-                <div id="taskManagerContainer" style="background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 8px; border: 1px solid var(--panel-border); min-height: 200px;">
+                <div id="taskManagerContainer" style="background: var(--panel-bg); padding: 1rem; border-radius: 8px; border: 1px solid var(--panel-border); min-height: 200px; backdrop-filter: var(--glass-blur); box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
                     <p style="color: var(--text-muted); text-align: center; margin-top: 2rem;">Pilih Project dan klik Load Tasks untuk melihat daftar Task.</p>
                 </div>
             </div>

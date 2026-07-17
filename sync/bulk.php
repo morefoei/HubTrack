@@ -14,29 +14,29 @@
                     <input type="date" id="bulkEndDate" required>
                 </div>
             </div>
-            <div class="form-row" style="background: rgba(0,0,0,0.15); padding: 1rem; border-radius: 8px; margin-bottom: 1rem; align-items: flex-start; border: 1px solid rgba(255,255,255,0.05);">
+            <div class="form-row exclusion-box">
                 <div style="flex: 1; display: flex; flex-direction: column; gap: 0.8rem;">
                     <label style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600; margin: 0;">Opsi Pengecualian (Exclude)</label>
-                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: var(--text-main); font-size: 0.9rem; transition: color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--text-main)'">
-                        <input type="checkbox" id="bulkExcludeWeekends" checked style="width: auto;">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="bulkExcludeWeekends" checked>
                         Lewati Sabtu & Minggu (Exclude Weekends)
                     </label>
-                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: var(--text-main); font-size: 0.9rem; transition: color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--text-main)'">
-                        <input type="checkbox" id="bulkExcludeHolidays" checked style="width: auto;">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="bulkExcludeHolidays" checked>
                         Lewati Libur Nasional (Auto-Fetch Tanggal Merah)
                     </label>
                 </div>
                 <div style="flex: 1; display: flex; flex-direction: column; gap: 0.5rem; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 1.5rem;">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                         <label style="font-size: 0.85rem; color: var(--text-muted); margin: 0; font-weight: 600;">Exclude Tanggal Cuti Tambahan</label>
-                        <button type="button" id="btnAddExcludeDate" style="padding: 3px 8px; font-size: 0.75rem; background: rgba(244,63,94,0.15); color: #fda4af; border: 1px solid rgba(244,63,94,0.3); border-radius: 4px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='rgba(244,63,94,0.25)'" onmouseout="this.style.background='rgba(244,63,94,0.15)'">+ Tambah Tanggal</button>
+                        <button type="button" id="btnAddExcludeDate" class="badge-btn badge-btn-red">+ Tambah Tanggal</button>
                     </div>
                     <div id="dynamicExcludeDatesContainer" style="display: flex; flex-direction: column; gap: 0.4rem;"></div>
                 </div>
                 <div style="flex: 1; display: flex; flex-direction: column; gap: 0.5rem; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 1.5rem;">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                         <label style="font-size: 0.85rem; color: var(--text-muted); margin: 0; font-weight: 600;">Lembur Hari Libur</label>
-                        <button type="button" id="btnAddIncludeDate" style="padding: 3px 8px; font-size: 0.75rem; background: rgba(34,197,94,0.15); color: #86efac; border: 1px solid rgba(34,197,94,0.3); border-radius: 4px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='rgba(34,197,94,0.25)'" onmouseout="this.style.background='rgba(34,197,94,0.15)'">+ Tambah Tanggal</button>
+                        <button type="button" id="btnAddIncludeDate" class="badge-btn badge-btn-green">+ Tambah Tanggal</button>
                     </div>
                     <div id="dynamicIncludeDatesContainer" style="display: flex; flex-direction: column; gap: 0.4rem;"></div>
                 </div>
@@ -67,14 +67,14 @@
                     </div>
                     <div class="form-group" style="flex: 1;">
                         <label>Project Name
-                            <button type="button" class="btn-add-task" style="padding: 2px 6px; font-size: 0.7rem; margin-left: 5px; background: rgba(59,130,246,0.2); color: #93c5fd; border: none; border-radius: 4px; cursor: pointer;" title="Tambah Task baru untuk Proyek ini">+ Task</button>
-                            <button type="button" class="btn-add-both" style="padding: 2px 6px; font-size: 0.7rem; margin-left: 2px; background: rgba(16,185,129,0.2); color: #6ee7b7; border: none; border-radius: 4px; cursor: pointer;" title="Tambah Baris Kosong Baru">+ Baru</button>
+                            <button type="button" class="badge-btn badge-btn-blue btn-add-task" title="Tambah Task baru untuk Proyek ini">+ Task</button>
+                            <button type="button" class="badge-btn badge-btn-green btn-add-both" title="Tambah Baris Kosong Baru">+ Baru</button>
                         </label>
                         <input type="text" class="bulkProjectName" list="zohoProjectsList" placeholder="Ketik atau pilih dari list..." required autocomplete="off">
                     </div>
                     <div class="form-group" style="flex: 1; position: relative;">
                         <label>Task Name
-                            <button type="button" class="btn-add-project" style="padding: 2px 6px; font-size: 0.7rem; margin-left: 5px; background: rgba(245,158,11,0.2); color: #fcd34d; border: none; border-radius: 4px; cursor: pointer;" title="Tambah Proyek baru untuk Task ini">+ Proyek</button>
+                            <button type="button" class="badge-btn badge-btn-yellow btn-add-project" title="Tambah Proyek baru untuk Task ini">+ Proyek</button>
                         </label>
                         <input type="text" class="bulkTaskName" list="zohoTasksList" autocomplete="off" placeholder="Main Task" required style="width: 100%;">
                     </div>
@@ -92,7 +92,7 @@
                 <textarea id="bulkNotes" rows="2" required></textarea>
             </div>
             <div class="form-group" style="margin-top: 1rem;">
-                <label>Catatan Khusus per Tanggal <button type="button" id="btnAddSpecificNote" style="padding: 2px 6px; font-size: 0.7rem; margin-left: 5px; background: rgba(59,130,246,0.2); color: #93c5fd; border: none; border-radius: 4px; cursor: pointer;" title="Tambah catatan khusus untuk tanggal tertentu">+ Tambah</button></label>
+                <label>Catatan Khusus per Tanggal <button type="button" id="btnAddSpecificNote" class="badge-btn badge-btn-blue" title="Tambah catatan khusus untuk tanggal tertentu">+ Tambah</button></label>
                 <div id="dynamicSpecificNotesContainer" style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.5rem;">
                 </div>
             </div>

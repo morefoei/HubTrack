@@ -3,7 +3,7 @@
                 <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; border-bottom: none; padding-bottom: 0;">
                     <h2 class="card-title" style="margin: 0;"><i class="fa-solid fa-chart-line" style="color: var(--primary);"></i> Statistik Input</h2>
                     <div style="display: flex; gap: 0.5rem;">
-                        <select id="analyticsMonth" style="padding: 0.5rem; border-radius: 4px; border: 1px solid var(--panel-border); background: #1e293b; color: var(--text-main); width: auto;">
+                        <select id="analyticsMonth" style="padding: 0.5rem; border-radius: 4px; border: 1px solid var(--panel-border); width: auto;">
                             <option value="all">Semua Bulan</option>
                             <option value="01">Januari</option>
                             <option value="02">Februari</option>
@@ -18,7 +18,7 @@
                             <option value="11">November</option>
                             <option value="12">Desember</option>
                         </select>
-                        <select id="analyticsYear" style="padding: 0.5rem; border-radius: 4px; border: 1px solid var(--panel-border); background: #1e293b; color: var(--text-main); width: auto;">
+                        <select id="analyticsYear" style="padding: 0.5rem; border-radius: 4px; border: 1px solid var(--panel-border); width: auto;">
                             <option value="all">Semua Tahun</option>
                             <option value="2023">2023</option>
                             <option value="2024">2024</option>

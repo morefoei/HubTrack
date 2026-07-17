@@ -47,15 +47,15 @@
                             </div>
                             <div class="form-group" style="flex: 1; position: relative;">
                                 <label>Project Name 
-                                    <button type="button" class="btn-add-single-task add-btn-daily" style="padding: 2px 6px; font-size: 0.7rem; margin-left: 5px; background: rgba(59,130,246,0.2); color: #93c5fd; border: none; border-radius: 4px; cursor: pointer;" title="Tambah Task baru untuk Proyek ini">+ Task</button>
-                                    <button type="button" class="btn-add-single-both add-btn-daily" style="padding: 2px 6px; font-size: 0.7rem; margin-left: 2px; background: rgba(16,185,129,0.2); color: #6ee7b7; border: none; border-radius: 4px; cursor: pointer;" title="Tambah Baris Kosong Baru">+ Baru</button>
+                                    <button type="button" class="badge-btn badge-btn-blue btn-add-single-task add-btn-daily" title="Tambah Task baru untuk Proyek ini">+ Task</button>
+                                    <button type="button" class="badge-btn badge-btn-green btn-add-single-both add-btn-daily" title="Tambah Baris Kosong Baru">+ Baru</button>
                                     <button type="button" class="refreshProjectsBtn" style="background: none; border: none; color: var(--primary); padding: 0; margin-left: 0.5rem; cursor: pointer; font-size: 0.8rem;" title="Ambil list project dari Zoho"><i class="fa-solid fa-rotate"></i> Load Projects</button>
                                 </label>
                                 <input type="text" class="singleProjectName" list="zohoProjectsList" placeholder="Ketik atau pilih dari list..." required autocomplete="off">
                             </div>
                             <div class="form-group" style="flex: 1; position: relative;">
                                 <label>Task Name
-                                    <button type="button" class="btn-add-single-project add-btn-daily" style="padding: 2px 6px; font-size: 0.7rem; margin-left: 5px; background: rgba(245,158,11,0.2); color: #fcd34d; border: none; border-radius: 4px; cursor: pointer;" title="Tambah Proyek baru untuk Task ini">+ Proyek</button>
+                                    <button type="button" class="badge-btn badge-btn-yellow btn-add-single-project add-btn-daily" title="Tambah Proyek baru untuk Task ini">+ Proyek</button>
                                 </label>
                                 <input type="text" class="singleTaskName" list="zohoTasksList" autocomplete="off" placeholder="Main Task" required style="width: 100%;">
                             </div>
