@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "Auto Absen Sync-Work",
+  "version": "1.0",
+  "description": "Ekstensi ringan untuk otomatis memicu script absen Anda tanpa membebani browser.",
+  "permissions": [
+    "alarms",
+    "storage",
+    "tabs"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "options.html",
+    "default_icon": {
+      "48": "icon.png",
+      "128": "icon.png"
+    }
+  },
+  "icons": {
+    "48": "icon.png",
+    "128": "icon.png"
+  }
+}

@@ -96,8 +96,11 @@
         <!-- Tabel Daftar Rencana -->
         <div style="flex: 2; min-width: 400px;">
             <div class="card">
-                <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 1rem; margin-bottom: 1.5rem;">
+                <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
                     <h3 style="color: var(--text-main); display: flex; align-items: center; gap: 0.5rem; margin: 0; font-weight: 700;"><i class="fa-solid fa-list-check" style="color: #a855f7;"></i> Daftar Rencana Absensi</h3>
+                    <button id="btnDownloadEkstensi" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); padding: 0.4rem 0.8rem; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.2s;">
+                        <i class="fa-brands fa-chrome"></i> Download Ekstensi Auto Absen
+                    </button>
                 </div>
                 <div class="table-responsive">
                     <table class="data-table">
@@ -131,4 +134,52 @@
             </div>
         </div>
     </div>
+
+    <!-- Modal Panduan Ekstensi -->
+    <div id="ekstensiModal" style="display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); backdrop-filter: blur(4px);">
+        <div style="background-color: var(--card-bg); margin: 5% auto; padding: 2rem; border: 1px solid var(--border); width: 90%; max-width: 600px; border-radius: 12px; color: var(--text-main); box-shadow: 0 10px 25px rgba(0,0,0,0.5); position: relative;">
+            <span id="closeEkstensiModal" style="color: var(--text-muted); position: absolute; right: 20px; top: 15px; font-size: 28px; font-weight: bold; cursor: pointer; transition: color 0.2s;">&times;</span>
+            
+            <h2 style="margin-top: 0; margin-bottom: 1.5rem; color: #10b981; font-weight: 700;">
+                <i class="fa-brands fa-chrome" style="margin-right: 8px;"></i> Instalasi Ekstensi Auto Absen
+            </h2>
+            
+            <p style="font-size: 0.95rem; line-height: 1.6; margin-bottom: 1.5rem;">
+                Gunakan ekstensi ini sebagai pengganti Cron Job. Ekstensi ini akan memicu <strong>cron_absen.php</strong> di hosting Anda secara otomatis setiap hari tanpa membebani laptop.
+            </p>
+            
+            <ol style="line-height: 1.8; padding-left: 1.5rem; font-size: 0.95rem; margin-bottom: 2rem;">
+                <li>Klik tombol <strong>Download (.zip)</strong> di bawah ini untuk mengunduh.</li>
+                <li><strong>Ekstrak (Unzip)</strong> file <code style="background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px;">absen-extension.zip</code> yang telah diunduh.</li>
+                <li>Buka Google Chrome, ketik <code style="background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px;">chrome://extensions/</code> di URL, dan tekan Enter.</li>
+                <li>Aktifkan <strong>Developer mode</strong> (Mode Pengembang) di pojok kanan atas.</li>
+                <li>Klik tombol <strong>Load unpacked</strong> dan pilih folder hasil ekstrak tadi.</li>
+                <li>Klik ikon ekstensi di pojok kanan atas browser untuk mengatur pada jam berapa absen harus dijalankan setiap harinya.</li>
+            </ol>
+            
+            <div style="text-align: right; border-top: 1px solid var(--border); padding-top: 1.5rem;">
+                <a href="absen-extension.zip" download="absen-extension.zip" style="background: linear-gradient(90deg, #10b981, #059669); color: white; padding: 0.8rem 1.5rem; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-block; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);">
+                    <i class="fa-solid fa-download" style="margin-right: 8px;"></i> Download (.zip)
+                </a>
+            </div>
+        </div>
+    </div>
 </section>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const btn = document.getElementById('btnDownloadEkstensi');
+    const modal = document.getElementById('ekstensiModal');
+    const closeBtn = document.getElementById('closeEkstensiModal');
+    
+    if(btn && modal && closeBtn) {
+        btn.addEventListener('click', () => modal.style.display = 'block');
+        closeBtn.addEventListener('click', () => modal.style.display = 'none');
+        
+        // Close when clicking outside
+        window.addEventListener('click', (e) => {
+            if (e.target === modal) modal.style.display = 'none';
+        });
+    }
+});
+</script>
