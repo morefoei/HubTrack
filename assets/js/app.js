@@ -226,7 +226,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('logs-view').classList.add('active');
             }
 
-            document.getElementById('profileNameDisplay').innerText = userProfile || 'Profile';
             return true;
         } catch (err) {
             return false;

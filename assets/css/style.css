@@ -792,9 +792,20 @@ body[data-lang="id"] .lang-en { display: none !important; }
 }
 
 [data-theme="dark"] .logo,
-[data-theme="dark"] .top-action-btn {
+[data-theme="dark"] .top-action-btn,
+[data-theme="dark"] .nav-btn,
+[data-theme="dark"] .nav-dropdown-summary {
     color: #f8fafc !important;
     border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+[data-theme="dark"] .nav-btn:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="dark"] .nav-btn.active {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff !important;
 }
 
 [data-theme="dark"] .top-action-btn:hover {

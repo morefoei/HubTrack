@@ -8,15 +8,15 @@ $base_url = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/\\') . '/';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TrackHub</title>
-    <link rel="icon" type="image/png" href="assets/css/img/logo.png">
+    <link rel="icon" type="image/png" href="<?= $base_url ?>assets/css/img/logo.png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="assets/css/style.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="<?= $base_url ?>assets/css/style.css?v=<?= time() ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <!-- PWA / Android App Integration -->
-    <link rel="manifest" href="components/pwa/manifest.json">
+    <link rel="manifest" href="<?= $base_url ?>components/pwa/manifest.json">
     <meta name="theme-color" content="#0f172a">
-    <link rel="apple-touch-icon" href="assets/css/img/logo.png">
+    <link rel="apple-touch-icon" href="<?= $base_url ?>assets/css/img/logo.png">
     <script>
         const BASE_URL = '<?= $base_url ?>';
         if (!sessionStorage.getItem('zohoProfile') || !sessionStorage.getItem('zohoPassword')) {
@@ -32,7 +32,7 @@ $base_url = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/\\') . '/';
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('components/pwa/sw.js', { scope: '/' })
+                navigator.serviceWorker.register('<?= $base_url ?>components/pwa/sw.js', { scope: '<?= $base_url ?>' })
                     .then(registration => {
                         console.log('ServiceWorker registration successful with scope: ', registration.scope);
                     }, err => {
@@ -101,6 +101,8 @@ $base_url = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/\\') . '/';
                 <button id="themeToggleBtn" class="top-action-btn" title="Ganti Mode Malam/Siang" onclick="toggleTheme()">
                     <i class="fa-solid fa-moon" id="themeIcon"></i>
                 </button>
+                <div id="dateTimeDisplay" style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500; text-align: right; line-height: 1.2; padding-right: 0.5rem; border-right: 1px solid var(--panel-border); display: none;">
+                </div>
                 <button id="profileDisplay" class="top-action-btn profile-btn" title="Logout Aplikasi">
                     <span id="profilePicDisplay"><i class="fa-solid fa-user"></i></span>
                     <span id="profileNameDisplay">Profile</span> 
@@ -108,12 +110,38 @@ $base_url = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/\\') . '/';
                 </button>
                 <script>
                     (function() {
-                        var pic = sessionStorage.getItem('zohoPicture');
                         var name = sessionStorage.getItem('zohoProfile') || 'Profile';
                         
-                        // Aman dari XSS karena textContent memaksa render sebagai teks murni
-                        document.getElementById('profileNameDisplay').textContent = name;
+                        function updateDateTime() {
+                            var now = new Date();
+                            var optionsDate = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+                            var dateStr = now.toLocaleDateString('id-ID', optionsDate);
+                            var timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                            
+                            var hour = now.getHours();
+                            var greeting = 'Selamat Malam';
+                            if (hour >= 5 && hour < 11) greeting = 'Selamat Pagi';
+                            else if (hour >= 11 && hour < 15) greeting = 'Selamat Siang';
+                            else if (hour >= 15 && hour < 18) greeting = 'Selamat Sore';
+                            
+                            var dtDisplay = document.getElementById('dateTimeDisplay');
+                            if (dtDisplay) {
+                                dtDisplay.style.display = 'block';
+                                // Aman dari XSS karena dateStr & timeStr murni output dari object Date bawaan JS
+                                dtDisplay.innerHTML = `<div>${dateStr}</div><div style="font-size:0.75rem; color: var(--primary); margin-top:2px;">${timeStr}</div>`;
+                            }
+                            
+                            var profileNameDisplay = document.getElementById('profileNameDisplay');
+                            if (profileNameDisplay) {
+                                // Aman dari XSS karena textContent memaksa render sebagai teks murni
+                                profileNameDisplay.textContent = greeting + ', ' + name;
+                            }
+                        }
                         
+                        updateDateTime();
+                        setInterval(updateDateTime, 1000);
+                        
+                        var pic = sessionStorage.getItem('zohoPicture');
                         if (pic && pic !== 'undefined' && pic.trim() !== '') {
                             // Validasi URL hanya boleh http/https untuk mencegah javascript: URI XSS
                             if (pic.startsWith('http')) {
@@ -201,8 +229,8 @@ $base_url = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/\\') . '/';
     <datalist id="zohoProjectsList"></datalist>
     <datalist id="zohoTasksList"></datalist>
 
-    <script src="assets/js/lang.js?v=<?= time() ?>"></script>
-    <script src="assets/js/app.js?v=<?php echo time(); ?>"></script>
+    <script src="<?= $base_url ?>assets/js/lang.js?v=<?= time() ?>"></script>
+    <script src="<?= $base_url ?>assets/js/app.js?v=<?php echo time(); ?>"></script>
 </body>
 
 </html>
