@@ -2,7 +2,7 @@
     <div style="display: flex; gap: 1.5rem; flex-wrap: wrap;">
         <!-- Form Buat Rencana -->
         <div style="flex: 1; min-width: 300px;">
-            <div class="card" style="position: sticky; top: 1.5rem; background: linear-gradient(180deg, var(--panel-bg) 0%, rgba(30,41,59,0.5) 100%); border: 1px solid rgba(255,255,255,0.05); box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
+            <div class="card" style="position: sticky; top: 1.5rem;">
                 <div class="card-header" style="border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 1rem; margin-bottom: 1.5rem;">
                     <h2 class="card-title" style="font-weight: 700; background: linear-gradient(90deg, #60a5fa, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent;"><i class="fa-solid fa-plus-circle" style="color: #60a5fa; -webkit-text-fill-color: initial;"></i> Buat Rencana Absensi</h2>
                 </div>
@@ -95,7 +95,7 @@
 
         <!-- Tabel Daftar Rencana -->
         <div style="flex: 2; min-width: 400px;">
-            <div class="card" style="background: linear-gradient(180deg, var(--panel-bg) 0%, rgba(30,41,59,0.5) 100%); border: 1px solid rgba(255,255,255,0.05); box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
+            <div class="card">
                 <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 1rem; margin-bottom: 1.5rem;">
                     <h3 style="color: var(--text-main); display: flex; align-items: center; gap: 0.5rem; margin: 0; font-weight: 700;"><i class="fa-solid fa-list-check" style="color: #a855f7;"></i> Daftar Rencana Absensi</h3>
                 </div>
@@ -118,7 +118,7 @@
     </div>
 
     <!-- Preview Google Form -->
-    <div class="card" style="margin-top: 1.5rem; height: 600px; display: flex; flex-direction: column; background: rgba(30,41,59,0.3); border: 1px solid rgba(255,255,255,0.05);">
+    <div class="card" style="margin-top: 1.5rem; height: 600px; display: flex; flex-direction: column;">
         <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 1rem; margin-bottom: 1rem;">
             <h3 style="color: var(--text-main); margin: 0; font-weight: 700;"><i class="fa-brands fa-google" style="color: #60a5fa;"></i> Preview Google Form</h3>
             <a id="absenNewTabBtn" href="#" target="_blank" style="display: none; background: rgba(59,130,246,0.15); color: #60a5fa; border: 1px solid rgba(59,130,246,0.3); padding: 0.4rem 0.8rem; border-radius: 6px; text-decoration: none; font-size: 0.85rem; font-weight: 600; transition: all 0.2s;"><i class="fa-solid fa-arrow-up-right-from-square"></i> Buka di Tab Baru</a>

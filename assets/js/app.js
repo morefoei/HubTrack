@@ -1299,7 +1299,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     tr.innerHTML = `
                         <td>${tglDisplay} ${plan.status === 'done' ? '<span class="absen-done-badge" style="margin-left: 0.5rem; background: rgba(16, 185, 129, 0.15); color: #34d399; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;"><i class="fa-solid fa-check"></i> Selesai</span>' : ''}</td>
                         <td>
-                            <select class="select-edit-plan-type" data-id="${plan.id}" style="background: rgba(168,85,247,0.1); color: #c084fc; border: 1px solid rgba(168,85,247,0.3); padding: 0.3rem 0.6rem; border-radius: 6px; font-size: 0.85rem; font-weight: 500; cursor: pointer; outline: none; transition: all 0.2s;">
+                            <select class="select-edit-plan-type" data-id="${plan.id}" style="padding: 0.3rem 0.6rem; border-radius: 6px; font-size: 0.85rem; font-weight: 500;">
                                 <option value="Sakit" ${plan.planType === 'Sakit' ? 'selected' : ''}>Sakit</option>
                                 <option value="Izin" ${plan.planType === 'Izin' ? 'selected' : ''}>Izin</option>
                                 <option value="Cuti Tahunan" ${plan.planType === 'Cuti Tahunan' ? 'selected' : ''}>Cuti Tahunan</option>
@@ -1310,9 +1310,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         </td>
                         <td>
                             <div style="display: flex; gap: 0.5rem; align-items: center; white-space: nowrap;">
-                                <button class="btn-auto-submit-absen" data-id="${plan.id}" title="Submit Otomatis ke Google Form" style="background: linear-gradient(90deg, rgba(59,130,246,0.15), rgba(59,130,246,0.05)); color: #60a5fa; border: 1px solid rgba(59,130,246,0.3); padding: 0.4rem 0.8rem; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.2s;"><i class="fa-solid fa-paper-plane"></i> Auto Submit</button>
-                                <button class="btn-open-absen" data-id="${plan.id}" title="Buka Form" style="background: linear-gradient(90deg, rgba(16,185,129,0.15), rgba(16,185,129,0.05)); color: #34d399; border: 1px solid rgba(16,185,129,0.3); padding: 0.4rem 0.6rem; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.2s;"><i class="fa-solid fa-arrow-up-right-from-square"></i></button>
-                                <button class="btn-del-absen" data-id="${plan.id}" style="background: rgba(239,68,68,0.1); color: #ef4444; border: 1px solid rgba(239,68,68,0.2); padding: 0.4rem 0.6rem; border-radius: 6px; cursor: pointer; transition: all 0.2s;"><i class="fa-solid fa-trash"></i></button>
+                                <button class="badge-btn badge-btn-blue btn-auto-submit-absen" data-id="${plan.id}" title="Submit Otomatis ke Google Form"><i class="fa-solid fa-paper-plane"></i> Auto Submit</button>
+                                <button class="badge-btn badge-btn-green btn-open-absen" data-id="${plan.id}" title="Buka Form"><i class="fa-solid fa-arrow-up-right-from-square"></i></button>
+                                <button class="badge-btn badge-btn-red btn-del-absen" data-id="${plan.id}"><i class="fa-solid fa-trash"></i></button>
                             </div>
                         </td>
                     `;
