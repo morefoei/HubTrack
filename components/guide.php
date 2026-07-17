@@ -4,21 +4,65 @@
                     <h2 class="card-title"><i class="fa-solid fa-book-open" style="color: var(--primary-color);"></i> Dokumentasi Instalasi & Penggunaan TrackHub</h2>
                 </div>
                 <div style="padding: 1rem; max-height: 70vh; overflow-y: auto;">
+                    
+                    <style>
+                        .guide-mode-toggle { display: flex; gap: 1rem; margin-bottom: 1.5rem; }
+                        .guide-mode-btn { flex: 1; background: var(--panel-bg); border: 1px solid var(--panel-border); border-radius: 12px; padding: 1rem; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; gap: 1rem; position: relative; overflow: hidden; }
+                        .guide-mode-btn:hover { background: rgba(255,255,255,0.05); transform: translateY(-2px); }
+                        .guide-mode-btn.active { background: rgba(168, 85, 247, 0.08); border-color: #a855f7; box-shadow: 0 4px 20px rgba(0,0,0,0.15); }
+                        .guide-mode-btn.active::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: #a855f7; }
+                        .guide-mode-btn.manual.active { background: rgba(59, 130, 246, 0.08); border-color: #3b82f6; }
+                        .guide-mode-btn.manual.active::before { background: #3b82f6; }
+                        .guide-mode-icon { font-size: 1.5rem; color: var(--text-muted); background: rgba(0,0,0,0.2); width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; border-radius: 10px; transition: all 0.3s ease; }
+                        .guide-mode-btn.active .guide-mode-icon { color: #c084fc; background: rgba(168, 85, 247, 0.2); }
+                        .guide-mode-btn.manual.active .guide-mode-icon { color: #60a5fa; background: rgba(59, 130, 246, 0.2); }
+                        .guide-mode-text h4 { margin: 0 0 0.2rem 0; font-size: 1rem; color: var(--text-main); font-weight: 600; }
+                        .guide-mode-text p { margin: 0; font-size: 0.8rem; color: var(--text-muted); }
+                        .guide-mode-btn.active .guide-mode-text h4 { color: #c084fc; }
+                        .guide-mode-btn.manual.active .guide-mode-text h4 { color: #60a5fa; }
+                        @media (max-width: 600px) { .guide-mode-toggle { flex-direction: column; } }
+                    </style>
+
+                    <div style="margin-bottom: 2rem;">
+                        <label style="display: block; font-weight: 500; color: var(--text-main); margin-bottom: 1rem; font-size: 1.05rem;"><i class="fa-solid fa-sliders" style="color: var(--primary); margin-right: 0.5rem;"></i> Sesuaikan Panduan dengan Mode Anda:</label>
+                        <div class="guide-mode-toggle">
+                            <div class="guide-mode-btn active" data-mode="auto">
+                                <div class="guide-mode-icon"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+                                <div class="guide-mode-text">
+                                    <h4>Otomatis (Ikuti Admin)</h4>
+                                    <p>Sangat Disarankan, Praktis</p>
+                                </div>
+                            </div>
+                            <div class="guide-mode-btn manual" data-mode="manual">
+                                <div class="guide-mode-icon"><i class="fa-solid fa-screwdriver-wrench"></i></div>
+                                <div class="guide-mode-text">
+                                    <h4>Manual Settings</h4>
+                                    <p>Gunakan Google Sheet Sendiri</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="font-size: 0.85rem; color: var(--text-muted); background: rgba(255, 255, 255, 0.03); padding: 0.75rem 1rem; border-radius: 6px; border-left: 3px solid var(--text-muted);">
+                            <i class="fa-solid fa-circle-info" style="margin-right: 0.3rem;"></i> <strong>Panduan Cerdas:</strong> Tampilan di bawah ini otomatis disesuaikan dengan tombol yang Anda klik di atas!
+                        </div>
+                        <input type="hidden" id="guideModeSelector" value="auto">
+                    </div>
 
                     <div class="lang-id">
-                        <h3 style="color: var(--primary); border-bottom: 1px solid var(--panel-border); padding-bottom: 0.5rem; margin-top: 1rem;">Bagian 1: Pengaturan Google Sheets API (Bot Google)</h3>
-                        <ol style="margin-left: 1.5rem; margin-bottom: 1.5rem;">
-                            <li>Buka <strong>Google Cloud Console</strong> (console.cloud.google.com).</li>
-                            <li>Buat Project baru (misal: <em>Zoho-Sync-App</em>).</li>
-                            <li>Pergi ke menu <strong>APIs & Services &gt; Library</strong>. Cari <strong>Google Sheets API</strong> lalu klik <strong>Enable</strong>.</li>
-                            <li>Pergi ke menu <strong>APIs & Services &gt; Credentials</strong>.</li>
-                            <li>Klik <strong>Create Credentials &gt; Service Account</strong>. Isi nama bot (misal: <em>zoho-bot</em>) dan klik Done.</li>
-                            <li>Klik email Service Account yang baru dibuat tersebut, masuk ke tab <strong>Keys</strong>, klik <strong>Add Key &gt; Create New Key</strong>, lalu pilih format <strong>JSON</strong>.</li>
-                            <li>File JSON akan ter-download ke komputer Anda. Buka file tersebut dengan Notepad, lalu <em>Copy</em> semua isinya dan <em>Paste</em> ke kolom <strong>Google Service Account JSON</strong> di tab Settings aplikasi kita.</li>
-                            <li><strong>SANGAT PENTING:</strong> <em>Copy</em> alamat email Service Account bot Anda (contoh: <code>zoho-bot@...iam.gserviceaccount.com</code>). Buka file Google Sheets Anda, klik tombol <strong>Share (Bagikan)</strong> di pojok kanan atas, lalu paste email bot tersebut dan berikan akses sebagai <strong>Editor</strong>.</li>
-                        </ol>
+                        <div class="guide-manual-only">
+                            <h3 style="color: var(--primary); border-bottom: 1px solid var(--panel-border); padding-bottom: 0.5rem; margin-top: 1rem;">Bagian 1: Pengaturan Google Sheets API (Bot Google)</h3>
+                            <ol style="margin-left: 1.5rem; margin-bottom: 1.5rem;">
+                                <li>Buka <strong>Google Cloud Console</strong> (console.cloud.google.com).</li>
+                                <li>Buat Project baru (misal: <em>Zoho-Sync-App</em>).</li>
+                                <li>Pergi ke menu <strong>APIs & Services &gt; Library</strong>. Cari <strong>Google Sheets API</strong> lalu klik <strong>Enable</strong>.</li>
+                                <li>Pergi ke menu <strong>APIs & Services &gt; Credentials</strong>.</li>
+                                <li>Klik <strong>Create Credentials &gt; Service Account</strong>. Isi nama bot (misal: <em>zoho-bot</em>) dan klik Done.</li>
+                                <li>Klik email Service Account yang baru dibuat tersebut, masuk ke tab <strong>Keys</strong>, klik <strong>Add Key &gt; Create New Key</strong>, lalu pilih format <strong>JSON</strong>.</li>
+                                <li>File JSON akan ter-download ke komputer Anda. Buka file tersebut dengan Notepad, lalu <em>Copy</em> semua isinya dan <em>Paste</em> ke kolom <strong>Google Service Account JSON</strong> di tab Settings aplikasi kita.</li>
+                                <li><strong>SANGAT PENTING:</strong> <em>Copy</em> alamat email Service Account bot Anda (contoh: <code>zoho-bot@...iam.gserviceaccount.com</code>). Buka file Google Sheets Anda, klik tombol <strong>Share (Bagikan)</strong> di pojok kanan atas, lalu paste email bot tersebut dan berikan akses sebagai <strong>Editor</strong>.</li>
+                            </ol>
+                        </div>
 
-                        <h3 style="color: var(--primary); border-bottom: 1px solid var(--panel-border); padding-bottom: 0.5rem;">Bagian 2: Pengaturan Zoho Projects API</h3>
+                        <h3 id="bagian-2" style="color: var(--primary); border-bottom: 1px solid var(--panel-border); padding-bottom: 0.5rem; margin-top: 1rem;">Bagian 2: Pengaturan Zoho Projects API</h3>
                         <ol style="margin-left: 1.5rem; margin-bottom: 1.5rem;">
                             <li>Buka <strong>Zoho API Console</strong> (api-console.zoho.com).</li>
                             <li>Klik <strong>Add Client</strong>, lalu pilih <strong>Self Client</strong>.</li>
@@ -33,25 +77,28 @@
                         </ol>
 
                         <h3 style="color: var(--primary); border-bottom: 1px solid var(--panel-border); padding-bottom: 0.5rem;">Bagian 3: Melengkapi Tab Settings di Aplikasi</h3>
-                        <p style="margin-bottom: 1rem; color: var(--text-muted);">Langkah pengisian dibedakan berdasarkan <strong>Konfigurasi Google Sheet</strong> yang Anda pilih:</p>
                         
-                        <h4 style="color: var(--text-main); margin-bottom: 0.5rem;"><i class="fa-solid fa-wand-magic-sparkles" style="color: #a855f7;"></i> Jika Menggunakan Pengaturan OTOMATIS (Sangat Disarankan)</h4>
-                        <ul style="margin-left: 1.5rem; margin-bottom: 1.5rem;">
-                            <li><strong>Konfigurasi Google Sheet:</strong> Pilih <em>"Ikuti Pengaturan Admin (Otomatis)"</em>.</li>
-                            <li><strong>Default Google Form Absensi:</strong> Masukkan <strong>Nama Default Absensi</strong> dan pilih <strong>Divisi Default Absensi</strong> Anda. Dengan mengatur ini, saat Anda menggunakan fitur Rencana Absensi nanti, Google Form akan secara otomatis terisi (<em>auto-prefill</em>) tanpa perlu Anda ketik ulang!</li>
-                            <li><strong>Zoho Portal Name:</strong> Masukkan ID organisasi Zoho Anda (contoh: <code>847721722</code>).</li>
-                            <li style="color: #10b981;"><em>Selesai! Anda tidak perlu mengisi Spreadsheet ID, Sheet Name, ataupun Service Account JSON. Semuanya sudah dikendalikan secara terpusat oleh Admin!</em></li>
-                        </ul>
+                        <div class="guide-auto-only" style="background: rgba(168,85,247,0.05); border: 1px solid rgba(168,85,247,0.3); border-left: 4px solid #a855f7; padding: 1rem; border-radius: 6px; margin-bottom: 1.5rem;">
+                            <h4 style="color: #c084fc; margin-bottom: 0.5rem;"><i class="fa-solid fa-wand-magic-sparkles"></i> Mode: Ikuti Pengaturan Admin (Otomatis)</h4>
+                            <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1rem;">Karena Anda memilih mode Otomatis, pengaturannya sangat mudah!</p>
+                            <ul style="margin-left: 1.5rem; margin-bottom: 0; color: var(--text-main);">
+                                <li><strong>Default Google Form Absensi:</strong> Masukkan <strong>Nama Default Absensi</strong> dan pilih <strong>Divisi Default Absensi</strong> Anda. Dengan mengatur ini, saat Anda menggunakan fitur Rencana Absensi nanti, Google Form akan secara otomatis terisi (<em>auto-prefill</em>) tanpa perlu Anda ketik ulang!</li>
+                                <li><strong>Zoho Portal Name:</strong> Masukkan ID organisasi Zoho Anda (contoh: <code>847721722</code>).</li>
+                                <li style="color: #34d399; margin-top: 0.5rem; list-style-type: none; margin-left: -1.5rem;"><i class="fa-solid fa-check-circle"></i> <em>Selesai! Anda tidak perlu mengisi Spreadsheet ID, Sheet Name, ataupun Service Account JSON. Semuanya sudah dikendalikan secara otomatis oleh sistem/admin!</em></li>
+                            </ul>
+                        </div>
 
-                        <h4 style="color: var(--text-main); margin-bottom: 0.5rem;"><i class="fa-solid fa-screwdriver-wrench" style="color: #60a5fa;"></i> Jika Menggunakan Pengaturan MANUAL</h4>
-                        <ul style="margin-left: 1.5rem; margin-bottom: 1.5rem;">
-                            <li><strong>Konfigurasi Google Sheet:</strong> Pilih <em>"Manual / Advanced Settings (Atur Sendiri)"</em>. Gunakan ini hanya jika Anda ingin menyimpan data di file Spreadsheet Anda sendiri.</li>
-                            <li><strong>Google Spreadsheet ID:</strong> Masukkan ID unik dari link URL Google Sheet pribadi Anda.</li>
-                            <li><strong>Google Sheet Tab Name:</strong> Nama Sheet tempat Anda akan menyimpan data Zoho (misal: <code>Sheet1</code> atau <code>tasklist</code>).</li>
-                            <li><strong>Google Service Account JSON:</strong> Paste isi file JSON bot Google yang Anda buat di Bagian 1.</li>
-                            <li><strong>Default Google Form Absensi:</strong> Masukkan Nama dan pilih Divisi Default Anda untuk fitur auto-prefill absen.</li>
-                            <li><strong>Zoho Portal Name:</strong> Masukkan ID organisasi Zoho Anda.</li>
-                        </ul>
+                        <div class="guide-manual-only" style="background: rgba(59,130,246,0.05); border: 1px solid rgba(59,130,246,0.3); border-left: 4px solid #3b82f6; padding: 1rem; border-radius: 6px; margin-bottom: 1.5rem;">
+                            <h4 style="color: #60a5fa; margin-bottom: 0.5rem;"><i class="fa-solid fa-screwdriver-wrench"></i> Mode: Manual / Advanced Settings (Atur Sendiri)</h4>
+                            <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1rem;">Anda memilih untuk menyimpan data secara manual ke file Spreadsheet milik Anda pribadi.</p>
+                            <ul style="margin-left: 1.5rem; margin-bottom: 0; color: var(--text-main);">
+                                <li><strong>Google Spreadsheet ID:</strong> Masukkan ID unik dari link URL Google Sheet pribadi Anda.</li>
+                                <li><strong>Google Sheet Tab Name:</strong> Nama Sheet tempat Anda akan menyimpan data Zoho (misal: <code>Sheet1</code> atau <code>tasklist</code>).</li>
+                                <li><strong>Google Service Account JSON:</strong> Paste isi file JSON bot Google yang Anda buat di Bagian 1 tadi.</li>
+                                <li><strong>Default Google Form Absensi:</strong> Masukkan Nama dan pilih Divisi Default Anda untuk fitur auto-prefill absen.</li>
+                                <li><strong>Zoho Portal Name:</strong> Masukkan ID organisasi Zoho Anda.</li>
+                            </ul>
+                        </div>
                         <p style="margin-bottom: 2rem;">Setelah semua terisi (termasuk Token Zoho di Bagian 2), klik tombol <strong><i class="fa-solid fa-floppy-disk"></i> Save Settings</strong>.</p>
 
                         <h3 style="color: var(--primary); border-bottom: 1px solid var(--panel-border); padding-bottom: 0.5rem;">Bagian 4: Cara Penggunaan & Fitur Canggih</h3>
@@ -115,19 +162,21 @@
                     </div>
 
                     <div class="lang-en">
-                        <h3 style="color: var(--primary); border-bottom: 1px solid var(--panel-border); padding-bottom: 0.5rem; margin-top: 1rem;">Part 1: Google Sheets API Setup (Google Bot)</h3>
-                        <ol style="margin-left: 1.5rem; margin-bottom: 1.5rem;">
-                            <li>Open <strong>Google Cloud Console</strong> (console.cloud.google.com).</li>
-                            <li>Create a new Project (e.g., <em>TrackHub-App</em>).</li>
-                            <li>Go to <strong>APIs & Services &gt; Library</strong>. Search for <strong>Google Sheets API</strong> and click <strong>Enable</strong>.</li>
-                            <li>Go to <strong>APIs & Services &gt; Credentials</strong>.</li>
-                            <li>Click <strong>Create Credentials &gt; Service Account</strong>. Enter a bot name (e.g., <em>zoho-bot</em>) and click Done.</li>
-                            <li>Click the newly created Service Account email, go to the <strong>Keys</strong> tab, click <strong>Add Key &gt; Create New Key</strong>, and choose <strong>JSON</strong> format.</li>
-                            <li>The JSON file will be downloaded. Open it, <em>Copy</em> all contents, and <em>Paste</em> it into the <strong>Google Service Account JSON</strong> field in the Settings tab.</li>
-                            <li><strong>VERY IMPORTANT:</strong> <em>Copy</em> the Service Account email (e.g., <code>zoho-bot@...iam.gserviceaccount.com</code>). Open your Google Sheet, click <strong>Share</strong> in the top right, paste the email, and grant <strong>Editor</strong> access.</li>
-                        </ol>
+                        <div class="guide-manual-only">
+                            <h3 style="color: var(--primary); border-bottom: 1px solid var(--panel-border); padding-bottom: 0.5rem; margin-top: 1rem;">Part 1: Google Sheets API Setup (Google Bot)</h3>
+                            <ol style="margin-left: 1.5rem; margin-bottom: 1.5rem;">
+                                <li>Open <strong>Google Cloud Console</strong> (console.cloud.google.com).</li>
+                                <li>Create a new Project (e.g., <em>TrackHub-App</em>).</li>
+                                <li>Go to <strong>APIs & Services &gt; Library</strong>. Search for <strong>Google Sheets API</strong> and click <strong>Enable</strong>.</li>
+                                <li>Go to <strong>APIs & Services &gt; Credentials</strong>.</li>
+                                <li>Click <strong>Create Credentials &gt; Service Account</strong>. Enter a bot name (e.g., <em>zoho-bot</em>) and click Done.</li>
+                                <li>Click the newly created Service Account email, go to the <strong>Keys</strong> tab, click <strong>Add Key &gt; Create New Key</strong>, and choose <strong>JSON</strong> format.</li>
+                                <li>The JSON file will be downloaded. Open it, <em>Copy</em> all contents, and <em>Paste</em> it into the <strong>Google Service Account JSON</strong> field in the Settings tab.</li>
+                                <li><strong>VERY IMPORTANT:</strong> <em>Copy</em> the Service Account email (e.g., <code>zoho-bot@...iam.gserviceaccount.com</code>). Open your Google Sheet, click <strong>Share</strong> in the top right, paste the email, and grant <strong>Editor</strong> access.</li>
+                            </ol>
+                        </div>
 
-                        <h3 style="color: var(--primary); border-bottom: 1px solid var(--panel-border); padding-bottom: 0.5rem;">Part 2: Zoho Projects API Setup</h3>
+                        <h3 id="part-2" style="color: var(--primary); border-bottom: 1px solid var(--panel-border); padding-bottom: 0.5rem; margin-top: 1rem;">Part 2: Zoho Projects API Setup</h3>
                         <ol style="margin-left: 1.5rem; margin-bottom: 1.5rem;">
                             <li>Open <strong>Zoho API Console</strong> (api-console.zoho.com).</li>
                             <li>Click <strong>Add Client</strong>, then select <strong>Self Client</strong>.</li>
@@ -142,25 +191,28 @@
                         </ol>
 
                         <h3 style="color: var(--primary); border-bottom: 1px solid var(--panel-border); padding-bottom: 0.5rem;">Part 3: Completing App Settings</h3>
-                        <p style="margin-bottom: 1rem; color: var(--text-muted);">The required steps depend on the <strong>Google Sheet Config</strong> mode you choose:</p>
+                        
+                        <div class="guide-auto-only" style="background: rgba(168,85,247,0.05); border: 1px solid rgba(168,85,247,0.3); border-left: 4px solid #a855f7; padding: 1rem; border-radius: 6px; margin-bottom: 1.5rem;">
+                            <h4 style="color: #c084fc; margin-bottom: 0.5rem;"><i class="fa-solid fa-wand-magic-sparkles"></i> Mode: Follow Admin Settings (Automatic)</h4>
+                            <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1rem;">Since you chose Automatic mode, setup is incredibly simple!</p>
+                            <ul style="margin-left: 1.5rem; margin-bottom: 0; color: var(--text-main);">
+                                <li><strong>Default Google Form Attendance:</strong> Enter your <strong>Default Attendance Name</strong> and select your <strong>Default Attendance Division</strong>. When using the Attendance Plan feature, the Google Form will magically auto-prefill these fields for you!</li>
+                                <li><strong>Zoho Portal Name:</strong> Enter your Zoho organization ID (e.g., <code>847721722</code>).</li>
+                                <li style="color: #34d399; margin-top: 0.5rem; list-style-type: none; margin-left: -1.5rem;"><i class="fa-solid fa-check-circle"></i> <em>Done! You do NOT need to fill in the Spreadsheet ID, Sheet Name, or Service Account JSON. The system manages them centrally!</em></li>
+                            </ul>
+                        </div>
 
-                        <h4 style="color: var(--text-main); margin-bottom: 0.5rem;"><i class="fa-solid fa-wand-magic-sparkles" style="color: #a855f7;"></i> If Using AUTOMATIC Mode (Highly Recommended)</h4>
-                        <ul style="margin-left: 1.5rem; margin-bottom: 1.5rem;">
-                            <li><strong>Google Sheet Config:</strong> Select <em>"Follow Admin Settings (Automatic)"</em>.</li>
-                            <li><strong>Default Google Form Attendance:</strong> Enter your <strong>Default Attendance Name</strong> and select your <strong>Default Attendance Division</strong>. When using the Attendance Plan feature, the Google Form will magically auto-prefill these fields for you!</li>
-                            <li><strong>Zoho Portal Name:</strong> Enter your Zoho organization ID (e.g., <code>847721722</code>).</li>
-                            <li style="color: #10b981;"><em>Done! You do NOT need to fill in the Spreadsheet ID, Sheet Name, or Service Account JSON. The Admin centrally manages them!</em></li>
-                        </ul>
-
-                        <h4 style="color: var(--text-main); margin-bottom: 0.5rem;"><i class="fa-solid fa-screwdriver-wrench" style="color: #60a5fa;"></i> If Using MANUAL Mode</h4>
-                        <ul style="margin-left: 1.5rem; margin-bottom: 1.5rem;">
-                            <li><strong>Google Sheet Config:</strong> Select <em>"Manual / Advanced Settings"</em>. Use this only if you want to store data in your own personal Spreadsheet.</li>
-                            <li><strong>Google Spreadsheet ID:</strong> Enter the unique ID from your Google Sheet URL.</li>
-                            <li><strong>Google Sheet Tab Name:</strong> The name of the sheet tab for your Zoho data (e.g., <code>Sheet1</code> or <code>tasklist</code>).</li>
-                            <li><strong>Google Service Account JSON:</strong> Paste the JSON content of your Google bot created in Part 1.</li>
-                            <li><strong>Default Google Form Attendance:</strong> Enter your Name and Division for the auto-prefill feature.</li>
-                            <li><strong>Zoho Portal Name:</strong> Enter your Zoho organization ID.</li>
-                        </ul>
+                        <div class="guide-manual-only" style="background: rgba(59,130,246,0.05); border: 1px solid rgba(59,130,246,0.3); border-left: 4px solid #3b82f6; padding: 1rem; border-radius: 6px; margin-bottom: 1.5rem;">
+                            <h4 style="color: #60a5fa; margin-bottom: 0.5rem;"><i class="fa-solid fa-screwdriver-wrench"></i> Mode: Manual / Advanced Settings</h4>
+                            <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1rem;">You chose to store data in your own personal Spreadsheet separately.</p>
+                            <ul style="margin-left: 1.5rem; margin-bottom: 0; color: var(--text-main);">
+                                <li><strong>Google Spreadsheet ID:</strong> Enter the unique ID from your Google Sheet URL.</li>
+                                <li><strong>Google Sheet Tab Name:</strong> The name of the sheet tab for your Zoho data (e.g., <code>Sheet1</code> or <code>tasklist</code>).</li>
+                                <li><strong>Google Service Account JSON:</strong> Paste the JSON content of your Google bot created in Part 1.</li>
+                                <li><strong>Default Google Form Attendance:</strong> Enter your Name and Division for the auto-prefill feature.</li>
+                                <li><strong>Zoho Portal Name:</strong> Enter your Zoho organization ID.</li>
+                            </ul>
+                        </div>
                         <p style="margin-bottom: 2rem;">Click the <strong><i class="fa-solid fa-floppy-disk"></i> Save Settings</strong> button once everything (including Zoho tokens from Part 2) is filled out.</p>
 
                         <h3 style="color: var(--primary); border-bottom: 1px solid var(--panel-border); padding-bottom: 0.5rem;">Part 4: Usage & Features</h3>
@@ -222,4 +274,62 @@
                     </div>
                 </div>
             </div>
+            
+            <script>
+                document.addEventListener('DOMContentLoaded', () => {
+                    const selector = document.getElementById('guideModeSelector');
+                    const modeBtns = document.querySelectorAll('.guide-mode-btn');
+                    
+                    if (selector && modeBtns.length > 0) {
+                        
+                        // Handle button clicks
+                        modeBtns.forEach(btn => {
+                            btn.addEventListener('click', () => {
+                                // Update hidden selector value
+                                selector.value = btn.getAttribute('data-mode');
+                                
+                                // Update button UI
+                                modeBtns.forEach(b => b.classList.remove('active'));
+                                btn.classList.add('active');
+                                
+                                // Trigger change event
+                                selector.dispatchEvent(new Event('change'));
+                            });
+                        });
+                        
+                        // Handle change event to toggle content visibility
+                        selector.addEventListener('change', (e) => {
+                            const mode = e.target.value;
+                            const autoElements = document.querySelectorAll('.guide-auto-only');
+                            const manualElements = document.querySelectorAll('.guide-manual-only');
+                            
+                            if (mode === 'auto') {
+                                autoElements.forEach(el => el.style.display = '');
+                                manualElements.forEach(el => el.style.display = 'none');
+                            } else {
+                                autoElements.forEach(el => el.style.display = 'none');
+                                manualElements.forEach(el => el.style.display = '');
+                            }
+                        });
+                        
+                        // Sync with actual settings if possible
+                        const currentSettings = localStorage.getItem('trackhub_settings');
+                        if (currentSettings) {
+                            try {
+                                const parsed = JSON.parse(currentSettings);
+                                if (parsed.googleSheetMode) {
+                                    const targetBtn = document.querySelector(`.guide-mode-btn[data-mode="${parsed.googleSheetMode}"]`);
+                                    if(targetBtn) targetBtn.click();
+                                } else {
+                                    selector.dispatchEvent(new Event('change'));
+                                }
+                            } catch(err) {
+                                selector.dispatchEvent(new Event('change'));
+                            }
+                        } else {
+                            selector.dispatchEvent(new Event('change'));
+                        }
+                    }
+                });
+            </script>
         </section>
