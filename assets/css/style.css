@@ -1,11 +1,11 @@
 :root {
-    --bg-color: #0f172a;
-    --panel-bg: rgba(0, 0, 0, 0.2);
-    --panel-border: rgba(255, 255, 255, 0.15);
-    --primary: #3b82f6;
-    --primary-hover: #2563eb;
-    --text-main: #f8fafc;
-    --text-muted: #cbd5e1;
+    --bg-color: #f0f9ff;
+    --panel-bg: rgba(255, 255, 255, 0.7);
+    --panel-border: rgba(255, 255, 255, 0.8);
+    --primary: #0ea5e9;
+    --primary-hover: #0284c7;
+    --text-main: #0f172a;
+    --text-muted: #475569;
     --success: #10b981;
     --warning: #f59e0b;
     --danger: #ef4444;
@@ -20,7 +20,7 @@
 
 body {
     font-family: 'Inter', sans-serif;
-    background: linear-gradient(180deg, #68bdfa 0%, #125796 50%, #071f40 100%);
+    background: linear-gradient(180deg, #bae6fd 0%, #e0f2fe 50%, #f1f5f9 100%);
     background-attachment: fixed;
     color: var(--text-main);
     min-height: 100vh;
